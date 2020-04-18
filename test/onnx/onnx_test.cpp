@@ -1117,14 +1117,13 @@ TEST_CASE(no_pad_test)
 TEST_CASE(onehot_test)
 {
     migraphx::program p;
-    auto l0 = p.add_literal(
-        migraphx::literal{migraphx::shape{migraphx::shape::int32_type, {5}}, {1, 1, 1, 1, 1}});
-    p.add_literal(2);
-    p.add_literal(migraphx::literal{migraphx::shape{migraphx::shape::float_type, {2}}, {0, 1}});
-    auto l1 = p.add_literal(
-        migraphx::literal{migraphx::shape{migraphx::shape::float_type, {2, 2}}, {1, 0, 0, 1}});
-    int axis = 0;
-    p.add_instruction(migraphx::op::gather{axis}, l1, l0);
+    p.add_literal(3);
+    migraphx::shape s_ind{migraphx::shape::int32_type, {5, 2}};
+    migraphx::shape s_val{migraphx::shape::half_type, {2}};
+    auto l_ind = p.add_parameter("indices", s_ind);
+    auto l_val = p.add_parameter("values", s_val);
+    int axis   = 0;
+    p.add_instruction(migraphx::op::onehot{3, axis}, l_ind, l_val);
     auto prog = optimize_onnx("onehot_test.onnx");
 
     EXPECT(p == prog);

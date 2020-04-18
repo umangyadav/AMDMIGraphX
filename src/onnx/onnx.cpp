@@ -1844,32 +1844,15 @@ struct onnx_parser
     {
         migraphx::argument depth_arg = args[1]->eval();
         check_arg_empty(depth_arg, "ONEHOT: depth - dynamic shape not supported");
-        size_t depth = depth_arg.at<size_t>();
+        std::size_t depth = depth_arg.at<std::size_t>();
 
         int64_t axis = -1;
-        std::vector<float> on_off_vals;
-
-        migraphx::argument values_arg = args[2]->eval();
-        check_arg_empty(values_arg, "ONEHOT: values - dynamic shape not supported");
-        values_arg.visit([&](auto v) { copy(v, std::back_inserter(on_off_vals)); });
-        float off_value = on_off_vals[0];
-        float on_value  = on_off_vals[1];
-
-        std::vector<float> depth_input(depth * depth, off_value);
-        for(int i = 0; i < depth; i++)
-        {
-            depth_input[depth * i + i] = on_value;
-        }
-
         if(contains(info.attributes, "axis"))
-            axis = info.attributes.at("axis").i();
-        if(axis == -1)
         {
-            shape s{shape::float_type, {depth, depth}};
-            auto l0 = prog.add_literal({s, depth_input});
-            return prog.add_instruction(op::gather{0}, {l0, args[0]});
+            axis = info.attributes.at("axis").i();
         }
-        MIGRAPHX_THROW("ONEHOT: MIGraphX does not support axis != -1");
+
+        return prog.add_instruction(op::onehot{depth, axis}, {args[0], args[2]});
     }
 
     void parse_from(std::istream& is)
