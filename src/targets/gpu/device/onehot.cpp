@@ -13,7 +13,7 @@ namespace device {
 argument
 onehot(hipStream_t stream, argument result, argument arg_indices, argument arg_value, int axis)
 {
-std::cout << "Loc1" << std::endl;
+    std::cout << "Loc1" << std::endl;
     auto out_shape           = result.get_shape();
     int n_rank               = static_cast<int>(out_shape.lens().size());
     int tuned_axis           = (axis < 0) ? (axis + n_rank) : axis;
