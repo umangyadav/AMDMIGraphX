@@ -2444,7 +2444,7 @@ TEST_CASE(onehot_test)
         migraphx::shape s_ind{migraphx::shape::int32_type, {2, 2}};
         std::vector<int> vec_ind(s_ind.elements());
         std::iota(vec_ind.begin(), vec_ind.end(), 0);
-        auto l_ind = p.add_literal(migraphx::literal(s_ind, vec_ind));
+        auto l_ind        = p.add_literal(migraphx::literal(s_ind, vec_ind));
         std::size_t depth = 4;
         p.add_instruction(migraphx::op::onehot{depth, axis}, l_ind, l_val);
         p.compile(migraphx::cpu::target{});
@@ -2453,16 +2453,46 @@ TEST_CASE(onehot_test)
         result.visit([&](auto output) { results_vector.assign(output.begin(), output.end()); });
         return results_vector;
     };
- 
+
     {
-        auto results = calc_onehot(-1);
-        std::vector<float> gold = {2.0f, 1.0f, 1.0f, 1.0f, 1.0f, 2.0f, 1.0f, 1.0f, 1.0f, 1.0f, 2.0f, 1.0f, 1.0f, 1.0f, 1.0f, 2.0f};
+        auto results            = calc_onehot(-1);
+        std::vector<float> gold = {2.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   2.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   2.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   2.0f};
         EXPECT(migraphx::verify_range(results, gold));
     }
 
     {
-        auto results = calc_onehot(0);
-        std::vector<float> gold = {2.0f, 1.0f, 1.0f, 1.0f, 1.0f, 2.0f, 1.0f, 1.0f, 1.0f, 1.0f, 2.0f, 1.0f, 1.0f, 1.0f, 1.0f, 2.0f};
+        auto results            = calc_onehot(0);
+        std::vector<float> gold = {2.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   2.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   2.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   2.0f};
         EXPECT(migraphx::verify_range(results, gold));
     }
 }

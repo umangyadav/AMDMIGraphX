@@ -4528,9 +4528,7 @@ struct test_onehot : verify_program<test_onehot<Axis, T>>
         std::size_t depth = 30;
         std::vector<int> vec_ind(s_ind.elements());
         std::srand(std::time(nullptr));
-        std::generate(vec_ind.begin(), vec_ind.end(), [&]() {
-            return rand() % depth;
-        });
+        std::generate(vec_ind.begin(), vec_ind.end(), [&]() { return rand() % depth; });
         auto l_ind = p.add_literal(migraphx::literal(s_ind, vec_ind));
         auto l_val = p.add_parameter("v", s_val);
         p.add_instruction(migraphx::op::onehot{depth, Axis}, l_ind, l_val);
