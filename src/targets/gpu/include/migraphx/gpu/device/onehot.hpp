@@ -11,7 +11,7 @@ namespace gpu {
 namespace device {
 
 argument
-onehot(hipStream_t stream, argument result, argument arg_index, argument arg_value, int axis);
+onehot(hipStream_t stream, argument result, argument arg_indices, argument arg_value, int axis);
 
 } // namespace device
 } // namespace gpu
