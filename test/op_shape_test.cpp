@@ -1272,4 +1272,54 @@ TEST_CASE(lstm)
     }
 }
 
+TEST_CASE(onehot)
+{
+    {
+        migraphx::shape s_ind{migraphx::shape::int32_type, {4, 5}};
+        migraphx::shape s_val{migraphx::shape::float_type, {2}};
+        throws_shape(migraphx::op::onehot{}, s_ind, s_val);
+    }
+
+    {
+        migraphx::shape s_ind{migraphx::shape::int32_type, {4, 5}};
+        migraphx::shape s_val{migraphx::shape::float_type, {2}};
+        expect_shape(
+            {migraphx::shape::float_type, {4, 5, 2}}, migraphx::op::onehot{2}, s_ind, s_val);
+    }
+
+    {
+        migraphx::shape s_ind{migraphx::shape::int32_type, {4, 5}};
+        migraphx::shape s_val{migraphx::shape::float_type, {2}};
+        expect_shape(
+            {migraphx::shape::float_type, {4, 2, 5}}, migraphx::op::onehot{2, -2}, s_ind, s_val);
+    }
+
+    {
+        migraphx::shape s_ind{migraphx::shape::int32_type, {4, 5}};
+        migraphx::shape s_val{migraphx::shape::float_type, {2}};
+        expect_shape(
+            {migraphx::shape::float_type, {2, 4, 5}}, migraphx::op::onehot{2, -3}, s_ind, s_val);
+    }
+
+    {
+        migraphx::shape s_ind{migraphx::shape::int32_type, {4, 5}};
+        migraphx::shape s_val{migraphx::shape::float_type, {2}};
+        expect_shape(
+            {migraphx::shape::float_type, {6, 4, 5}}, migraphx::op::onehot{6, 0}, s_ind, s_val);
+    }
+
+    {
+        migraphx::shape s_ind{migraphx::shape::int32_type, {4, 5}};
+        migraphx::shape s_val{migraphx::shape::float_type, {2}};
+        expect_shape(
+            {migraphx::shape::float_type, {4, 5, 6}}, migraphx::op::onehot{6, 2}, s_ind, s_val);
+    }
+
+    {
+        migraphx::shape s_ind{migraphx::shape::int32_type, {4, 5}};
+        migraphx::shape s_val{migraphx::shape::float_type, {1}};
+        throws_shape(migraphx::op::onehot{6, 2}, s_ind, s_val);
+    }
+}
+
 int main(int argc, const char* argv[]) { test::run(argc, argv); }

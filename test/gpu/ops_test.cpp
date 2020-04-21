@@ -4517,4 +4517,29 @@ struct test_recip : verify_program<test_recip>
     }
 };
 
+template <int Axis, migraphx::shape::type_t T>
+struct test_onehot : verify_program<test_onehot<Axis, T>>
+{
+    migraphx::program create_program() const
+    {
+        migraphx::program p;
+        migraphx::shape s_ind{migraphx::shape::int32_type, {3, 5, 6}};
+        migraphx::shape s_val{T, {2}};
+        std::size_t depth = 30;
+        std::vector<int> vec_ind(s_ind.elements());
+        std::iota(vec_ind.begin(), vec_ind.end(), 0);
+        std::transform(
+            vec_ind.begin(), vec_ind.end(), vec_ind.begin(), [&](auto i) { return i % depth; });
+        auto l_ind = p.add_literal(migraphx::literal(s_ind, vec_ind));
+        auto l_val = p.add_parameter("v", s_val);
+        p.add_instruction(migraphx::op::onehot{depth, Axis}, l_ind, l_val);
+        return p;
+    };
+};
+
+template struct test_onehot<0, migraphx::shape::float_type>;
+template struct test_onehot<1, migraphx::shape::float_type>;
+template struct test_onehot<2, migraphx::shape::half_type>;
+template struct test_onehot<3, migraphx::shape::half_type>;
+
 int main(int argc, const char* argv[]) { test::run(argc, argv); }
