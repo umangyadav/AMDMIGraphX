@@ -44,6 +44,7 @@ add_library(migraphx_device
     device/mul.cpp
     device/mul_add.cpp
     device/mul_add_relu.cpp
+    device/onehot.cpp
     device/pad.cpp
     device/pow.cpp
     device/prelu.cpp
@@ -104,6 +105,7 @@ add_library(migraphx_gpu
     rocblas.cpp
     abs.cpp
     elu.cpp
+    onehot.cpp
     pad.cpp
     gather.cpp
     convert.cpp
