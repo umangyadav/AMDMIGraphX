@@ -1843,8 +1843,8 @@ struct onnx_parser
     parse_onehot(const std::string&, node_info info, std::vector<instruction_ref> args)
     {
         migraphx::argument depth_arg = args[1]->eval();
-        check_arg_empty(depth_arg, "ONEHOT: depth - dynamic shape not supported");
-        std::size_t depth = depth_arg.at<std::size_t>();
+        check_arg_empty(depth_arg, "PARSE_ONEHOT: depth - dynamic shape not supported");
+        size_t depth = depth_arg.at<size_t>();
 
         int64_t axis = -1;
         if(contains(info.attributes, "axis"))
@@ -1852,7 +1852,37 @@ struct onnx_parser
             axis = info.attributes.at("axis").i();
         }
 
-        return prog.add_instruction(op::onehot{depth, axis}, {args[0], args[2]});
+        std::vector<float> depth_input(depth * depth, 0.0f);
+        for(int i = 0; i < depth; i++)
+        {
+            depth_input[depth * i + i] = 1.0f;
+        }
+
+        auto type = args[2]->get_shape().type();
+        shape s{type, {depth, depth}};
+        auto l_val      = prog.add_literal({s, depth_input});
+        auto gather_out = prog.add_instruction(op::gather{0}, {l_val, args[0]});
+
+        // Finally, we need a transpose to move the inner most dim to the axis dim
+        int n_rank = gather_out->get_shape().lens().size();
+        if(axis < -n_rank or axis >= n_rank)
+        {
+            MIGRAPHX_THROW("PARSE_ONEHOT: axis out of range");
+        }
+        int64_t tuned_axis = (axis < 0) ? axis + n_rank : axis;
+        std::vector<int64_t> perm(n_rank - 1);
+        std::iota(perm.begin(), perm.end(), 0);
+        perm.insert(perm.begin() + tuned_axis, n_rank - 1);
+        auto tr_out = prog.add_instruction(op::transpose{perm}, gather_out);
+        auto lens   = tr_out->get_shape().lens();
+
+        auto off_val       = prog.add_instruction(op::slice{{0}, {0}, {1}}, args[2]);
+        auto on_val        = prog.add_instruction(op::slice{{0}, {1}, {2}}, args[2]);
+        auto diff          = prog.add_instruction(op::sub{}, on_val, off_val);
+        auto unsq_off_val  = prog.add_instruction(op::multibroadcast{lens}, off_val);
+        auto unsq_diff_val = prog.add_instruction(op::multibroadcast{lens}, diff);
+        auto l_mul         = prog.add_instruction(op::mul{}, tr_out, unsq_diff_val);
+        return prog.add_instruction(op::add{}, l_mul, unsq_off_val);
     }
 
     void parse_from(std::istream& is)
