@@ -26,6 +26,7 @@ add_library(migraphx_device
     device/atanh.cpp
     device/ceil.cpp
     device/clip.cpp
+    device/compare.cpp
     device/concat.cpp
     device/contiguous.cpp
     device/convert.cpp

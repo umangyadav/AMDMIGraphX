@@ -20,6 +20,7 @@
 #include <migraphx/op/ceil.hpp>
 #include <migraphx/op/clip.hpp>
 #include <migraphx/op/common.hpp>
+#include <migraphx/op/compare.hpp>
 #include <migraphx/op/concat.hpp>
 #include <migraphx/op/contiguous.hpp>
 #include <migraphx/op/convert.hpp>

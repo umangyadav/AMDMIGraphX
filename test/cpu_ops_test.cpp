@@ -2434,4 +2434,21 @@ TEST_CASE(recip_test)
     EXPECT(migraphx::verify_range(results_vector, gold));
 }
 
+TEST_CASE(compare_test)
+{
+    migraphx::program p;
+    migraphx::shape s{migraphx::shape::double_type, {3}};
+    std::vector<float> data_x{-0.5f, 0.1f, 0.5f};
+    std::vector<float> data_y{-0.5f, 0.2f, 0.5f};
+    auto l0 = p.add_literal(migraphx::literal{s, data_x});
+    auto l1 = p.add_literal(migraphx::literal{s, data_y});
+    p.add_instruction(migraphx::op::compare{}, l0, l1);
+    p.compile(migraphx::cpu::target{});
+    auto result = p.eval({}).back();
+    std::vector<float> results_vector(3);
+    result.visit([&](auto output) { results_vector.assign(output.begin(), output.end()); });
+    std::vector<float> gold = {1.0f, 0.0f, 1.0f};
+    EXPECT(migraphx::verify_range(results_vector, gold));
+}
+
 int main(int argc, const char* argv[]) { test::run(argc, argv); }

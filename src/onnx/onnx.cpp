@@ -97,6 +97,7 @@ struct onnx_parser
         add_mem_op("ConvTranspose", &onnx_parser::parse_conv_transpose);
         add_mem_op("Elu", &onnx_parser::parse_elu);
         add_mem_op("Expand", &onnx_parser::parse_expand);
+        add_mem_op("Equal", &onnx_parser::parse_equal);
         add_mem_op("Flatten", &onnx_parser::parse_flatten);
         add_mem_op("Gather", &onnx_parser::parse_gather);
         add_mem_op("Gemm", &onnx_parser::parse_gemm);
@@ -1297,6 +1298,13 @@ struct onnx_parser
 
             return prog.add_literal(l_out);
         }
+    }
+
+    instruction_ref
+    parse_equal(const std::string&, const node_info&, std::vector<instruction_ref> args)
+    {
+        auto l0 = prog.add_instruction(op::compare{}, args);
+        return prog.add_instruction(op::convert{shape::int8_type}, l0);
     }
 
     instruction_ref

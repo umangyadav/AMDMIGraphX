@@ -4517,4 +4517,17 @@ struct test_recip : verify_program<test_recip>
     }
 };
 
+struct test_compare : verify_program<test_compare>
+{
+    migraphx::program create_program() const
+    {
+        migraphx::program p;
+        migraphx::shape s{migraphx::shape::double_type, {3}};
+        auto x = p.add_parameter("x", s);
+        auto y = p.add_parameter("y", s);
+        p.add_instruction(migraphx::op::compare{}, x, y);
+        return p;
+    }
+};
+
 int main(int argc, const char* argv[]) { test::run(argc, argv); }
