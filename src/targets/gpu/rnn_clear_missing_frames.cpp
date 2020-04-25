@@ -16,7 +16,7 @@ argument hip_rnn_clear_missing_frames::compute(context& ctx,
                                                const shape&,
                                                const std::vector<argument>& args) const
 {
-    device::rnn_clear_missing_frames(ctx.get_stream().get(), args.back(), args.at(0), args.at(1));
+    device::rnn_clear_missing_frames(ctx.get_stream().get(), args.back(), args.at(0), args.at(1), (op.direction == op::rnn_direction::reverse));
     return args.back();
 }
 

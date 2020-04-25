@@ -9,6 +9,7 @@
 #include <migraphx/literal.hpp>
 #include <migraphx/par_for.hpp>
 #include <migraphx/config.hpp>
+#include <migraphx/op/common.hpp>
 #include <cmath>
 #include <utility>
 
@@ -18,6 +19,15 @@ namespace op {
 
 struct rnn_clear_missing_frames
 {
+
+    rnn_direction direction = rnn_direction::forward;
+
+    template <class Self, class F>
+    static auto reflect(Self& self, F f)
+    {
+        return pack(f(self.direction, "direction"));
+    }
+
     std::string name() const { return "rnn_clear_missing_frames"; }
     shape compute_shape(std::vector<shape> inputs) const
     {
@@ -42,8 +52,9 @@ struct rnn_clear_missing_frames
                     if(t < sl)
                     {
                         auto in_idx = idx;
-                        in_idx[0] += d * (max_len - sl);
-                        val = input(idx.begin(), idx.end());
+                        int offset = (direction == rnn_direction::reverse or d == 1) ? 1 : 0;
+                        in_idx[0] += offset * (max_len - sl);
+                        val = input(in_idx.begin(), in_idx.end());
                     }
                     output(idx.begin(), idx.end()) = val;
                 });

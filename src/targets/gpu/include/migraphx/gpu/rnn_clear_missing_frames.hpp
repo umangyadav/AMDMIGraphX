@@ -14,6 +14,12 @@ struct hip_rnn_clear_missing_frames
 {
     op::rnn_clear_missing_frames op;
 
+    template <class Self, class F>
+    static auto reflect(Self& self, F f)
+    {
+        return migraphx::reflect(self.op, f);
+    }
+
     std::string name() const { return "gpu::rnn_clear_missing_frames"; }
     shape compute_shape(std::vector<shape> inputs) const;
     argument

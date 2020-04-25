@@ -941,7 +941,7 @@ std::vector<instruction_ref> rewrite_rnn::lstm_cell(bool is_forward,
     auto w        = inputs.at(1);
     auto r        = inputs.at(2);
     auto bias     = inputs.at(3);
-    auto seq_lens = inputs.at(4);
+    //auto seq_lens = inputs.at(4);
     auto ih       = inputs.at(5);
     auto ic       = inputs.at(6);
     auto pph      = inputs.at(7);
