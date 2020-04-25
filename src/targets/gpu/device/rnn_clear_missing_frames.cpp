@@ -29,7 +29,7 @@ void rnn_clear_missing_frames(hipStream_t stream,
                 val      = 0;
                 if(t < l)
                 {
-                    int offset = (d == 1 or is_reverse) ? 1 : 0;
+                    int offset  = (d == 1 or is_reverse) ? 1 : 0;
                     auto in_idx = idx;
                     in_idx[0] += offset * (max_len - l);
                     val = in_data[out_s.index(in_idx)];

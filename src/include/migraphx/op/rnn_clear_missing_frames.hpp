@@ -52,7 +52,7 @@ struct rnn_clear_missing_frames
                     if(t < sl)
                     {
                         auto in_idx = idx;
-                        int offset = (direction == rnn_direction::reverse or d == 1) ? 1 : 0;
+                        int offset  = (direction == rnn_direction::reverse or d == 1) ? 1 : 0;
                         in_idx[0] += offset * (max_len - sl);
                         val = input(in_idx.begin(), in_idx.end());
                     }
