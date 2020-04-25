@@ -504,7 +504,8 @@ std::vector<argument> program::eval(parameter_map params) const
             this->debug_print(ins);
             auto result = check_context(f);
             ctx.finish();
-            if(trace_level > 1 and ins->name().front() != '@' and ins->name() != "load" and ins->name() != "check_context")
+            if(trace_level > 1 and ins->name().front() != '@' and ins->name() != "load" and
+               ins->name() != "check_context")
                 std::cout << "Ouput: " << t_.copy_from(result) << std::endl;
             return result;
         });
