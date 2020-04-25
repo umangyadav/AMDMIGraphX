@@ -387,6 +387,7 @@ instruction_ref program::validate() const
 
 void program::compile(const target& t, compile_options options)
 {
+    t_ = t;
     assert(this->validate() == impl->instructions.end());
     this->impl->ctx = t.get_context();
     if(enabled(MIGRAPHX_TRACE_COMPILE{}))
@@ -503,8 +504,8 @@ std::vector<argument> program::eval(parameter_map params) const
             this->debug_print(ins);
             auto result = check_context(f);
             ctx.finish();
-            if(trace_level > 1 and ins->name().front() != '@' and ins->name() != "load")
-                std::cout << "Ouput: " << result << std::endl;
+            if(trace_level > 1 and ins->name().front() != '@' and ins->name() != "load" and ins->name() != "check_context")
+                std::cout << "Ouput: " << t_.copy_from(result) << std::endl;
             return result;
         });
     }

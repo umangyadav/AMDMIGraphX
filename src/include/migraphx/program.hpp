@@ -134,6 +134,7 @@ struct program
 
     private:
     std::unique_ptr<program_impl> impl;
+    migraphx::target t_;
 };
 
 } // namespace MIGRAPHX_INLINE_NS

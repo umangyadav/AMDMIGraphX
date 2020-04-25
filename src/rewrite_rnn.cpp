@@ -19,6 +19,7 @@
 #include <migraphx/iterator_for.hpp>
 #include <migraphx/dfor.hpp>
 #include <migraphx/op/common.hpp>
+#include <migraphx/op/rnn_clear_missing_frames.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
@@ -675,8 +676,16 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
     auto lstm_op            = any_cast<op::lstm>(ins->get_operator());
     op::rnn_direction dirct = lstm_op.direction;
 
+    // process sequence length
+    instruction_ref seq_lens = prog.end();
+    if((args.size() >= 5) && args[4]->name() != "undefined")
+    {
+        seq_lens = args[4];
+    }
+
     instruction_ref last_output{};
     instruction_ref last_cell_output{};
+    instruction_ref hidden_state{};
     if(dirct == op::rnn_direction::bidirectional)
     {
         // input weight matrix
@@ -734,23 +743,35 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
             pph_reverse = prog.insert_instruction(ins, op::slice{{0}, {1}, {2}}, args[7]);
         }
 
-        auto ret_forward = lstm_cell(
-            true,
-            prog,
-            ins,
-            {args[0], w_forward, r_forward, bias_forward, ih_forward, ic_forward, pph_forward},
-            actv_funcs.at(0),
-            actv_funcs.at(1),
-            actv_funcs.at(2));
+        auto ret_forward = lstm_cell(true,
+                                     prog,
+                                     ins,
+                                     {args[0],
+                                      w_forward,
+                                      r_forward,
+                                      bias_forward,
+                                      seq_lens,
+                                      ih_forward,
+                                      ic_forward,
+                                      pph_forward},
+                                     actv_funcs.at(0),
+                                     actv_funcs.at(1),
+                                     actv_funcs.at(2));
 
-        auto ret_reverse = lstm_cell(
-            false,
-            prog,
-            ins,
-            {args[0], w_reverse, r_reverse, bias_reverse, ih_reverse, ic_reverse, pph_reverse},
-            actv_funcs.at(3),
-            actv_funcs.at(4),
-            actv_funcs.at(5));
+        auto ret_reverse = lstm_cell(false,
+                                     prog,
+                                     ins,
+                                     {args[0],
+                                      w_reverse,
+                                      r_reverse,
+                                      bias_reverse,
+                                      seq_lens,
+                                      ih_reverse,
+                                      ic_reverse,
+                                      pph_reverse},
+                                     actv_funcs.at(3),
+                                     actv_funcs.at(4),
+                                     actv_funcs.at(5));
 
         auto concat_output =
             prog.insert_instruction(ins, op::concat{1}, ret_forward[1], ret_reverse[1]);
@@ -763,7 +784,8 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
         // the following logic is to ensure the last instruction is a concat
         if(ret_forward[0] == prog.end())
         {
-            prog.replace_instruction(ins, op::concat{1}, ret_forward[1], ret_reverse[1]);
+            hidden_state =
+                prog.replace_instruction(ins, op::concat{1}, ret_forward[1], ret_reverse[1]);
         }
         else
         {
@@ -771,7 +793,8 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
                 prog.insert_instruction(ins, op::concat{0}, ret_forward[0], ret_forward[1]);
             ret_reverse[0] =
                 prog.insert_instruction(ins, op::concat{0}, ret_reverse[1], ret_reverse[0]);
-            prog.replace_instruction(ins, op::concat{1}, {ret_forward[0], ret_reverse[0]});
+            hidden_state =
+                prog.replace_instruction(ins, op::concat{1}, {ret_forward[0], ret_reverse[0]});
         }
     }
     else
@@ -820,7 +843,7 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
         auto ret = lstm_cell(is_forward,
                              prog,
                              ins,
-                             {args[0], w, r, bias, ih, ic, pph},
+                             {args[0], w, r, bias, seq_lens, ih, ic, pph},
                              actv_funcs.at(0),
                              actv_funcs.at(1),
                              actv_funcs.at(2));
@@ -829,14 +852,45 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
         last_cell_output = ret[2];
         if(ret[0] == prog.end())
         {
-            prog.replace_instruction(ins, op::concat{0}, ret[1]);
+            hidden_state = prog.replace_instruction(ins, op::concat{0}, ret[1]);
         }
         else
         {
             auto concat_arg0 = is_forward ? ret[0] : ret[1];
             auto concat_arg1 = is_forward ? ret[1] : ret[0];
-            prog.replace_instruction(ins, op::concat{0}, concat_arg0, concat_arg1);
+            hidden_state = prog.replace_instruction(ins, op::concat{0}, concat_arg0, concat_arg1);
         }
+    }
+
+    bool clear_missing_frames = false;
+    if(seq_lens != prog.end())
+    {
+        if(seq_lens->can_eval())
+        {
+            auto arg_lens = seq_lens->eval();
+            std::vector<int64_t> vec_lens;
+            arg_lens.visit([&](auto l) { vec_lens.assign(l.begin(), l.end()); });
+            int64_t l = 0;
+            if(vec_lens.size() > 0)
+            {
+                l = vec_lens[0];
+            }
+            if(!std::all_of(vec_lens.begin(), vec_lens.end(), [&](auto v) { return v == l; }))
+            {
+                clear_missing_frames = true;
+            }
+        }
+        else
+        {
+            clear_missing_frames = true;
+        }
+    }
+
+    if(clear_missing_frames)
+    {
+        auto tuned = prog.insert_instruction(
+            std::next(hidden_state), op::rnn_clear_missing_frames{}, hidden_state, seq_lens);
+        prog.replace_instruction(hidden_state, tuned);
     }
 
     // replace the corresponding lstm_last_output instruction
@@ -883,13 +937,14 @@ std::vector<instruction_ref> rewrite_rnn::lstm_cell(bool is_forward,
 {
     // must have 7 args in the input vector
     assert(inputs.size() == 7);
-    auto seq  = inputs.at(0);
-    auto w    = inputs.at(1);
-    auto r    = inputs.at(2);
-    auto bias = inputs.at(3);
-    auto ih   = inputs.at(4);
-    auto ic   = inputs.at(5);
-    auto pph  = inputs.at(6);
+    auto seq      = inputs.at(0);
+    auto w        = inputs.at(1);
+    auto r        = inputs.at(2);
+    auto bias     = inputs.at(3);
+    auto seq_lens = inputs.at(4);
+    auto ih       = inputs.at(5);
+    auto ic       = inputs.at(6);
+    auto pph      = inputs.at(7);
 
     instruction_ref hidden_states = prog.end();
     instruction_ref last_output{};
