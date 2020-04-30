@@ -25,7 +25,7 @@ TEST_CASE(load_and_run)
 TEST_CASE(load_and_run_user_input_shape)
 {
     migraphx::onnx_options options;
-    options.add_parameter_shape("0", {2, 3, 64, 64});
+    options.set_input_parameter_shape("0", {2, 3, 64, 64});
     auto p             = migraphx::parse_onnx("conv_relu_maxpool_test.onnx", options);
     auto shapes_before = p.get_output_shapes();
     p.compile(migraphx::target("cpu"));
