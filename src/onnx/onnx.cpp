@@ -449,6 +449,55 @@ struct onnx_parser
         return ins;
     }
 
+    instruction_ref reflect_pad(const std::vector<int64_t>& pads, instruction_ref input)
+    {
+        size_t num_dims = pads.size() / 2;
+        std::vector<int> ldims(pads.begin(), pads.begin() + num_dims);
+        std::vector<int> rdims(pads.begin() + num_dims, pads.end());
+        assert(ldims.size() == rdims.size());
+
+        std::vector<int64_t> axes(num_dims);
+        std::iota(axes.begin(), axes.end(), int64_t{0});
+
+        // iterate over dimensions, starting from lowest dimension
+        for(int64_t i = num_dims - 1; i >= 0; i--)
+        {
+            auto axis   = i;
+            auto lcount = ldims.at(i);
+            auto rcount = rdims.at(i);
+            if(lcount == 0 and rcount == 0) // no padding for current dim
+                continue;
+
+            // calculate starts and ends for each iteration since shape may change
+            std::vector<size_t> dims = input->get_shape().lens();
+            std::vector<int64_t> starts(axes.size(), 0);
+            std::vector<int64_t> ends(dims.begin(), dims.end());
+            std::vector<instruction_ref> slices;
+
+            auto starts_it = starts.begin() + i;
+            auto ends_it   = ends.begin() + i;
+            auto dims_it   = dims.begin() + i;
+
+            for(int j = 0; j < lcount; j++)
+            {
+                auto start_idx = (j + 1) % *dims_it;
+                *starts_it     = start_idx;
+                *ends_it       = start_idx + 1;
+                slices.push_back(prog.add_instruction(op::slice{axes, starts, ends}, input));
+            }
+            slices.push_back(input);
+            for(int j = 0; j < rcount; j++)
+            {
+                auto start_idx = (j - rcount) % *dims_it;
+                *starts_it     = start_idx;
+                *ends_it       = start_idx + 1;
+                slices.push_back(prog.add_instruction(op::slice{axes, starts, ends}, input));
+            }
+            input = prog.add_instruction(op::concat{axis}, slices);
+        }
+        return input;
+    }
+
     template <class Op>
     instruction_ref
     parse_conv(const std::string&, node_info info, std::vector<instruction_ref> args)
@@ -1151,6 +1200,8 @@ struct onnx_parser
         if(contains(info.attributes, "mode"))
         {
             auto mode = info.attributes.at("mode").s();
+            if(mode == "reflect")
+                return reflect_pad(pads, args.front());
             if(mode != "constant")
             {
                 MIGRAPHX_THROW("PARSE_PAD: migraphx currently only supports constant padding");
