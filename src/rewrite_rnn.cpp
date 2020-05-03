@@ -805,9 +805,9 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
 
         auto concat_hs_output =
             prog.insert_instruction(ins, op::concat{1}, ret_forward[1], ret_reverse[1]);
-        auto concat_cell_output = 
+        auto concat_cell_output =
             prog.insert_instruction(ins, op::concat{1}, ret_forward[3], ret_reverse[3]);
-        last_hs_output = prog.insert_instruction(ins, op::squeeze{{0}}, concat_hs_output);
+        last_hs_output   = prog.insert_instruction(ins, op::squeeze{{0}}, concat_hs_output);
         last_cell_output = prog.insert_instruction(ins, op::squeeze{{0}}, concat_cell_output);
 
         // the following logic is to ensure the last instruction is a concat
@@ -822,17 +822,20 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
             ret_reverse[1] =
                 prog.insert_instruction(ins, op::concat{0}, ret_reverse[1], ret_reverse[0]);
 
-            ret_forward[3] = prog.insert_instruction(ins, op::concat{0}, ret_forward[2], ret_forward[3]);
-            ret_reverse[3] = prog.insert_instruction(ins, op::concat{0}, ret_reverse[3], ret_reverse[2]);
-            cell_outputs = prog.insert_instruction(ins, op::concat{1}, ret_forward[3], ret_reverse[3]);
+            ret_forward[3] =
+                prog.insert_instruction(ins, op::concat{0}, ret_forward[2], ret_forward[3]);
+            ret_reverse[3] =
+                prog.insert_instruction(ins, op::concat{0}, ret_reverse[3], ret_reverse[2]);
+            cell_outputs =
+                prog.insert_instruction(ins, op::concat{1}, ret_forward[3], ret_reverse[3]);
         }
-        
-        if (variable_seq_len)
+
+        if(variable_seq_len)
         {
             hidden_state =
                 prog.insert_instruction(ins, op::concat{1}, {ret_forward[1], ret_reverse[1]});
         }
-        else 
+        else
         {
             hidden_state =
                 prog.replace_instruction(ins, op::concat{1}, {ret_forward[1], ret_reverse[1]});
@@ -899,11 +902,11 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
         if(ret[0] == prog.end())
         {
             cell_outputs = ret[3];
-            if (variable_seq_len)
+            if(variable_seq_len)
             {
                 hidden_state = prog.insert_instruction(ins, op::concat{0}, ret[1]);
             }
-            else 
+            else
             {
                 hidden_state = prog.replace_instruction(ins, op::concat{0}, ret[1]);
             }
@@ -912,17 +915,20 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
         {
             auto concat_cell_arg0 = is_forward ? ret[2] : ret[3];
             auto concat_cell_arg1 = is_forward ? ret[3] : ret[2];
-            cell_outputs = prog.insert_instruction(ins, op::concat{0}, concat_cell_arg0, concat_cell_arg1);
+            cell_outputs =
+                prog.insert_instruction(ins, op::concat{0}, concat_cell_arg0, concat_cell_arg1);
 
             auto concat_arg0 = is_forward ? ret[0] : ret[1];
             auto concat_arg1 = is_forward ? ret[1] : ret[0];
-            if (variable_seq_len)
+            if(variable_seq_len)
             {
-                hidden_state = prog.insert_instruction(ins, op::concat{0}, concat_arg0, concat_arg1);
+                hidden_state =
+                    prog.insert_instruction(ins, op::concat{0}, concat_arg0, concat_arg1);
             }
-            else 
+            else
             {
-                hidden_state = prog.replace_instruction(ins, op::concat{0}, concat_arg0, concat_arg1);
+                hidden_state =
+                    prog.replace_instruction(ins, op::concat{0}, concat_arg0, concat_arg1);
             }
         }
     }
@@ -932,18 +938,15 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
         auto shifted_hs = prog.insert_instruction(
             ins, op::rnn_shift_hidden_states{dirct}, hidden_state, seq_lens);
 
-        auto shifted_cellout = prog.replace_instruction(ins,
-                                                  op::rnn_shift_hidden_states{dirct},
-                                                  cell_outputs,
-                                                  seq_lens);
+        auto shifted_cellout = prog.replace_instruction(
+            ins, op::rnn_shift_hidden_states{dirct}, cell_outputs, seq_lens);
 
         auto last_hs_output_it = ins->outputs().begin();
         while(last_hs_output_it != ins->outputs().end())
         {
-            last_hs_output_it =
-                std::find_if(last_hs_output_it, ins->outputs().end(), [](auto i) {
-                    return i->name() == "rnn_last_hs_output";
-                });
+            last_hs_output_it = std::find_if(last_hs_output_it, ins->outputs().end(), [](auto i) {
+                return i->name() == "rnn_last_hs_output";
+            });
 
             if(last_hs_output_it != ins->outputs().end())
             {
@@ -1015,13 +1018,13 @@ std::vector<instruction_ref> rewrite_rnn::lstm_cell(bool is_forward,
 {
     // must have 7 args in the input vector
     assert(inputs.size() == 8);
-    auto seq      = inputs.at(0);
-    auto w        = inputs.at(1);
-    auto r        = inputs.at(2);
-    auto bias     = inputs.at(3);
-    auto ih       = inputs.at(5);
-    auto ic       = inputs.at(6);
-    auto pph      = inputs.at(7);
+    auto seq  = inputs.at(0);
+    auto w    = inputs.at(1);
+    auto r    = inputs.at(2);
+    auto bias = inputs.at(3);
+    auto ih   = inputs.at(5);
+    auto ic   = inputs.at(6);
+    auto pph  = inputs.at(7);
 
     instruction_ref hidden_states = prog.end();
     instruction_ref cell_outputs  = prog.end();
@@ -1117,9 +1120,9 @@ std::vector<instruction_ref> rewrite_rnn::lstm_cell(bool is_forward,
         auto ct = prog.insert_instruction(ins, actv_func2, ct_before_actv);
 
         // equation Ct = ft (.) Ct-1 + it (.) ct
-        auto ft_cell     = prog.insert_instruction(ins, op::mul{}, ft, sic);
-        auto it_ct       = prog.insert_instruction(ins, op::mul{}, it, ct);
-        auto cellt       = prog.insert_instruction(ins, op::add{}, ft_cell, it_ct);
+        auto ft_cell = prog.insert_instruction(ins, op::mul{}, ft, sic);
+        auto it_ct   = prog.insert_instruction(ins, op::mul{}, it, ct);
+        auto cellt   = prog.insert_instruction(ins, op::add{}, ft_cell, it_ct);
         // last_cell_output = cellt;
 
         if(pph != prog.end())
@@ -1136,7 +1139,7 @@ std::vector<instruction_ref> rewrite_rnn::lstm_cell(bool is_forward,
         sic = cellt;
         sih = ht;
 
-        last_hs_output = prog.insert_instruction(ins, op::unsqueeze{{0, 1}}, ht);
+        last_hs_output   = prog.insert_instruction(ins, op::unsqueeze{{0, 1}}, ht);
         last_cell_output = prog.insert_instruction(ins, op::unsqueeze{{0, 1}}, cellt);
 
         if(i < seq_len - 1)
@@ -1155,8 +1158,8 @@ std::vector<instruction_ref> rewrite_rnn::lstm_cell(bool is_forward,
 
                 auto concat_cell_arg0 = is_forward ? cell_outputs : last_cell_output;
                 auto concat_cell_arg1 = is_forward ? last_cell_output : cell_outputs;
-                cell_outputs          = prog.insert_instruction(
-                    ins, op::concat{0}, concat_cell_arg0, concat_cell_arg1);
+                cell_outputs =
+                    prog.insert_instruction(ins, op::concat{0}, concat_cell_arg0, concat_cell_arg1);
             }
         }
     }
