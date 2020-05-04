@@ -1735,6 +1735,13 @@ struct onnx_parser
             input_forget = parse_value(info.attributes.at("input_forget")).at<int>();
         }
 
+        // input sequence lengths info is available
+        instruction_ref seq_lens = prog.end();
+        if(args.size() >= 5)
+        {
+            seq_lens = args[4];
+        }
+
         // append undefined opeator to make 6 arguments
         if(args.size() < 8)
         {
