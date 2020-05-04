@@ -72,7 +72,6 @@
 #include <migraphx/gpu/int8_conv_pack.hpp>
 #include <migraphx/gpu/prelu.hpp>
 #include <migraphx/gpu/recip.hpp>
-#include <migraphx/gpu/onehot.hpp>
 #include <migraphx/gpu/rnn_variable_sequences.hpp>
 #include <utility>
 #include <functional>
@@ -181,7 +180,6 @@ struct miopen_apply
         add_extend_op<hip_pad, op::pad>("pad");
         add_extend_op<hip_convert, op::convert>("convert");
         add_extend_op<hip_clip, op::clip>("clip");
-        add_extend_op<hip_onehot, op::onehot>("onehot");
         add_extend_op<hip_reduce_max, op::reduce_max>("reduce_max");
         add_extend_op<hip_reduce_mean, op::reduce_mean>("reduce_mean");
         add_extend_op<hip_reduce_min, op::reduce_min>("reduce_min");
