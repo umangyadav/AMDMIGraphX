@@ -830,16 +830,8 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
                 prog.insert_instruction(ins, op::concat{1}, ret_forward[3], ret_reverse[3]);
         }
 
-        if(variable_seq_len)
-        {
-            hidden_state =
-                prog.insert_instruction(ins, op::concat{1}, {ret_forward[1], ret_reverse[1]});
-        }
-        else
-        {
-            hidden_state =
-                prog.replace_instruction(ins, op::concat{1}, {ret_forward[1], ret_reverse[1]});
-        }
+        hidden_state =
+            prog.replace_instruction(ins, op::concat{1}, {ret_forward[1], ret_reverse[1]});
     }
     else
     {
@@ -902,14 +894,7 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
         if(ret[0] == prog.end())
         {
             cell_outputs = ret[3];
-            if(variable_seq_len)
-            {
-                hidden_state = prog.insert_instruction(ins, op::concat{0}, ret[1]);
-            }
-            else
-            {
-                hidden_state = prog.replace_instruction(ins, op::concat{0}, ret[1]);
-            }
+            hidden_state = prog.replace_instruction(ins, op::concat{0}, ret[1]);
         }
         else
         {
@@ -920,26 +905,24 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
 
             auto concat_arg0 = is_forward ? ret[0] : ret[1];
             auto concat_arg1 = is_forward ? ret[1] : ret[0];
-            if(variable_seq_len)
-            {
-                hidden_state =
-                    prog.insert_instruction(ins, op::concat{0}, concat_arg0, concat_arg1);
-            }
-            else
-            {
-                hidden_state =
-                    prog.replace_instruction(ins, op::concat{0}, concat_arg0, concat_arg1);
-            }
+            hidden_state = prog.replace_instruction(ins, op::concat{0}, concat_arg0, concat_arg1);
         }
     }
 
     if(variable_seq_len)
     {
         auto shifted_hs = prog.insert_instruction(
-            ins, op::rnn_shift_hidden_states{dirct}, hidden_state, seq_lens);
+            std::next(hidden_state), op::rnn_shift_hidden_states{dirct}, hidden_state, seq_lens);
 
-        auto shifted_cellout = prog.replace_instruction(
-            ins, op::rnn_shift_hidden_states{dirct}, cell_outputs, seq_lens);
+        auto last_cell_output_it =
+            std::find_if(ins->outputs().begin(), ins->outputs().end(), [](auto i) {
+                return i->name() == "lstm_last_cell_output";
+            });
+        if(last_cell_output_it != ins->outputs().end())
+        {
+            cell_outputs = prog.insert_instruction(
+                std::next(shifted_hs), op::rnn_shift_hidden_states{dirct}, cell_outputs, seq_lens);
+        }
 
         auto last_hs_output_it = ins->outputs().begin();
         while(last_hs_output_it != ins->outputs().end())
@@ -955,7 +938,7 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
             }
         }
 
-        auto last_cell_output_it = ins->outputs().begin();
+        last_cell_output_it = ins->outputs().begin();
         while(last_cell_output_it != ins->outputs().end())
         {
             last_cell_output_it =
@@ -965,7 +948,7 @@ void rewrite_rnn::apply_lstm(program& prog, instruction_ref ins) const
 
             if(last_cell_output_it != ins->outputs().end())
             {
-                instruction::replace_argument(*last_cell_output_it, ins, shifted_cellout);
+                instruction::replace_argument(*last_cell_output_it, ins, cell_outputs);
                 last_cell_output_it++;
             }
         }
