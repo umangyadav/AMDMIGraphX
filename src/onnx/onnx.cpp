@@ -449,6 +449,26 @@ struct onnx_parser
         return ins;
     }
 
+    void calc_reflect_indices(std::vector<int>& indices, const int64_t num_dims)
+    {
+        int k         = 0;
+        bool reversed = false;
+        // in reflect padding, if the num_pads > num_dims,
+        // compute the extra pad indices periodically, ex. ( 1, 2, 3, 2, 1, 0)
+        for(int& idx : indices)
+        {
+            if(k == num_dims - 1)
+                reversed = true;
+            if(k == 0)
+                reversed = false;
+            if(reversed)
+                k--;
+            else
+                k++;
+            idx = k;
+        }
+    }
+
     instruction_ref reflect_pad(const std::vector<int64_t>& pads, instruction_ref input)
     {
         size_t num_dims = pads.size() / 2;
@@ -478,19 +498,24 @@ struct onnx_parser
             auto ends_it   = ends.begin() + i;
             auto dims_it   = dims.begin() + i;
 
-            for(int j = 0; j < lcount; j++)
+            std::vector<int> l_indices(lcount);
+            std::vector<int> r_indices(rcount);
+
+            // compute slice indices in a periodic fashion
+            calc_reflect_indices(l_indices, *dims_it);
+            calc_reflect_indices(r_indices, *dims_it);
+
+            for(int idx : l_indices)
             {
-                auto start_idx = (j + 1) % *dims_it;
-                *starts_it     = start_idx;
-                *ends_it       = start_idx + 1;
+                *starts_it = idx;
+                *ends_it   = *starts_it + 1;
                 slices.push_back(prog.add_instruction(op::slice{axes, starts, ends}, input));
             }
             slices.push_back(input);
-            for(int j = 0; j < rcount; j++)
+            for(int idx : r_indices)
             {
-                auto start_idx = (j - rcount) % *dims_it;
-                *starts_it     = start_idx;
-                *ends_it       = start_idx + 1;
+                *starts_it = *dims_it - idx - 1;
+                *ends_it   = *starts_it + 1;
                 slices.push_back(prog.add_instruction(op::slice{axes, starts, ends}, input));
             }
             input = prog.add_instruction(op::concat{axis}, slices);
@@ -1176,6 +1201,18 @@ struct onnx_parser
             return prog.add_instruction(migraphx::op::identity{}, args.front());
         }
 
+        if(contains(info.attributes, "mode"))
+        {
+            auto mode = info.attributes.at("mode").s();
+            if(mode == "reflect")
+                return reflect_pad(pads, args.front());
+            if(mode != "constant")
+            {
+                MIGRAPHX_THROW(
+                    "PARSE_PAD: migraphx currently only supports constant and reflect padding");
+            }
+        }
+
         float value = 0.0f;
         // third input is the value
         if(args.size() == 3)
@@ -1197,16 +1234,6 @@ struct onnx_parser
             value = parse_value(info.attributes.at("value")).at<float>();
         }
 
-        if(contains(info.attributes, "mode"))
-        {
-            auto mode = info.attributes.at("mode").s();
-            if(mode == "reflect")
-                return reflect_pad(pads, args.front());
-            if(mode != "constant")
-            {
-                MIGRAPHX_THROW("PARSE_PAD: migraphx currently only supports constant padding");
-            }
-        }
         return prog.add_instruction(migraphx::op::pad{pads, value}, args.front());
     }
     // Use a literal instruction to replace the shape since, output of
