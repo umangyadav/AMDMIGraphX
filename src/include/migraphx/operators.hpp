@@ -35,6 +35,7 @@
 #include <migraphx/op/flatten.hpp>
 #include <migraphx/op/floor.hpp>
 #include <migraphx/op/gather.hpp>
+#include <migraphx/op/gather_elements.hpp>
 #include <migraphx/op/gru.hpp>
 #include <migraphx/op/identity.hpp>
 #include <migraphx/op/im2col.hpp>

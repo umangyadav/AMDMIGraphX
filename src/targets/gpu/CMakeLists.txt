@@ -36,6 +36,7 @@ add_library(migraphx_device
     device/exp.cpp
     device/floor.cpp
     device/gather.cpp
+    device/gather_elements.cpp
     device/int8_gemm_pack.cpp
     device/log.cpp
     device/logsoftmax.cpp
@@ -106,6 +107,7 @@ add_library(migraphx_gpu
     elu.cpp
     pad.cpp
     gather.cpp
+    gather_elements.cpp
     convert.cpp
     lrn.cpp
     schedule_model.cpp
