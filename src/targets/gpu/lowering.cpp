@@ -72,7 +72,7 @@
 #include <migraphx/gpu/int8_conv_pack.hpp>
 #include <migraphx/gpu/prelu.hpp>
 #include <migraphx/gpu/recip.hpp>
-#include <migraphx/gpu/rnn_variable_sequences.hpp>
+#include <migraphx/gpu/rnn_variable_seq_lens.hpp>
 #include <migraphx/gpu/rnn_last_hs_output.hpp>
 #include <migraphx/gpu/rnn_last_cell_output.hpp>
 #include <utility>
@@ -187,9 +187,8 @@ struct miopen_apply
         add_extend_op<hip_reduce_min, op::reduce_min>("reduce_min");
         add_extend_op<hip_reduce_prod, op::reduce_prod>("reduce_prod");
         add_extend_op<hip_reduce_sum, op::reduce_sum>("reduce_sum");
-        add_extend_op<hip_rnn_shift_hidden_states, op::rnn_shift_hidden_states>(
-            "rnn_shift_hidden_states");
-        add_extend_op<hip_rnn_shift_sequences, op::rnn_shift_sequences>("rnn_shift_sequences");
+        add_extend_op<hip_rnn_shift_output, op::rnn_shift_output>("rnn_shift_output");
+        add_extend_op<hip_rnn_shift_sequence, op::rnn_shift_sequence>("rnn_shift_sequence");
         add_extend_op<hip_lstm_last_cell_output, op::lstm_last_cell_output>(
             "lstm_last_cell_output");
         add_extend_op<hip_rnn_last_hs_output, op::rnn_last_hs_output>("rnn_last_hs_output");

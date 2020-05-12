@@ -1,8 +1,8 @@
-#ifndef MIGRAPHX_GUARD_RTGLIB_RNN_VARIABLE_SEQUENCES_HPP
-#define MIGRAPHX_GUARD_RTGLIB_RNN_VARIABLE_SEQUENCES_HPP
+#ifndef MIGRAPHX_GUARD_RTGLIB_RNN_VARIABLE_SEQ_LENS_HPP
+#define MIGRAPHX_GUARD_RTGLIB_RNN_VARIABLE_SEQ_LENS_HPP
 
 #include <migraphx/shape.hpp>
-#include <migraphx/op/rnn_variable_sequences.hpp>
+#include <migraphx/op/rnn_variable_seq_lens.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
@@ -10,9 +10,9 @@ namespace gpu {
 
 struct context;
 
-struct hip_rnn_shift_hidden_states
+struct hip_rnn_shift_output
 {
-    op::rnn_shift_hidden_states op;
+    op::rnn_shift_output op;
 
     template <class Self, class F>
     static auto reflect(Self& self, F f)
@@ -20,7 +20,7 @@ struct hip_rnn_shift_hidden_states
         return migraphx::reflect(self.op, f);
     }
 
-    std::string name() const { return "gpu::rnn_shift_hidden_states"; }
+    std::string name() const { return "gpu::rnn_shift_output"; }
     shape compute_shape(std::vector<shape> inputs) const;
     argument
     compute(context& ctx, const shape& output_shape, const std::vector<argument>& args) const;
@@ -30,11 +30,11 @@ struct hip_rnn_shift_hidden_states
     }
 };
 
-struct hip_rnn_shift_sequences
+struct hip_rnn_shift_sequence
 {
-    op::rnn_shift_sequences op;
+    op::rnn_shift_sequence op;
 
-    std::string name() const { return "gpu::rnn_shift_sequences"; }
+    std::string name() const { return "gpu::rnn_shift_sequence"; }
     shape compute_shape(std::vector<shape> inputs) const;
     argument
     compute(context& ctx, const shape& output_shape, const std::vector<argument>& args) const;
