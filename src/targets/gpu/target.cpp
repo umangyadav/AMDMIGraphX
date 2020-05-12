@@ -25,8 +25,6 @@
 #include <migraphx/gpu/preallocate_param.hpp>
 #include <migraphx/gpu/pack_int8_args.hpp>
 #include <migraphx/eliminate_pad.hpp>
-#include <migraphx/decompose.hpp>
-#include <migraphx/remap.hpp>
 #include <migraphx/schedule.hpp>
 
 namespace migraphx {
@@ -41,7 +39,6 @@ std::vector<pass> target::get_passes(migraphx::context& gctx, const compile_opti
     // clang-format off
     return
     {
-        decompose{},
         dead_code_elimination{},
         simplify_reshapes{},
         dead_code_elimination{},
@@ -61,8 +58,6 @@ std::vector<pass> target::get_passes(migraphx::context& gctx, const compile_opti
         simplify_reshapes{},
         dead_code_elimination{},
         propagate_constant{},
-        dead_code_elimination{},
-        remap{},
         dead_code_elimination{},
         lowering{&ctx, options.offload_copy},
         eliminate_contiguous{},
