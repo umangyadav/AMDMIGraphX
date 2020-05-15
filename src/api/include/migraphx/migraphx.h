@@ -77,6 +77,16 @@ migraphx_status migraphx_shape_create(migraphx_shape_t* shape,
                                       size_t* lengths,
                                       size_t lengths_size);
 
+migraphx_status migraphx_shape_create_with_strides(migraphx_shape_t* shape,
+                                                   migraphx_shape_datatype_t type,
+                                                   size_t* lengths,
+                                                   size_t lengths_size,
+                                                   size_t* strides,
+                                                   size_t strides_size);
+
+migraphx_status migraphx_shape_create_scalar(migraphx_shape_t* shape,
+                                             migraphx_shape_datatype_t type);
+
 migraphx_status
 migraphx_shape_lengths(const size_t** out, size_t* out_size, const_migraphx_shape_t shape);
 

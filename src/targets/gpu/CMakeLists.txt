@@ -37,6 +37,7 @@ add_library(migraphx_device
     device/floor.cpp
     device/gather.cpp
     device/gather_elements.cpp
+    device/gelu.cpp
     device/int8_gemm_pack.cpp
     device/log.cpp
     device/logsoftmax.cpp

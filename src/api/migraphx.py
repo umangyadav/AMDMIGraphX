@@ -54,6 +54,12 @@ def shape(h):
         'create',
         api.params(type='migraphx::shape::type_t',
                    lengths='std::vector<size_t>'))
+    h.constructor(
+        'create_with_strides',
+        api.params(type='migraphx::shape::type_t',
+                   lengths='std::vector<size_t>',
+                   strides='std::vector<size_t>'))
+    h.constructor('create_scalar', api.params(type='migraphx::shape::type_t'))
     h.method('lengths',
              fname='lens',
              returns='const std::vector<size_t>&',
