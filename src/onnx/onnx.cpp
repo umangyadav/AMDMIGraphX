@@ -102,7 +102,8 @@ struct onnx_parser
         add_mem_op("Elu", &onnx_parser::parse_elu);
         add_mem_op("Expand", &onnx_parser::parse_expand);
         add_mem_op("Flatten", &onnx_parser::parse_flatten);
-        add_mem_op("Gather", &onnx_parser::parse_gather);
+        add_mem_op("Gather", &onnx_parser::parse_gather<op::gather>);
+        add_mem_op("GatherElements", &onnx_parser::parse_gather<op::gather_elements>);
         add_mem_op("Gemm", &onnx_parser::parse_gemm);
         add_mem_op("GlobalAveragePool", &onnx_parser::parse_pooling);
         add_mem_op("GlobalMaxPool", &onnx_parser::parse_pooling);
@@ -829,6 +830,7 @@ struct onnx_parser
         return prog.add_instruction(op, std::move(args));
     }
 
+    template<class Op>
     instruction_ref
     parse_gather(const std::string&, node_info info, std::vector<instruction_ref> args)
     {
@@ -838,7 +840,7 @@ struct onnx_parser
             axis = parse_value(info.attributes.at("axis")).at<int>();
         }
 
-        op::gather op{axis};
+        Op op{axis};
         return prog.add_instruction(op, make_contiguous(args[0]), make_contiguous(args[1]));
     }
 

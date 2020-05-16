@@ -7,7 +7,7 @@
 #include <migraphx/stringutils.hpp>
 #include <migraphx/streamutils.hpp>
 #include <migraphx/literal.hpp>
-#include <migraphx/shape_for_each.hpp>
+#include <migraphx/par_for.hpp>
 #include <migraphx/config.hpp>
 #include <cmath>
 #include <utility>
@@ -17,7 +17,6 @@ namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 namespace op {
 
-template <class Derived>
 struct gather_elements
 {
     int axis = 0;

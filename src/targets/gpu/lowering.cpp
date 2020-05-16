@@ -54,6 +54,7 @@
 #include <migraphx/gpu/concat.hpp>
 #include <migraphx/gpu/pad.hpp>
 #include <migraphx/gpu/gather.hpp>
+#include <migraphx/gpu/gather_elements.hpp>
 #include <migraphx/gpu/lrn.hpp>
 #include <migraphx/gpu/convert.hpp>
 #include <migraphx/gpu/clip.hpp>
@@ -176,6 +177,7 @@ struct miopen_apply
         add_extend_op<hip_argmax, op::argmax>("argmax");
         add_extend_op<hip_argmin, op::argmin>("argmin");
         add_extend_op<hip_gather, op::gather>("gather");
+        add_extend_op<hip_gather_elements, op::gather_elements>("gather_elements");
         add_extend_op<hip_pad, op::pad>("pad");
         add_extend_op<hip_convert, op::convert>("convert");
         add_extend_op<hip_clip, op::clip>("clip");
