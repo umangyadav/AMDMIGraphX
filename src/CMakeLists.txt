@@ -13,6 +13,7 @@ add_library(migraphx
     eliminate_concat.cpp
     eliminate_identity.cpp
     eliminate_pad.cpp
+    normalize.cpp
     rewrite_batchnorm.cpp
     rewrite_rnn.cpp
     rewrite_pooling.cpp

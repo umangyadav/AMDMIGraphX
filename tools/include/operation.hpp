@@ -218,6 +218,12 @@ auto has_finalize_op(const T&) -> decltype(has_finalize_op(rank<1>{},
     return {};
 }
 
+template <class T>
+auto normalize_op(const T& x, const std::vector<shape>&)
+{
+    return x;
+}
+
 } // namespace detail
 
 <%
@@ -237,6 +243,7 @@ auto has_finalize_op(const T&) -> decltype(has_finalize_op(rank<1>{},
              output  = 'const shape&',
              input   = 'const std::vector<shape>&',
              default = 'detail::finalize_op'),
+     virtual('normalize', returns = 'operation', input = 'const std::vector<shape>&', const = True, default = 'detail::normalize_op'),
      virtual('compute_shape', returns = 'shape', input = 'const std::vector<shape>&', const = True),
      virtual('compute',
              returns = 'argument',

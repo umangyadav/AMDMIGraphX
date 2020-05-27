@@ -218,6 +218,12 @@ auto has_finalize_op(const T&) -> decltype(has_finalize_op(rank<1>{},
     return {};
 }
 
+template <class T>
+auto normalize_op(const T& x, const std::vector<shape>&)
+{
+    return x;
+}
+
 } // namespace detail
 
 /*
@@ -230,6 +236,7 @@ auto has_finalize_op(const T&) -> decltype(has_finalize_op(rank<1>{},
  *      bool has_finalize() const;
  *      std::ptrdiff_t output_alias(const std::vector<shape>& input) const;
  *      void finalize(context& ctx,const shape& output,const std::vector<shape>& input) ;
+ *      operation normalize(const std::vector<shape>& input) const;
  *      shape compute_shape(const std::vector<shape>& input) const;
  *      argument compute(context& ctx,const shape& output,const std::vector<argument>& input) const;
  *      argument compute(const shape& output,const std::vector<argument>& input) const;
@@ -332,6 +339,12 @@ struct operation
         (*this).private_detail_te_get_handle().finalize(ctx, output, input);
     }
 
+    operation normalize(const std::vector<shape>& input) const
+    {
+        assert((*this).private_detail_te_handle_mem_var);
+        return (*this).private_detail_te_get_handle().normalize(input);
+    }
+
     shape compute_shape(const std::vector<shape>& input) const
     {
         assert((*this).private_detail_te_handle_mem_var);
@@ -381,6 +394,7 @@ struct operation
         virtual std::ptrdiff_t output_alias(const std::vector<shape>& input) const = 0;
         virtual void
         finalize(context& ctx, const shape& output, const std::vector<shape>& input) = 0;
+        virtual operation normalize(const std::vector<shape>& input) const           = 0;
         virtual shape compute_shape(const std::vector<shape>& input) const           = 0;
         virtual argument
         compute(context& ctx, const shape& output, const std::vector<argument>& input) const    = 0;
@@ -451,6 +465,23 @@ struct operation
                                                    const std::vector<shape>& input)
     {
         detail::finalize_op(private_detail_te_self, ctx, output, input);
+    }
+
+    template <class T>
+    static auto private_detail_te_default_normalize(char,
+                                                    T&& private_detail_te_self,
+                                                    const std::vector<shape>& input)
+        -> decltype(private_detail_te_self.normalize(input))
+    {
+        return private_detail_te_self.normalize(input);
+    }
+
+    template <class T>
+    static operation private_detail_te_default_normalize(float,
+                                                         T&& private_detail_te_self,
+                                                         const std::vector<shape>& input)
+    {
+        return detail::normalize_op(private_detail_te_self, input);
     }
 
     template <class T>
@@ -546,6 +577,12 @@ struct operation
 
             private_detail_te_default_finalize(
                 char(0), private_detail_te_value, ctx, output, input);
+        }
+
+        operation normalize(const std::vector<shape>& input) const override
+        {
+
+            return private_detail_te_default_normalize(char(0), private_detail_te_value, input);
         }
 
         shape compute_shape(const std::vector<shape>& input) const override
