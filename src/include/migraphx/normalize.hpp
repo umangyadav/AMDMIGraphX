@@ -14,6 +14,7 @@ struct program;
  */
 struct normalize
 {
+    std::string name() const { return "normalize"; }
     void apply(program& p) const;
 };
 

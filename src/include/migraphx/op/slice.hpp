@@ -112,6 +112,23 @@ struct slice
         return offset;
     }
 
+    slice normalize(std::vector<shape> inputs) const
+    {
+        auto input_shape        = inputs[0];
+        const auto& old_lens    = input_shape.lens();
+        if(starts.size() != axes.size() || axes.size() != ends.size())
+        {
+            MIGRAPHX_THROW("SLICE: inconsistent sizes");
+        }
+
+        std::vector<int64_t> tuned_axes   = axes;
+        std::vector<int64_t> tuned_starts = starts;
+        std::vector<int64_t> tuned_ends   = ends;
+        tune_attributes(tuned_axes, tuned_starts, tuned_ends, old_lens);
+
+        return {tuned_axes, tuned_starts, tuned_ends};
+    }
+
     shape compute_shape(std::vector<shape> inputs) const
     {
         auto input_shape        = inputs[0];
