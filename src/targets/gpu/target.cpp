@@ -26,6 +26,7 @@
 #include <migraphx/gpu/pack_int8_args.hpp>
 #include <migraphx/eliminate_pad.hpp>
 #include <migraphx/decompose.hpp>
+#include <migraphx/normalize.hpp>
 #include <migraphx/remap.hpp>
 #include <migraphx/schedule.hpp>
 
@@ -41,6 +42,7 @@ std::vector<pass> target::get_passes(migraphx::context& gctx, const compile_opti
     // clang-format off
     return
     {
+        normalize{},
         decompose{},
         dead_code_elimination{},
         simplify_reshapes{},
