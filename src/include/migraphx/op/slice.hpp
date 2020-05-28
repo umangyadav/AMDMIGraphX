@@ -114,8 +114,8 @@ struct slice
 
     slice normalize(std::vector<shape> inputs) const
     {
-        auto input_shape        = inputs[0];
-        const auto& old_lens    = input_shape.lens();
+        auto input_shape     = inputs[0];
+        const auto& old_lens = input_shape.lens();
         if(starts.size() != axes.size() || axes.size() != ends.size())
         {
             MIGRAPHX_THROW("SLICE: inconsistent sizes");
