@@ -30,14 +30,14 @@ struct gather_elements
 
     shape compute_shape(std::vector<shape> inputs) const
     {
-        check_shapes{inputs, *this}.has(2).standard().same_dims();
+        check_shapes{inputs, *this}.has(2).standard().same_ndims();
         if (inputs[0].lens().size() == 0)
         {
             MIGRAPHX_THROW("GATHER_ELEMENTS: input rank must be at least 1");
         }
 
         int n_rank = static_cast<int>(inputs[0].lens().size());
-        if (axis <= -n_rank or axis >= n_rank - 1)
+        if (axis < -n_rank or axis >= n_rank)
         {
             MIGRAPHX_THROW("GATHER_ELEMENTS: axis is out of rank");
         }
