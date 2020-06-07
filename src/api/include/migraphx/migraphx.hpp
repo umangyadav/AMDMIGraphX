@@ -375,6 +375,8 @@ struct program_parameters : MIGRAPHX_HANDLE_BASE(program_parameters)
 
     program_parameters(migraphx_program_parameters* p, borrow) { this->set_handle(p, borrow{}); }
 
+    program_parameters(migraphx_program_parameters* p) { this->set_handle(p, borrow{}); }
+
     program_parameters() { this->make_handle(&migraphx_program_parameters_create); }
 
     void add(const char* pname, const argument& pargument) const
@@ -567,6 +569,73 @@ inline program parse_onnx_buffer(const std::string& buffer)
         make<migraphx_program>(
             &migraphx_parse_onnx_buffer, buffer.data(), buffer.size(), options.get_handle_ptr()),
         own{});
+}
+
+// fp16 quantization apis
+inline void quantize_fp16(const program& prog, const std::vector<const char*>& names)
+{
+    call(&migraphx_quantize_fp16, prog.get_handle_ptr(), names.data(), names.size());
+}
+
+inline void quantize_fp16(const program& prog)
+{
+    call(&migraphx_quantize_fp16_default, prog.get_handle_ptr());
+}
+
+// int8 quantization apis
+struct calibration_data : MIGRAPHX_HANDLE_BASE(calibration_data), array_base<calibration_data>
+{
+    calibration_data() { this->make_handle(&migraphx_calibration_data_create); }
+
+    calibration_data(migraphx_calibration_data* p, own) { this->set_handle(p, own{}); }
+
+    calibration_data(migraphx_calibration_data* p, borrow) { this->set_handle(p, borrow{}); }
+
+    size_t size() const
+    {
+        size_t pout;
+        call(&migraphx_calibration_data_size, &pout, this->get_handle_ptr());
+        return pout;
+    }
+
+    program_parameters operator[](size_t pidx) const
+    {
+        migraphx_program_parameters_t pout;
+        call(&migraphx_calibration_data_get, &pout, this->get_handle_ptr(), pidx);
+        return program_parameters(pout);
+    }
+
+    struct iterator_read
+    {
+        migraphx_calibration_data* self;
+        program_parameters operator()(size_t pidx) const
+        {
+            migraphx_program_parameters_t pout;
+            call(&migraphx_calibration_data_get, &pout, self, pidx);
+            return program_parameters(pout);
+        }
+    };
+};
+
+inline void quantize_int8(const program& prog,
+                          const target& ptarget,
+                          const calibration_data& data,
+                          const std::vector<const char*>& names)
+{
+    call(&migraphx_quantize_int8,
+         prog.get_handle_ptr(),
+         ptarget.get_handle_ptr(),
+         data.get_handle_ptr(),
+         names.data(),
+         names.size());
+}
+
+inline void quantize_int8(const program& prog, const target& ptarget, const calibration_data& data)
+{
+    call(&migraphx_quantize_int8_default,
+         prog.get_handle_ptr(),
+         ptarget.get_handle_ptr(),
+         data.get_handle_ptr());
 }
 
 } // namespace api

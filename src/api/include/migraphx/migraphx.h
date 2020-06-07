@@ -70,6 +70,9 @@ typedef const struct migraphx_program* const_migraphx_program_t;
 typedef struct migraphx_onnx_options* migraphx_onnx_options_t;
 typedef const struct migraphx_onnx_options* const_migraphx_onnx_options_t;
 
+typedef struct migraphx_calibration_data* migraphx_calibration_data_t;
+typedef const struct migraphx_calibration_data* const_migraphx_calibration_data_t;
+
 migraphx_status migraphx_shape_destroy(migraphx_shape_t shape);
 
 migraphx_status migraphx_shape_create(migraphx_shape_t* shape,
@@ -196,6 +199,35 @@ migraphx_status migraphx_parse_onnx_buffer(migraphx_program_t* out,
                                            const void* data,
                                            size_t size,
                                            migraphx_onnx_options_t options);
+
+migraphx_status
+migraphx_quantize_fp16(migraphx_program_t prog, const char* const* name, size_t num);
+
+migraphx_status migraphx_quantize_fp16_default(migraphx_program_t prog);
+
+migraphx_status migraphx_calibration_data_destroy(migraphx_calibration_data_t calibration_data);
+
+migraphx_status migraphx_calibration_data_create(migraphx_calibration_data_t* calibration_data);
+
+migraphx_status migraphx_calibration_data_size(size_t* out,
+                                               migraphx_calibration_data_t calibration_data);
+
+migraphx_status migraphx_calibration_data_get(migraphx_program_parameters_t* out,
+                                              migraphx_calibration_data_t calibration_data,
+                                              size_t idx);
+
+migraphx_status migraphx_calibration_data_add_element(migraphx_calibration_data_t calibration_data,
+                                                      migraphx_program_parameters_t elem);
+
+migraphx_status migraphx_quantize_int8(migraphx_program_t prog,
+                                       migraphx_target_t target,
+                                       migraphx_calibration_data_t data,
+                                       const char* const* name,
+                                       size_t num);
+
+migraphx_status migraphx_quantize_int8_default(migraphx_program_t prog,
+                                               migraphx_target_t target,
+                                               migraphx_calibration_data_t data);
 
 #ifdef __cplusplus
 }
