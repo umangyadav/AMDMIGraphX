@@ -75,6 +75,11 @@ inline tensor_descriptor make_tensor(const migraphx::shape& os, bool pack = fals
     return t;
 }
 
+inline void insert_attribute_1d_dims(std::vector<int>& attr, size_t val)
+{
+    attr.insert(attr.begin(), val);
+}
+
 template <class T>
 inline convolution_descriptor make_conv(const T& op)
 {
@@ -82,14 +87,19 @@ inline convolution_descriptor make_conv(const T& op)
     miopenConvolutionMode_t c_mode = miopenConvolution;
     if(op.group > 1)
         c_mode = miopenGroupConv;
-    miopenInitConvolutionDescriptor(c.get(),
-                                    c_mode,
-                                    op.padding[0],
-                                    op.padding[1],
-                                    op.stride[0],
-                                    op.stride[1],
-                                    op.dilation[0],
-                                    op.dilation[1]);
+    std::vector<int> padding(op.padding.begin(), op.padding.end());
+    std::vector<int> stride(op.stride.begin(), op.stride.end());
+    std::vector<int> dilation(op.dilation.begin(), op.dilation.end());
+
+    if(op.kdims() == 1)
+    {
+        insert_attribute_1d_dims(padding, 0);
+        insert_attribute_1d_dims(stride, 1);
+        insert_attribute_1d_dims(dilation, 1);
+    }
+
+    miopenInitConvolutionNdDescriptor(
+        c.get(), padding.size(), padding.data(), stride.data(), dilation.data(), c_mode);
     if(op.group > 1)
         miopenSetConvolutionGroupCount(c.get(), op.group);
     return c;
@@ -123,14 +133,20 @@ inline pooling_descriptor make_pooling(const migraphx::op::pooling& op)
     else
         MIGRAPHX_THROW("Unknown mode for pooling: " + op.mode);
     auto p = make_obj<pooling_descriptor>(&miopenCreatePoolingDescriptor);
-    miopenSet2dPoolingDescriptor(p.get(),
-                                 mode,
-                                 op.lengths[0],
-                                 op.lengths[1],
-                                 op.padding[0],
-                                 op.padding[1],
-                                 op.stride[0],
-                                 op.stride[1]);
+
+    std::vector<int> padding(op.padding.begin(), op.padding.end());
+    std::vector<int> stride(op.stride.begin(), op.stride.end());
+    std::vector<int> lengths(op.lengths.begin(), op.lengths.end());
+
+    if(op.kdims() == 1)
+    {
+        insert_attribute_1d_dims(padding, 0);
+        insert_attribute_1d_dims(stride, 1);
+        insert_attribute_1d_dims(lengths, 1);
+    }
+
+    miopenSetNdPoolingDescriptor(
+        p.get(), mode, padding.size(), lengths.data(), padding.data(), stride.data());
     return p;
 }
 
