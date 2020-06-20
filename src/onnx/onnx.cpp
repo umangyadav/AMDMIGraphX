@@ -2426,7 +2426,7 @@ struct onnx_parser
                        [&](auto&& d) -> std::size_t {
                            if(d.has_dim_value())
                            {
-                               if(static_cast<int>(d.dim_value()) <= 0)
+                               if(static_cast<int>(d.dim_value()) < 0)
                                {
                                    return default_dim_value;
                                }

@@ -1707,6 +1707,19 @@ TEST_CASE(split_test_default)
     EXPECT(p == prog);
 }
 
+TEST_CASE(split_zero_input)
+{
+    migraphx::program p;
+    auto input = p.add_parameter("x", migraphx::shape{migraphx::shape::float_type, {0}});
+    auto r1    = p.add_instruction(migraphx::op::slice{{0}, {0}, {0}}, input);
+    auto r2    = p.add_instruction(migraphx::op::slice{{0}, {0}, {0}}, input);
+    auto r3    = p.add_instruction(migraphx::op::slice{{0}, {0}, {0}}, input);
+    p.add_return({r1, r2, r3});
+
+    auto prog = migraphx::parse_onnx("split_zero_input.onnx");
+    EXPECT(p == prog);
+}
+
 TEST_CASE(sqrt_test)
 {
     migraphx::program p;
@@ -1921,13 +1934,13 @@ TEST_CASE(variable_batch_user_input_test)
     EXPECT(p == prog);
 }
 
-TEST_CASE(variable_batch_leq_zero_test)
+TEST_CASE(variable_batch_leq_minus_test)
 {
     migraphx::program p;
     auto l0 = p.add_parameter("0", migraphx::shape{migraphx::shape::float_type, {1, 3, 16, 16}});
     auto l1 = p.add_parameter("1", migraphx::shape{migraphx::shape::float_type, {1, 3, 16, 16}});
     p.add_instruction(migraphx::op::add{}, l0, l1);
-    auto prog = optimize_onnx("variable_batch_leq_zero_test.onnx");
+    auto prog = optimize_onnx("variable_batch_leq_minus_test.onnx");
 
     EXPECT(p == prog);
 }

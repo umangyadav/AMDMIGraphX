@@ -2349,6 +2349,24 @@ def split_test_default():
 
 
 @onnx_test
+def split_zero_input():
+    x = helper.make_tensor_value_info('x', TensorProto.FLOAT, [0])
+    y1 = helper.make_tensor_value_info('y1', TensorProto.FLOAT, [0])
+    y2 = helper.make_tensor_value_info('y2', TensorProto.FLOAT, [0])
+    y3 = helper.make_tensor_value_info('y3', TensorProto.FLOAT, [0])
+
+    node = onnx.helper.make_node(
+        'Split',
+        inputs=['x'],
+        axis=0,
+        split=[0, 0, 0],
+        outputs=['y1', 'y2', 'y3'],
+    )
+
+    return ([node], [x], [y1, y2, y3])
+
+
+@onnx_test
 def sqrt_test():
     x = helper.make_tensor_value_info('x', TensorProto.FLOAT, [10, 15])
     y = helper.make_tensor_value_info('y', TensorProto.FLOAT, [10, 15])
@@ -2599,8 +2617,8 @@ def variable_batch_test():
 
 
 @onnx_test
-def variable_batch_leq_zero_test():
-    x = helper.make_tensor_value_info('0', TensorProto.FLOAT, [0, 3, 16, 16])
+def variable_batch_leq_minus_test():
+    x = helper.make_tensor_value_info('0', TensorProto.FLOAT, [1, 3, 16, 16])
     y = helper.make_tensor_value_info('1', TensorProto.FLOAT, [-1, 3, 16, 16])
 
     z = helper.make_tensor_value_info('2', TensorProto.FLOAT, [-1, 3, 16, 16])
