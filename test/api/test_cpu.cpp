@@ -26,12 +26,16 @@ TEST_CASE(quantize_fp16)
 {
     auto p1        = migraphx::parse_onnx("gemm_ex_test.onnx");
     const auto& p2 = p1;
+    const auto& p3 = p1;
     migraphx::quantize_fp16(p1);
-    CHECK(bool{p1 != p2});
 
-    std::vector<const char*> op_names = {"dot"};
-    migraphx::quantize_fp16(p2, op_names);
+    migraphx::quantize_op_names names;
+    migraphx::quantize_fp16(p2, names);
     CHECK(bool{p1 == p2});
+
+    names.add("dot");
+    migraphx::quantize_fp16(p3, names);
+    CHECK(bool{p1 == p3});
 }
 
 TEST_CASE(quantize_int8)
@@ -39,12 +43,19 @@ TEST_CASE(quantize_int8)
     auto p1        = migraphx::parse_onnx("gemm_ex_test.onnx");
     const auto& p2 = p1;
     auto t         = migraphx::target("cpu");
-    migraphx::calibration_data cali_data;
-    migraphx::quantize_int8(p1, t, cali_data);
-    CHECK(bool{p1 != p2});
+    migraphx::quantize_int8_options options;
+    migraphx::quantize_int8(p1, t, options);
 
-    std::vector<const char*> op_names = {"dot"};
-    migraphx::quantize_int8(p1, t, cali_data, op_names);
+    migraphx::program_parameters pp;
+    auto param_shapes = p1.get_parameter_shapes();
+    for(auto&& name : param_shapes.names())
+    {
+        pp.add(name, migraphx::argument::generate(param_shapes[name]));
+    }
+    options.add_calibration_data(pp);
+    options.add_op_name("dot");
+
+    migraphx::quantize_int8(p2, t, options);
     CHECK(bool{p1 == p2});
 }
 

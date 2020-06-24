@@ -109,41 +109,40 @@ std::vector<const char*> get_names(const std::unordered_map<std::string, Value>&
     return result;
 }
 
-void quantize_fp16_wrap(program& prog, const char* const* names, std::size_t num)
+void quantize_fp16_with_op_names(program& prog, std::vector<std::string>& names)
 {
-    std::vector<std::string> vec_names;
-    for(std::size_t i = 0; i < num; ++i)
+    if(names.empty())
     {
-        vec_names.push_back(names[i]);
+        names = {"all"};
     }
 
-    if(vec_names.empty())
-    {
-        vec_names = {"all"};
-    }
-
-    migraphx::quantize_fp16(prog, vec_names);
+    migraphx::quantize_fp16(prog, names);
 }
 
-void quantize_int8_wrap(
-    program& prog,
-    const target& t,
-    const std::vector<std::unordered_map<std::string, migraphx::argument>>& data,
-    const char* const* names,
-    std::size_t num)
+struct quantize_int8_options
 {
-    std::vector<std::string> vec_names;
-    for(std::size_t i = 0; i < num; ++i)
+    std::vector<program::parameter_map> calibration = {};
+    std::vector<std::string> op_names               = {};
+};
+
+void add_op_name(quantize_int8_options& options, const char* name)
+{
+    options.op_names.push_back(name);
+}
+
+void add_calibration_data(quantize_int8_options& options, program::parameter_map& data)
+{
+    options.calibration.push_back(data);
+}
+
+void quantize_int8_wrap(program& prog, const target& t, quantize_int8_options& options)
+{
+    if(options.op_names.empty())
     {
-        vec_names.push_back(names[i]);
+        options.op_names = {"dot", "convolution"};
     }
 
-    if(vec_names.empty())
-    {
-        vec_names = {"dot", "convolution"};
-    }
-
-    migraphx::quantize_int8(prog, t, data, vec_names);
+    migraphx::quantize_int8(prog, t, options.calibration, options.op_names);
 }
 
 template <class T>

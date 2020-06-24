@@ -204,48 +204,40 @@ api.add_function('migraphx_parse_onnx_buffer',
                  fname='migraphx::parse_onnx_buffer',
                  returns='migraphx::program')
 
-api.add_function('migraphx_quantize_fp16',
-                 api.params(prog='migraphx::program&',
-                            name='const char *const*',
-                            num='size_t'),
-                 fname='migraphx::quantize_fp16_wrap')
 
-api.add_function('migraphx_quantize_fp16_default',
+@api.handle('migraphx_quantize_op_names', 'std::vector<std::string>')
+def quantize_op_names(h):
+    h.constructor('create')
+    h.method('add', api.params(name='const char*'), fname='push_back')
+
+
+api.add_function('migraphx_quantize_fp16_with_op_names',
+                 api.params(prog='migraphx::program&',
+                            name='std::vector<std::string>&'),
+                 fname='migraphx::quantize_fp16_with_op_names')
+
+api.add_function('migraphx_quantize_fp16',
                  api.params(prog='migraphx::program&'),
                  fname='migraphx::quantize_fp16')
 
 
-@api.handle('migraphx_calibration_data',
-            'std::vector<std::unordered_map<std::string, migraphx::argument>>')
-def calibration_data(h):
+@auto_handle
+def quantize_int8_options(h):
     h.constructor('create')
-    h.method('size', returns='size_t')
-    h.method('get',
-             api.params(idx='size_t'),
-             fname='at',
-             cpp_name='operator[]',
-             returns='std::unordered_map<std::string, migraphx::argument>&'),
     h.method(
-        'add_element',
-        api.params(elem='std::unordered_map<std::string, migraphx::argument>'),
-        fname='push_back')
+        'add_op_name',
+        api.params(name='const char*'),
+        invoke='migraphx::add_op_name($@)',
+    )
+    h.method(
+        'add_calibration_data',
+        api.params(data='std::unordered_map<std::string, migraphx::argument>'),
+        invoke='migraphx::add_calibration_data($@)',
+    )
 
 
-api.add_function(
-    'migraphx_quantize_int8',
-    api.params(
-        prog='migraphx::program&',
-        target='migraphx::target',
-        data='std::vector<std::unordered_map<std::string, migraphx::argument>>',
-        name='const char *const*',
-        num='size_t'),
-    fname='migraphx::quantize_int8_wrap')
-
-api.add_function(
-    'migraphx_quantize_int8_default',
-    api.params(
-        prog='migraphx::program&',
-        target='migraphx::target',
-        data='std::vector<std::unordered_map<std::string, migraphx::argument>>'
-    ),
-    fname='migraphx::quantize_int8')
+api.add_function('migraphx_quantize_int8',
+                 api.params(prog='migraphx::program&',
+                            target='migraphx::target',
+                            options='migraphx::quantize_int8_options'),
+                 fname='migraphx::quantize_int8_wrap')
