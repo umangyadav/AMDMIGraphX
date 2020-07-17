@@ -850,7 +850,8 @@ struct onnx_parser
         {
             if(info.attributes.at("storage_order").i() == 1)
             {
-                MIGRAPHX_THROW("PARSE_POOLING: pool does not support storage_order 1 (column major format)");
+                MIGRAPHX_THROW(
+                    "PARSE_POOLING: pool does not support storage_order 1 (column major format)");
             }
         }
 
