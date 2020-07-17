@@ -845,6 +845,15 @@ struct onnx_parser
             }
         }
 
+        // we do not support storage order 1 (column major format)
+        if(contains(info.attributes, "storage_order"))
+        {
+            if(info.attributes.at("storage_order").i() == 1)
+            {
+                MIGRAPHX_THROW("PARSE_POOLING: pool does not support storage_order 1 (column major format)");
+            }
+        }
+
         // count include padding, if count include pad is 1, we always use
         // explicit pad
         int count_include_pad = 0;
@@ -852,7 +861,6 @@ struct onnx_parser
         {
             count_include_pad = info.attributes.at("count_include_pad").i();
         }
-
         if(contains(info.attributes, "strides"))
         {
             op.stride.clear();
