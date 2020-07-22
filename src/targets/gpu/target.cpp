@@ -1,6 +1,6 @@
 #include <migraphx/gpu/target.hpp>
 #include <migraphx/gpu/lowering.hpp>
-#include <migraphx/memory_coloring.hpp>
+#include <migraphx/memory_coloring2.hpp>
 #include <migraphx/gpu/write_literals.hpp>
 #include <migraphx/gpu/context.hpp>
 #include <migraphx/gpu/eliminate_workspace.hpp>
@@ -77,7 +77,8 @@ std::vector<pass> target::get_passes(migraphx::context& gctx, const compile_opti
         dead_code_elimination{},
         write_literals{&ctx},
         schedule{gpu::schedule_model{ctx.get_current_device().nstreams()}, not enabled(MIGRAPHX_DISABLE_SCHEDULE_PASS{})},
-        memory_coloring{"hip::allocate"},
+        // memory_coloring{"hip::allocate"},
+        memory_coloring2{"hip::allocate"},
         preallocate_param{"scratch", &ctx},
         dead_code_elimination{},
         eliminate_workspace{},

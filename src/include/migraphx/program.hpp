@@ -3,6 +3,7 @@
 
 #include <list>
 #include <unordered_map>
+#include <migraphx/config.hpp>
 #include <migraphx/operation.hpp>
 #include <migraphx/literal.hpp>
 #include <migraphx/builtin.hpp>

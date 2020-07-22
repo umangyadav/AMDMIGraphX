@@ -20,6 +20,7 @@ add_library(migraphx
     env.cpp
     generate.cpp
     instruction.cpp
+    memory_coloring2.cpp
     program.cpp
     quantization.cpp
     remap.cpp

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <iterator>
 #include <migraphx/rank.hpp>
 #include <migraphx/config.hpp>
 
@@ -150,6 +151,12 @@ template <class Iterator>
 iterator_range<Iterator> range(std::pair<Iterator, Iterator> p)
 {
     return {p.first, p.second};
+}
+
+template <class Range>
+auto reverse(Range& r)
+{
+    return range(std::make_reverse_iterator(r.end()), std::make_reverse_iterator(r.begin()));
 }
 
 } // namespace MIGRAPHX_INLINE_NS
