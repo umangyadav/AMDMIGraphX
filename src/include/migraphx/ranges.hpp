@@ -2,6 +2,7 @@
 #define MIGRAPHX_GUARD_MIGRAPHLIB_RANGES_HPP
 
 #include <algorithm>
+#include <vector>
 #include <initializer_list>
 #include <iterator>
 #include <migraphx/rank.hpp>
@@ -128,6 +129,17 @@ template <class Range, class T>
 void replace(Range&& r, const T& old, const T& new_x)
 {
     std::replace(r.begin(), r.end(), old, new_x);
+}
+
+template <class R>
+using range_value = std::decay_t<decltype(*std::declval<R>().begin())>;
+
+template <class Range, class Predicate>
+std::vector<range_value<Range>> find_all(Range&& r, Predicate p)
+{
+    std::vector<range_value<Range>> result;
+    std::copy_if(r.begin(), r.end(), std::back_inserter(result), p);
+    return result;
 }
 
 template <class Iterator>
