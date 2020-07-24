@@ -1,24 +1,27 @@
 #include <migraphx/memory_coloring2.hpp>
-#include <migraphx/dead_code_elimination.hpp>
+#include <migraphx/pass_manager.hpp>
 #include <migraphx/operators.hpp>
 #include <migraphx/instruction.hpp>
+#include <migraphx/op/identity.hpp>
 #include <migraphx/generate.hpp>
 #include <basic_ops.hpp>
 #include <test.hpp>
 
-struct memory_coloring_target
+void run_pass(migraphx::program& p)
 {
-    std::string name() const { return "memory_coloring2"; }
-    std::vector<migraphx::pass> get_passes(migraphx::context&) const
-    {
-        return {migraphx::memory_coloring2{"allocate"}, migraphx::dead_code_elimination{}};
-    }
-    migraphx::context get_context() const { return {}; }
-};
+    migraphx::run_passes(p, {migraphx::memory_coloring2{"allocate"}});
+}
 
 struct allocate
 {
     migraphx::shape s{};
+
+    template <class Self, class F>
+    static auto reflect(Self& self, F f)
+    {
+        return migraphx::pack(f(self.s, "shape"));
+    }
+
     std::string name() const { return "allocate"; }
     migraphx::shape compute_shape(const std::vector<migraphx::shape>& inputs) const
     {
@@ -50,7 +53,7 @@ TEST_CASE(test1)
     auto p1 = p.add_instruction(pass_op{}, a1);
     auto a2 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, a2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 192);
     CHECK(no_allocate(p));
 }
@@ -64,7 +67,7 @@ TEST_CASE(test2)
     auto p1 = p.add_instruction(pass_op{}, a1, input);
     auto p2 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, p2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 672);
     CHECK(no_allocate(p));
 }
@@ -77,7 +80,7 @@ TEST_CASE(test3)
     auto p1 = p.add_instruction(pass_op{}, p2, a1);
     auto p3 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, p3, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 672);
     CHECK(no_allocate(p));
 }
@@ -90,7 +93,7 @@ TEST_CASE(test4)
     auto p1 = p.add_instruction(pass_op{}, p2, a1);
     auto p3 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, p3, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 672);
     CHECK(no_allocate(p));
 }
@@ -102,7 +105,7 @@ TEST_CASE(test5)
     auto p1 = p.add_instruction(pass_op{}, a1);
     auto p2 = add_alloc(p, {migraphx::shape::float_type, {8}});
     p.add_instruction(pass_op{}, p2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 192);
     CHECK(no_allocate(p));
 }
@@ -115,7 +118,7 @@ TEST_CASE(test6)
     auto p2 = add_alloc(p, {migraphx::shape::float_type, {40}});
     auto p3 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, p3, p2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 352);
     CHECK(no_allocate(p));
 }
@@ -128,7 +131,7 @@ TEST_CASE(test7)
     auto p2 = add_alloc(p, {migraphx::shape::float_type, {40}});
     auto p3 = add_alloc(p, {migraphx::shape::float_type, {8}});
     p.add_instruction(pass_op{}, p3, p2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 224);
     CHECK(no_allocate(p));
 }
@@ -141,7 +144,7 @@ TEST_CASE(test8)
     auto p2 = add_alloc(p, {migraphx::shape::float_type, {40}});
     auto p3 = add_alloc(p, {migraphx::shape::float_type, {192}});
     p.add_instruction(pass_op{}, p3, p2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 960);
     CHECK(no_allocate(p));
 }
@@ -154,7 +157,7 @@ TEST_CASE(test9)
     auto p2 = add_alloc(p, {migraphx::shape::float_type, {8}});
     auto p3 = add_alloc(p, {migraphx::shape::float_type, {8}});
     p.add_instruction(pass_op{}, p3, p2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 96);
     CHECK(no_allocate(p));
 }
@@ -164,7 +167,7 @@ TEST_CASE(test10)
     migraphx::program p;
     auto a1 = add_alloc(p, {migraphx::shape::float_type, {8}});
     p.add_instruction(pass_op{}, a1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 32);
     CHECK(no_allocate(p));
 }
@@ -178,7 +181,7 @@ TEST_CASE(test11)
     auto a3 = add_alloc(p, {migraphx::shape::float_type, {8}});
     auto p2 = p.add_instruction(pass_op{}, a2, p1);
     p.add_instruction(pass_op{}, a3, p2);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 224);
     CHECK(no_allocate(p));
 }
@@ -192,7 +195,7 @@ TEST_CASE(test12)
     auto a3 = add_alloc(p, {migraphx::shape::float_type, {40}});
     auto p2 = p.add_instruction(pass_op{}, a2, p1);
     p.add_instruction(pass_op{}, a3, p2);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 352);
     CHECK(no_allocate(p));
 }
@@ -206,7 +209,7 @@ TEST_CASE(test13)
     auto a2 = add_alloc(p, {migraphx::shape::float_type, {40}});
     auto p2 = p.add_instruction(pass_op{}, a2, p1);
     p.add_instruction(pass_op{}, a3, p2);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 224);
     CHECK(no_allocate(p));
 }
@@ -220,7 +223,7 @@ TEST_CASE(test14)
     auto p1 = p.add_instruction(pass_op{}, a1);
     auto p2 = p.add_instruction(pass_op{}, a2, p1);
     p.add_instruction(pass_op{}, a3, p2);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 224);
     CHECK(no_allocate(p));
 }
@@ -234,7 +237,7 @@ TEST_CASE(test15)
     auto p2 = p.add_instruction(pass_op{}, a2);
     auto a3 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, a3, p1, p2);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 352);
     CHECK(no_allocate(p));
 }
@@ -248,7 +251,7 @@ TEST_CASE(test16)
     auto p2 = p.add_instruction(pass_op{}, a2);
     auto a3 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, a3, p1, p2);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 160);
     CHECK(no_allocate(p));
 }
@@ -262,7 +265,7 @@ TEST_CASE(test17)
     auto a2 = p.add_literal(migraphx::generate_literal({migraphx::shape::float_type, {40}}));
     auto p2 = p.add_instruction(pass_op{}, a2);
     p.add_instruction(pass_op{}, a3, p1, p2);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 160);
     CHECK(no_allocate(p));
 }
@@ -276,7 +279,7 @@ TEST_CASE(test18)
     auto p3 = p.add_instruction(pass_op{}, p2, p1);
     auto a2 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, a2, p1, p2, p3);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 192);
     CHECK(no_allocate(p));
 }
@@ -290,7 +293,7 @@ TEST_CASE(test19)
     auto p2 = p.add_instruction(pass_op{}, a2, p1);
     auto a3 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, a3, p2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 352);
     CHECK(no_allocate(p));
 }
@@ -304,7 +307,7 @@ TEST_CASE(test20)
     auto p1 = p.add_instruction(pass_op{}, a1, a2, a3);
     auto a4 = add_alloc(p, {migraphx::shape::float_type, {32}});
     p.add_instruction(pass_op{}, a4, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 384);
     CHECK(no_allocate(p));
 }
@@ -318,7 +321,7 @@ TEST_CASE(test21)
     auto p1 = p.add_instruction(pass_op{}, a1, a2, a3);
     auto a4 = add_alloc(p, {migraphx::shape::float_type, {8}});
     p.add_instruction(pass_op{}, a4, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 288);
     CHECK(no_allocate(p));
 }
@@ -332,7 +335,7 @@ TEST_CASE(test22)
     auto p1 = p.add_instruction(pass_op{}, a1, a2, a3);
     auto a4 = add_alloc(p, {migraphx::shape::float_type, {8}});
     p.add_instruction(pass_op{}, a4, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 288);
     CHECK(no_allocate(p));
 }
@@ -346,7 +349,7 @@ TEST_CASE(test23)
     auto p1 = p.add_instruction(pass_op{}, a1, a2, a3);
     auto a4 = add_alloc(p, {migraphx::shape::float_type, {8}});
     p.add_instruction(pass_op{}, a4, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 288);
     CHECK(no_allocate(p));
 }
@@ -360,7 +363,7 @@ TEST_CASE(test24)
     auto p1 = p.add_instruction(pass_op{}, a1, a2, a3);
     auto a4 = add_alloc(p, {migraphx::shape::float_type, {8}});
     p.add_instruction(pass_op{}, a4, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 384);
     CHECK(no_allocate(p));
 }
@@ -374,7 +377,7 @@ TEST_CASE(test25)
     p.add_instruction(nop{});
     auto a2 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, a2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 192);
     CHECK(no_allocate(p));
 }
@@ -388,7 +391,7 @@ TEST_CASE(test26)
     p.add_instruction(nop{}, a1, p1);
     auto a2 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, a2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 192);
     CHECK(no_allocate(p));
 }
@@ -400,7 +403,7 @@ TEST_CASE(test27)
     auto p1 = p.add_instruction(pass_op{}, a1);
     auto a2 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(nop{}, a2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 192);
     CHECK(no_allocate(p));
 }
@@ -414,7 +417,7 @@ TEST_CASE(test28)
     auto a2     = add_alloc(p, {migraphx::shape::float_type, {40}});
     auto p2     = p.add_instruction(pass_op{}, a2, p1);
     p.add_instruction(pass_op{}, p2, output);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 192);
     CHECK(no_allocate(p));
 }
@@ -429,7 +432,7 @@ TEST_CASE(test29)
     auto p2     = p.add_instruction(pass_op{}, a2, p1);
     p.move_instruction(output, p2);
     p.add_instruction(pass_op{}, p2, output);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 192);
     CHECK(no_allocate(p));
 }
@@ -444,7 +447,7 @@ TEST_CASE(test30)
     auto p2     = p.add_instruction(pass_op{}, a2, p1);
     p.move_instruction(output, p2);
     p.add_instruction(pass_op{}, p2, output);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 192);
     CHECK(no_allocate(p));
 }
@@ -458,7 +461,7 @@ TEST_CASE(test31)
     auto a2     = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.move_instruction(output, a2);
     p.add_instruction(pass_op{}, a2, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 192);
     CHECK(no_allocate(p));
 }
@@ -472,7 +475,7 @@ TEST_CASE(test32)
     auto p1 = p.add_instruction(pass_op{}, a2, a1, a3);
     auto a5 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, a5, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 352);
     CHECK(no_allocate(p));
 }
@@ -486,7 +489,7 @@ TEST_CASE(test33)
     auto p1 = p.add_instruction(pass_op{}, a2, a1, a3);
     auto a5 = add_alloc(p, {migraphx::shape::float_type, {40}});
     p.add_instruction(pass_op{}, a5, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 224); // 192
     CHECK(no_allocate(p));
 }
@@ -500,7 +503,7 @@ TEST_CASE(test34)
     auto p1 = p.add_instruction(pass_op{}, a2, a1, a3);
     auto a5 = add_alloc(p, {migraphx::shape::float_type, {8}});
     p.add_instruction(pass_op{}, a5, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 480);
     CHECK(no_allocate(p));
 }
@@ -514,7 +517,7 @@ TEST_CASE(test35)
     auto p1 = p.add_instruction(pass_op{}, a2, a1, a3);
     auto a5 = add_alloc(p, {migraphx::shape::float_type, {8}});
     p.add_instruction(pass_op{}, a5, p1);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 224);
     CHECK(no_allocate(p));
 }
@@ -531,7 +534,7 @@ TEST_CASE(test36)
     auto a4     = add_alloc(p, {migraphx::shape::float_type, {40}});
     auto p3     = p.add_instruction(pass_op{}, a4, p2);
     p.add_instruction(pass_op{}, output, p3);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 320);
     CHECK(no_allocate(p));
 }
@@ -548,7 +551,7 @@ TEST_CASE(test37)
     auto a4     = add_alloc(p, {migraphx::shape::float_type, {40}});
     auto p3     = p.add_instruction(pass_op{}, a4, p2);
     p.add_instruction(pass_op{}, output, p3);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 320);
     CHECK(no_allocate(p));
 }
@@ -593,7 +596,7 @@ TEST_CASE(test38)
     auto p78    = add_alloc(p, {migraphx::shape::float_type, {1, 64, 56, 56}});
     auto p83    = p.add_instruction(pass_op{}, p78, p77);
     p.add_instruction(pass_op{}, output, p83, p63);
-    p.compile(memory_coloring_target{});
+    run_pass(p);
     CHECK(p.get_parameter_shape("scratch").bytes() == 11239424); // 6422528
     CHECK(no_allocate(p));
 }
@@ -603,9 +606,28 @@ TEST_CASE(literal_test)
     migraphx::program p;
     auto lit = generate_literal(migraphx::shape{migraphx::shape::float_type, {4, 3, 3, 3}});
     p.add_literal(lit);
-    p.compile(memory_coloring_target{});
-    auto result = p.eval({});
+    run_pass(p);
+    auto result = p.eval({{"scratch", migraphx::shape{migraphx::shape::int8_type, {0}}}}).back();
     CHECK(lit == result);
+}
+
+TEST_CASE(dead_conflict)
+{
+    migraphx::program p;
+    auto a1 = add_alloc(p, {migraphx::shape::float_type, {40}});
+    auto p1 = p.add_instruction(pass_op{}, a1);
+    auto a2 = add_alloc(p, {migraphx::shape::float_type, {40}});
+    auto p2 = p.add_instruction(pass_op{}, a2);
+    p.add_instruction(migraphx::op::identity{}, p2, p1);
+    auto a3 = add_alloc(p, {migraphx::shape::float_type, {40}});
+    auto p3 = p.add_instruction(pass_op{}, p2, a3);
+    auto a4 = add_alloc(p, {migraphx::shape::float_type, {40}});
+    auto p4 = p.add_instruction(pass_op{}, p1, a4);
+    auto a5 = add_alloc(p, {migraphx::shape::float_type, {40}});
+    p.add_instruction(pass_op{}, p3, p4, a5);
+    run_pass(p);
+    CHECK(p.get_parameter_shape("scratch").bytes() == 640);
+    CHECK(no_allocate(p));
 }
 
 int main(int argc, const char* argv[]) { test::run(argc, argv); }
