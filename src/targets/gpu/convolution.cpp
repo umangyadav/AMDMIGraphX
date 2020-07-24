@@ -9,31 +9,50 @@ namespace gpu {
 shape miopen_convolution::compute_shape(const std::vector<shape>& inputs) const
 {
     check_shapes{inputs, *this}.has(4).standard();
-    return op.compute_shape({inputs.at(0), inputs.at(1)});
+    std::vector<shape> conv_inputs(inputs.begin(), inputs.begin() + 2);
+    check_shapes{conv_inputs, *this}.max_ndims(5);
+    return op.compute_shape(conv_inputs);
 }
+
+inline shape reshape_if_1d(const shape& input)
+{
+    shape new_shape{input};
+    auto dims = new_shape.lens();
+
+    if(dims.size() == 3)
+    {
+        std::vector<size_t> new_dims = dims;
+        new_dims.insert(new_dims.begin() + 2, 1);
+        new_shape = shape{input.type(), new_dims};
+    }
+    return new_shape;
+}
+
 argument miopen_convolution::compute(context& ctx,
                                      const shape& output_shape,
                                      const std::vector<argument>& args) const
 {
-    auto x_desc = make_tensor(args[0].get_shape());
-    auto w_desc = make_tensor(args[1].get_shape());
-    auto y_desc = make_tensor(output_shape);
+    auto x_desc = make_tensor(reshape_if_1d(args[0].get_shape()));
+    auto w_desc = make_tensor(reshape_if_1d(args[1].get_shape()));
+    auto y_desc = make_tensor(reshape_if_1d(output_shape));
 
     float alpha = 1;
     float beta  = 0;
-    miopenConvolutionForward(ctx.get_stream().get_miopen(),
-                             &alpha,
-                             x_desc.get(),
-                             args[0].implicit(),
-                             w_desc.get(),
-                             args[1].implicit(),
-                             cd.get(),
-                             algo,
-                             &beta,
-                             y_desc.get(),
-                             args[3].implicit(),
-                             args[2].implicit(),
-                             args[2].get_shape().bytes());
+    auto status = miopenConvolutionForward(ctx.get_stream().get_miopen(),
+                                           &alpha,
+                                           x_desc.get(),
+                                           args[0].implicit(),
+                                           w_desc.get(),
+                                           args[1].implicit(),
+                                           cd.get(),
+                                           algo,
+                                           &beta,
+                                           y_desc.get(),
+                                           args[3].implicit(),
+                                           args[2].implicit(),
+                                           args[2].get_shape().bytes());
+    if(status != miopenStatusSuccess)
+        MIGRAPHX_THROW("Running convolution failed");
     return args[3];
 }
 
@@ -42,9 +61,10 @@ shape miopen_convolution::compile(context& ctx,
                                   std::vector<shape> inputs)
 {
     shape workspace_shape{};
-    auto x_desc = make_tensor(inputs[0]);
-    auto w_desc = make_tensor(inputs[1]);
-    auto y_desc = make_tensor(output_shape);
+
+    auto x_desc = make_tensor(reshape_if_1d(inputs[0]));
+    auto w_desc = make_tensor(reshape_if_1d(inputs[1]));
+    auto y_desc = make_tensor(reshape_if_1d(output_shape));
 
     std::size_t workspace_size = 0;
     miopenConvolutionForwardGetWorkSpaceSize(ctx.get_stream().get_miopen(),
@@ -89,8 +109,11 @@ void miopen_convolution::finalize(context& ctx,
 {
     if(handle == ctx.get_stream().get_miopen())
         return;
-    // TODO: Check that workspace hasn't changed
-    compile(ctx, output_shape, std::move(inputs));
+    // Check that workspace hasn't changed
+    auto size = inputs.at(2).bytes();
+    auto ws   = compile(ctx, output_shape, std::move(inputs));
+    if(ws.bytes() > size)
+        MIGRAPHX_THROW("Workspace has changed during finalization.");
 }
 
 } // namespace gpu

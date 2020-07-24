@@ -9,12 +9,17 @@
 #include <migraphx/builtin.hpp>
 #include <migraphx/instruction_ref.hpp>
 #include <migraphx/target.hpp>
-#include <migraphx/tracer.hpp>
+#include <migraphx/compile_options.hpp>
+#include <migraphx/env.hpp>
+#include <migraphx/config.hpp>
 #include <algorithm>
 #include <iostream>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
+
+MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_TRACE_COMPILE)
+MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_TRACE_EVAL)
 
 struct program_impl;
 
@@ -26,8 +31,16 @@ const operation& get_operation(instruction_ref ins);
 struct program
 {
     program();
+
+    // move constructor
     program(program&&) noexcept;
-    program& operator=(program&&) noexcept;
+
+    // copy constructor
+    program(const program&);
+
+    // copy assignment operator
+    program& operator=(program);
+
     ~program() noexcept;
 
     using parameter_map = std::unordered_map<std::string, argument>;
@@ -62,6 +75,7 @@ struct program
     instruction_ref remove_instructions(instruction_ref first, instruction_ref last);
 
     instruction_ref move_instruction(instruction_ref src, instruction_ref dst);
+    instruction_ref move_instructions(instruction_ref src, instruction_ref dst);
 
     template <class... Ts>
     instruction_ref add_literal(Ts&&... xs)
@@ -75,13 +89,15 @@ struct program
 
     instruction_ref add_parameter(std::string name, shape s);
 
+    instruction_ref add_return(std::vector<instruction_ref> args);
+
     shape get_parameter_shape(std::string name) const;
 
     instruction_ref get_parameter(std::string name) const;
 
     std::unordered_map<std::string, shape> get_parameter_shapes() const;
 
-    argument eval(parameter_map params) const;
+    std::vector<argument> eval(parameter_map params) const;
 
     bool has_instruction(instruction_ref ins) const;
 
@@ -89,13 +105,13 @@ struct program
     instruction_ref begin() const;
     instruction_ref end() const;
 
-    shape get_shape() const;
+    std::vector<shape> get_output_shapes() const;
 
     context& get_context() const;
 
     instruction_ref validate() const;
 
-    void compile(const target& t, tracer trace = tracer{});
+    void compile(const target& t, compile_options options = compile_options{});
 
     void finalize();
 
@@ -104,12 +120,21 @@ struct program
     void debug_print() const;
     void debug_print(instruction_ref ins) const;
     void debug_print(const std::vector<instruction_ref>& inss) const;
+    void print_graph(std::ostream& os, bool brief = false) const;
+    void print_cpp(std::ostream& os) const;
 
     void dry_run(parameter_map params) const;
+
+    void annotate(std::ostream& os, std::function<void(instruction_ref)> a) const;
+
+    program& sort();
 
     friend std::ostream& operator<<(std::ostream& os, const program& p);
     friend bool operator==(const program& x, const program& y);
     friend bool operator!=(const program& x, const program& y) { return !(x == y); }
+
+    private:
+    void assign(const program& p);
 
     private:
     std::unique_ptr<program_impl> impl;

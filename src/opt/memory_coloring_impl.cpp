@@ -1,3 +1,4 @@
+#include <migraphx/op/load.hpp>
 #include "memory_coloring_impl.hpp"
 
 namespace migraphx {
@@ -62,11 +63,11 @@ bool memory_coloring_impl::allocate(interval_ptr interval)
         }
     }
 
-    long long offset = 0;
+    std::size_t offset = 0;
     while(!conflict_queue.empty())
     {
-        live_range* range     = conflict_queue.top();
-        long long iter_offset = range->offset;
+        live_range* range       = conflict_queue.top();
+        std::size_t iter_offset = range->offset;
         if(offset > iter_offset)
         {
             offset = std::max(offset, iter_offset + range->size);
@@ -84,6 +85,9 @@ bool memory_coloring_impl::allocate(interval_ptr interval)
             offset += (element_size - (offset % element_size));
         conflict_queue.pop();
     }
+    // when int8 type is used, the offset could be any number
+    // if not 4-byte aligned, miopen int8 convolution can crash
+    offset         = (offset + 3) / 4 * 4;
     segment.offset = offset;
     MIGRAPHX_DEBUG(segment.dump());
     required_bytes = std::max(required_bytes, offset + segment.size);
@@ -96,7 +100,7 @@ void memory_coloring_impl::build()
     if(num_of_instrs == 0)
         return;
 
-    int cur_points        = num_of_instrs * 2;
+    auto cur_points       = num_of_instrs * 2;
     instruction_ref iter  = p_program->end();
     instruction_ref begin = p_program->begin();
     std::vector<instruction_ref> dead_instrs;
@@ -176,7 +180,7 @@ void memory_coloring_impl::build()
 void memory_coloring_impl::rewrite()
 {
     std::vector<std::size_t> dims;
-    dims.push_back(required_bytes / sizeof(float));
+    dims.push_back((required_bytes + sizeof(float) - 1) / sizeof(float));
     shape s                       = {shape::float_type, dims};
     instruction_ref scratch_param = p_program->add_parameter("scratch", s);
     for(auto ins : iterator_for(*p_program))
@@ -192,28 +196,19 @@ void memory_coloring_impl::rewrite()
                 continue;
 
             std::size_t offset = 0;
-            if(interval->get_offset() == invalid_offset)
+            if(interval->get_offset() != invalid_offset)
             {
-                assert(interval->result.bytes() == 0);
+                offset = interval->get_offset();
             }
             else
             {
-                offset = interval->get_offset();
+                assert(interval->result.bytes() == 0);
             }
 
             if(is_allocate(ins))
             {
                 p_program->replace_instruction(
                     ins, op::load{ins->get_shape(), offset}, scratch_param);
-            }
-            else if(is_literal(ins))
-            {
-#if 0                
-                auto pre      = p_program->add_literal(ins->lit);
-                bool pre_copy = (interval->get_begin() < earliest_end_point);
-                p_program->replace_instruction(
-                    ins, write_literal{offset, pre_copy}, scratch_param, pre);
-#endif
             }
         }
     }

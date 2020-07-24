@@ -21,6 +21,14 @@ bool disabled(const char* name)
     return contains({"0", "disable", "disabled", "no", "false"}, e.front());
 }
 
+std::size_t value_of(const char* name, std::size_t fallback)
+{
+    auto e = env(name);
+    if(e.empty())
+        return fallback;
+    return std::stoul(e.front());
+}
+
 std::vector<std::string> env(const char* name)
 {
     auto p = std::getenv(name);

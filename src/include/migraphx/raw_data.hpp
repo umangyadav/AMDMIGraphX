@@ -27,7 +27,8 @@ struct raw_data : raw_data_base
     template <class Stream>
     friend Stream& operator<<(Stream& os, const Derived& d)
     {
-        d.visit([&](auto x) { os << x; });
+        if(not d.empty())
+            d.visit([&](auto x) { os << x; });
         return os;
     }
 
@@ -40,8 +41,11 @@ struct raw_data : raw_data_base
     template <class Visitor>
     void visit_at(Visitor v, std::size_t n = 0) const
     {
-        auto&& s      = static_cast<const Derived&>(*this).get_shape();
-        auto&& buffer = static_cast<const Derived&>(*this).data();
+        auto&& derived = static_cast<const Derived&>(*this);
+        if(derived.empty())
+            MIGRAPHX_THROW("Visiting empty data!");
+        auto&& s      = derived.get_shape();
+        auto&& buffer = derived.data();
         s.visit_type([&](auto as) { v(*(as.from(buffer) + s.index(n))); });
     }
 
@@ -55,8 +59,11 @@ struct raw_data : raw_data_base
     template <class Visitor>
     void visit(Visitor v) const
     {
-        auto&& s      = static_cast<const Derived&>(*this).get_shape();
-        auto&& buffer = static_cast<const Derived&>(*this).data();
+        auto&& derived = static_cast<const Derived&>(*this);
+        if(derived.empty())
+            MIGRAPHX_THROW("Visiting empty data!");
+        auto&& s      = derived.get_shape();
+        auto&& buffer = derived.data();
         s.visit_type([&](auto as) { v(make_view(s, as.from(buffer))); });
     }
 
@@ -202,6 +209,25 @@ auto visit_all(T&& x, Ts&&... xs)
     return [&](auto v) {
         // Workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=70100
         detail::visit_all_impl(s, v, x, xs...);
+    };
+}
+
+template <class T>
+auto visit_all(const std::vector<T>& x)
+{
+    auto&& s = x.front().get_shape();
+    if(!std::all_of(
+           x.begin(), x.end(), [&](const T& y) { return y.get_shape().type() == s.type(); }))
+        MIGRAPHX_THROW("Types must be the same");
+    return [&](auto v) {
+        s.visit_type([&](auto as) {
+            using type = typename decltype(as)::type;
+            std::vector<tensor_view<type>> result;
+            std::transform(x.begin(), x.end(), std::back_inserter(result), [&](const auto& y) {
+                return make_view(y.get_shape(), as.from(y.data()));
+            });
+            v(result);
+        });
     };
 }
 

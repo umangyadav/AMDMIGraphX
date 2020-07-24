@@ -93,11 +93,13 @@ struct shape
     {
         assert(std::distance(start, last) <= this->lens().size());
         assert(this->lens().size() == this->strides().size());
-        return std::inner_product(start, last, this->strides().begin(), std::size_t{0});
+        return std::inner_product(start, last, this->strides().begin(), std::size_t{0}); // NOLINT
     }
 
     /// Map element index to space index
     std::size_t index(std::size_t i) const;
+
+    std::vector<std::size_t> multi(std::size_t i) const;
 
     /// Returns true if the shape is packed with no padding
     bool packed() const;
@@ -111,6 +113,8 @@ struct shape
     bool standard() const;
     /// Returns true if all strides are equal to 0 (scalar tensor)
     bool scalar() const;
+
+    shape normalize_standard() const;
 
     friend bool operator==(const shape& x, const shape& y);
     friend bool operator!=(const shape& x, const shape& y);
@@ -179,11 +183,12 @@ struct shape
 #undef MIGRAPHX_SHAPE_GENERATE_VISITOR_ALL
     }
 
+    std::string type_string() const;
+
     private:
     std::shared_ptr<const shape_impl> impl;
 
     std::size_t element_space() const;
-    std::string type_string() const;
 };
 
 } // namespace MIGRAPHX_INLINE_NS

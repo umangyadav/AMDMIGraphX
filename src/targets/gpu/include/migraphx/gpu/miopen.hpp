@@ -2,7 +2,9 @@
 #define MIGRAPHX_GUARD_MIGRAPHLIB_MIOPEN_HPP
 
 #include <migraphx/manage_ptr.hpp>
-#include <migraphx/operators.hpp>
+#include <migraphx/op/convolution.hpp>
+#include <migraphx/op/pooling.hpp>
+#include <migraphx/op/lrn.hpp>
 #include <miopen/miopen.h>
 #include <migraphx/config.hpp>
 
@@ -32,12 +34,13 @@ Result make_obj(F f, Ts... xs)
     auto status                = f(&x, xs...);
     Result r{x};
     if(status != miopenStatusSuccess)
-        MIGRAPHX_THROW("MIOpen call failed");
+        MIGRAPHX_THROW("MAKE_OBJ: MIOpen call failed");
     return r;
 }
 
-inline tensor_descriptor make_tensor(const migraphx::shape& s)
+inline tensor_descriptor make_tensor(const migraphx::shape& os, bool pack = false)
 {
+    auto s = os.normalize_standard();
     auto t = make_obj<tensor_descriptor>(&miopenCreateTensorDescriptor);
     // Convert to ints
     std::vector<int> lens(s.lens().begin(), s.lens().end());
@@ -47,26 +50,71 @@ inline tensor_descriptor make_tensor(const migraphx::shape& s)
         d = miopenFloat;
     else if(s.type() == shape::half_type)
         d = miopenHalf;
+    else if(s.type() == shape::int32_type)
+        d = miopenInt32;
+    else if(s.type() == shape::int8_type)
+    {
+        if(pack)
+        {
+            // update the lens and corresponding strides
+            d          = miopenInt8x4;
+            lens[1]    = ((lens[1] + 3) / 4) * 4;
+            strides[0] = strides[1] * lens[1];
+        }
+        else
+        {
+            d = miopenInt8;
+        }
+    }
     else
-        MIGRAPHX_THROW("Unsupported type");
+    {
+        MIGRAPHX_THROW("MAKE_TENSOR: unsupported type");
+    }
     miopenSetTensorDescriptor(t.get(), d, s.lens().size(), lens.data(), strides.data());
+
     return t;
 }
 
-inline convolution_descriptor make_conv(const migraphx::op::convolution& op)
+template <class T>
+inline convolution_descriptor make_conv(const T& op)
 {
     auto c = make_obj<convolution_descriptor>(&miopenCreateConvolutionDescriptor);
     miopenConvolutionMode_t c_mode = miopenConvolution;
     if(op.group > 1)
         c_mode = miopenGroupConv;
-    miopenInitConvolutionDescriptor(c.get(),
-                                    c_mode,
-                                    op.padding[0],
-                                    op.padding[1],
-                                    op.stride[0],
-                                    op.stride[1],
-                                    op.dilation[0],
-                                    op.dilation[1]);
+
+    int kdims = op.kdims();
+    std::vector<int> padding(std::max(2, kdims), 0);
+    std::vector<int> stride(std::max(2, kdims), 1);
+    std::vector<int> dilation(std::max(2, kdims), 1);
+
+    std::copy_backward(op.padding.begin(), op.padding.end(), padding.end());
+    std::copy_backward(op.stride.begin(), op.stride.end(), stride.end());
+    std::copy_backward(op.dilation.begin(), op.dilation.end(), dilation.end());
+
+    miopenInitConvolutionNdDescriptor(
+        c.get(), padding.size(), padding.data(), stride.data(), dilation.data(), c_mode);
+    if(op.group > 1)
+        miopenSetConvolutionGroupCount(c.get(), op.group);
+    return c;
+}
+
+template <class T>
+inline convolution_descriptor make_deconv(const T& op)
+{
+    auto c = make_obj<convolution_descriptor>(&miopenCreateConvolutionDescriptor);
+    miopenConvolutionMode_t c_mode = miopenTranspose;
+    int kdims                      = op.kdims();
+    std::vector<int> padding(std::max(2, kdims), 0);
+    std::vector<int> stride(std::max(2, kdims), 1);
+    std::vector<int> dilation(std::max(2, kdims), 1);
+
+    std::copy_backward(op.padding.begin(), op.padding.end(), padding.end());
+    std::copy_backward(op.stride.begin(), op.stride.end(), stride.end());
+    std::copy_backward(op.dilation.begin(), op.dilation.end(), dilation.end());
+
+    miopenInitConvolutionNdDescriptor(
+        c.get(), padding.size(), padding.data(), stride.data(), dilation.data(), c_mode);
     if(op.group > 1)
         miopenSetConvolutionGroupCount(c.get(), op.group);
     return c;
@@ -77,17 +125,23 @@ inline pooling_descriptor make_pooling(const migraphx::op::pooling& op)
     miopenPoolingMode_t mode;
     if(op.mode == "max")
         mode = miopenPoolingMax;
-    else
+    else if(op.mode == "average")
         mode = miopenPoolingAverage;
+    else
+        MIGRAPHX_THROW("Unknown mode for pooling: " + op.mode);
     auto p = make_obj<pooling_descriptor>(&miopenCreatePoolingDescriptor);
-    miopenSet2dPoolingDescriptor(p.get(),
-                                 mode,
-                                 op.lengths[0],
-                                 op.lengths[1],
-                                 op.padding[0],
-                                 op.padding[1],
-                                 op.stride[0],
-                                 op.stride[1]);
+
+    int kdims = op.kdims();
+    std::vector<int> padding(std::max(2, kdims), 0);
+    std::vector<int> stride(std::max(2, kdims), 1);
+    std::vector<int> lengths(std::max(2, kdims), 1);
+
+    std::copy_backward(op.padding.begin(), op.padding.end(), padding.end());
+    std::copy_backward(op.stride.begin(), op.stride.end(), stride.end());
+    std::copy_backward(op.lengths.begin(), op.lengths.end(), lengths.end());
+
+    miopenSetNdPoolingDescriptor(
+        p.get(), mode, padding.size(), lengths.data(), padding.data(), stride.data());
     return p;
 }
 
@@ -158,6 +212,38 @@ inline fusion_plan_descriptor make_fusion_plan(const tensor_descriptor& input)
 inline fused_operator_args make_fused_args()
 {
     return make_obj<fused_operator_args>(&miopenCreateOperatorArgs);
+}
+
+template <class F>
+auto reflect(miopenActivationDescriptor_t ad, F f)
+{
+    assert(ad != nullptr);
+    miopenActivationMode_t mode = miopenActivationPASTHRU;
+    double alpha                = 0.0;
+    double beta                 = 0.0;
+    double gamma                = 0.0;
+    miopenGetActivationDescriptor(ad, &mode, &alpha, &beta, &gamma);
+    return pack(f(std::move(mode), "mode"),    // NOLINT
+                f(std::move(alpha), "alpha"),  // NOLINT
+                f(std::move(beta), "beta"),    // NOLINT
+                f(std::move(gamma), "gamma")); // NOLINT
+}
+
+template <class F>
+auto reflect(miopenLRNDescriptor_t lrnd, F f)
+{
+    assert(lrnd != nullptr);
+    miopenLRNMode_t mode = miopenLRNWithinChannel;
+    unsigned int n       = 0;
+    double alpha         = 0.0;
+    double beta          = 0.0;
+    double k             = 0.0;
+    miopenGetLRNDescriptor(lrnd, &mode, &n, &alpha, &beta, &k);
+    return pack(f(std::move(mode), "mode"),   // NOLINT
+                f(std::move(n), "n"),         // NOLINT
+                f(std::move(alpha), "alpha"), // NOLINT
+                f(std::move(beta), "beta"),   // NOLINT
+                f(std::move(k), "k"));        // NOLINT
 }
 
 } // namespace gpu

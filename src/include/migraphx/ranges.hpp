@@ -2,6 +2,7 @@
 #define MIGRAPHX_GUARD_MIGRAPHLIB_RANGES_HPP
 
 #include <algorithm>
+#include <vector>
 #include <initializer_list>
 #include <iterator>
 #include <migraphx/rank.hpp>
@@ -13,7 +14,7 @@ inline namespace MIGRAPHX_INLINE_NS {
 namespace detail {
 
 template <class String, class T>
-auto generic_find_impl(rank<2>, String&& s, const T& x) -> decltype(s.begin() + s.find(x), s.npos)
+auto generic_find_impl(rank<2>, String&& s, const T& x) -> decltype(s.npos, s.begin() + s.find(x))
 {
     auto index = s.find(x);
     if(index == s.npos)
@@ -33,6 +34,10 @@ auto generic_find_impl(rank<0>, C&& c, const T& x)
 {
     return std::find(c.begin(), c.end(), x);
 }
+
+struct empty
+{
+};
 
 } // namespace detail
 
@@ -72,6 +77,48 @@ bool all_of(const std::initializer_list<T>& c, const Predicate& p)
     return std::all_of(c.begin(), c.end(), p);
 }
 
+template <class Predicate>
+bool all_of(detail::empty, const Predicate&)
+{
+    return true;
+}
+
+template <class C, class Predicate>
+bool any_of(const C& c, const Predicate& p)
+{
+    return std::any_of(c.begin(), c.end(), p);
+}
+
+template <class T, class Predicate>
+bool any_of(const std::initializer_list<T>& c, const Predicate& p)
+{
+    return std::any_of(c.begin(), c.end(), p);
+}
+
+template <class Predicate>
+bool any_of(detail::empty, const Predicate&)
+{
+    return false;
+}
+
+template <class C, class Predicate>
+bool none_of(const C& c, const Predicate& p)
+{
+    return std::none_of(c.begin(), c.end(), p);
+}
+
+template <class T, class Predicate>
+bool none_of(const std::initializer_list<T>& c, const Predicate& p)
+{
+    return std::none_of(c.begin(), c.end(), p);
+}
+
+template <class Predicate>
+bool none_of(detail::empty, const Predicate&)
+{
+    return true;
+}
+
 template <class Range, class Iterator>
 void copy(Range&& r, Iterator it)
 {
@@ -82,6 +129,17 @@ template <class Range, class T>
 void replace(Range&& r, const T& old, const T& new_x)
 {
     std::replace(r.begin(), r.end(), old, new_x);
+}
+
+template <class R>
+using range_value = std::decay_t<decltype(*std::declval<R>().begin())>;
+
+template <class Range, class Predicate>
+std::vector<range_value<Range>> find_all(Range&& r, Predicate p)
+{
+    std::vector<range_value<Range>> result;
+    std::copy_if(r.begin(), r.end(), std::back_inserter(result), p);
+    return result;
 }
 
 template <class Iterator>

@@ -13,6 +13,14 @@ namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 
 template <class T>
+T as_number(T x)
+{
+    return x;
+}
+inline int32_t as_number(int8_t x) { return static_cast<int32_t>(x); }
+inline uint32_t as_number(uint8_t x) { return static_cast<uint32_t>(x); }
+
+template <class T>
 struct tensor_view
 {
     using value_type = T;
@@ -48,12 +56,16 @@ struct tensor_view
     template <class Iterator, MIGRAPHX_REQUIRES(not std::is_integral<Iterator>{})>
     const T& operator()(Iterator start, Iterator last) const
     {
+        assert(std::distance(start, last) > 0);
+        assert(std::all_of(start, last, [](auto x) { return x >= 0; }));
         return m_data[m_shape.index(start, last)];
     }
 
     template <class Iterator, MIGRAPHX_REQUIRES(not std::is_integral<Iterator>{})>
     T& operator()(Iterator start, Iterator last)
     {
+        assert(std::distance(start, last) > 0);
+        assert(std::all_of(start, last, [](auto x) { return x >= 0; }));
         return m_data[m_shape.index(start, last)];
     }
 
@@ -124,16 +136,20 @@ struct tensor_view
             return m_data + this->size();
     }
 
-    std::vector<T> to_vector() const { return std::vector<T>(this->begin(), this->end()); }
+    template <class U = T>
+    std::vector<U> to_vector() const
+    {
+        return std::vector<U>(this->begin(), this->end());
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const tensor_view<T>& x)
     {
         if(!x.empty())
         {
-            os << x.front();
+            os << as_number(x.front());
             for(std::size_t i = 1; i < x.m_shape.elements(); i++)
             {
-                os << ", " << x.m_data[x.m_shape.index(i)];
+                os << ", " << as_number(x.m_data[x.m_shape.index(i)]);
             }
         }
         return os;

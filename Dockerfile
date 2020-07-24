@@ -20,6 +20,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --allow-
     clang-format-5.0 \
     clang-tidy-5.0 \
     cmake \
+    comgr \
     curl \
     doxygen \
     g++-7 \
@@ -29,28 +30,49 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --allow-
     hsakmt-roct-dev \
     lcov \
     libelf-dev \
+    libfile-which-perl \
     libncurses5-dev \
     libnuma-dev \
     libpthread-stubs0-dev \
-    python \
-    python-dev \
+    libssl-dev \
+    locales \
+    pkg-config \
+    python3 \
+    python3-dev \
+    python3-pip \
     python-pip \
+    python-dev \
+    rocm-device-libs \
     rocm-opencl \
     rocm-opencl-dev \
-    rocminfo \
     software-properties-common \
-    wget && \
+    sudo \
+    wget \
+    zlib1g-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN locale-gen en_US.UTF-8
+RUN update-locale LANG=en_US.UTF-8
+
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
+
 # Install cget
-RUN pip install cget
+RUN pip3 install cget && pip3 install numpy==1.18.5
 
 # Install rclone
 RUN pip install https://github.com/pfultz2/rclone/archive/master.tar.gz
 
+# Install yapf
+RUN pip3 install yapf==0.28.0
+
+# Install doc requirements
+ADD doc/requirements.txt /doc-requirements.txt
+RUN pip3 install -r /doc-requirements.txt
+
 # Install hcc
-RUN rclone -b roc-2.0.x -c 757fb492517b80e7c86338af5fc1a43d63cb25a9 https://github.com/RadeonOpenCompute/hcc.git /hcc
+RUN rclone -b roc-3.0.x -c 286651a04d9c3a8e3052dd84b1822985498cd27d https://github.com/RadeonOpenCompute/hcc.git /hcc
 RUN cget -p $PREFIX install hcc,/hcc
 
 # Use hcc
@@ -65,11 +87,24 @@ ADD dev-requirements.txt /dev-requirements.txt
 ADD requirements.txt /requirements.txt
 RUN cget -p $PREFIX install -f /dev-requirements.txt -DMIOPEN_CACHE_DIR=""
 
+# Install newer cmake for onnx runtime
+RUN cget -p /opt/cmake install kitware/cmake@v3.13.0
+
+ARG ONNXRUNTIME_REPO=https://github.com/Microsoft/onnxruntime
+ARG ONNXRUNTIME_BRANCH=master
+ARG ONNXRUNTIME_COMMIT=bfc888613f4e831d29c8b0bc17182ae061712553
+RUN git clone --single-branch --branch ${ONNXRUNTIME_BRANCH} --recursive ${ONNXRUNTIME_REPO} onnxruntime && \
+    cd onnxruntime && \
+    git checkout ${ONNXRUNTIME_COMMIT} && \
+    /bin/sh dockerfiles/scripts/install_common_deps.sh
+
+ADD tools/build_and_test_onnxrt.sh /onnxruntime/build_and_test_onnxrt.sh
+
 ENV MIOPEN_FIND_DB_PATH=/tmp/miopen/find-db
 ENV MIOPEN_USER_DB_PATH=/tmp/miopen/user-db
 
 ENV LD_LIBRARY_PATH=$PREFIX/lib
 
-# Install doc requirements
-ADD doc/requirements.txt /doc-requirements.txt
-RUN pip install -r /doc-requirements.txt
+# Setup ubsan environment to printstacktrace
+ENV UBSAN_OPTIONS=print_stacktrace=1
+ENV ASAN_OPTIONS=detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1

@@ -1,6 +1,6 @@
 #include <migraphx/gpu/logsoftmax.hpp>
 #include <migraphx/gpu/device/logsoftmax.hpp>
-#include <migraphx/operators.hpp>
+#include <migraphx/op/logsoftmax.hpp>
 #include <migraphx/manage_ptr.hpp>
 #include <migraphx/gpu/miopen.hpp>
 #include <utility>
@@ -15,11 +15,13 @@ shape hip_logsoftmax::compute_shape(const std::vector<shape>& inputs) const
     return op.compute_shape({inputs.at(0)});
 }
 
-argument hip_logsoftmax::compute(context& ctx,
-                                 const shape& output_shape,
-                                 const std::vector<argument>& args) const
+argument
+hip_logsoftmax::compute(context& ctx, const shape&, const std::vector<argument>& args) const
 {
-    return device::logsoftmax(ctx.get_stream().get(), output_shape, args, op.axis);
+    auto n_dim      = args.front().get_shape().lens().size();
+    auto tuned_axis = (op.axis < 0) ? op.axis + n_dim : op.axis;
+    device::logsoftmax(ctx.get_stream().get(), args.back(), args.front(), tuned_axis);
+    return args.back();
 }
 
 } // namespace gpu

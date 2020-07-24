@@ -44,29 +44,27 @@ struct is_fast_gemm_type<float> : std::true_type
 {
 };
 
-template <class T>
-void migemm_impl(tensor_view<T> cmat,
-                 tensor_view<T> amat,
-                 tensor_view<T> bmat,
-                 float alpha,
-                 float beta,
-                 std::true_type)
+template <class T, class F>
+void migemm_impl(
+    tensor_view<T> cmat, tensor_view<T> amat, tensor_view<T> bmat, F alpha, F beta, std::true_type)
 {
     visit_mat(amat, [&](const auto& a) {
         visit_mat(bmat, [&](const auto& b) {
             auto c = make_mat(cmat);
-            c      = (a * b) * alpha + beta * c;
+            c      = beta * c;
+            // This is a simple optimization to avoid
+            // compute A * B if alpha is 0.0
+            if(alpha != 0.0)
+            {
+                c = c + alpha * a * b;
+            }
         });
     });
 }
 
-template <class T>
-void migemm_impl(tensor_view<T> cmat,
-                 tensor_view<T> amat,
-                 tensor_view<T> bmat,
-                 float alpha,
-                 float beta,
-                 std::false_type)
+template <class T, class F>
+void migemm_impl(
+    tensor_view<T> cmat, tensor_view<T> amat, tensor_view<T> bmat, F alpha, F beta, std::false_type)
 {
     std::size_t n_dims = cmat.get_shape().lens().size();
     std::size_t dim_0  = n_dims - 2;
@@ -89,14 +87,13 @@ void migemm_impl(tensor_view<T> cmat,
     });
 }
 
-template <class T>
-void migemm_impl(
-    tensor_view<T> cmat, tensor_view<T> amat, tensor_view<T> bmat, float alpha, float beta)
+template <class T, class F>
+void migemm_impl(tensor_view<T> cmat, tensor_view<T> amat, tensor_view<T> bmat, F alpha, F beta)
 {
     auto lens = amat.get_shape().lens();
     bool batch_mul =
-        std::accumulate(lens.begin(), lens.end(), std::size_t{1}, std::multiplies<std::size_t>()) ==
-        (*lens.rbegin()) * (*(lens.rbegin() + 1));
+        std::accumulate(
+            lens.rbegin() + 2, lens.rend(), std::size_t{1}, std::multiplies<std::size_t>()) == 1;
     if(batch_mul)
     {
         migemm_impl(cmat, amat, bmat, alpha, beta, is_fast_gemm_type<T>{});
@@ -107,11 +104,27 @@ void migemm_impl(
     }
 }
 
-void migemm(
-    const argument& c_arg, const argument& a_arg, const argument& b_arg, float alpha, float beta)
+template <class F>
+void migemm_tpl(
+    const argument& c_arg, const argument& a_arg, const argument& b_arg, F alpha, F beta)
 {
     visit_all(c_arg, a_arg, b_arg)(
         [&](auto cmat, auto amat, auto bmat) { migemm_impl(cmat, amat, bmat, alpha, beta); });
+}
+
+void migemm(
+    const argument& c_arg, const argument& a_arg, const argument& b_arg, float alpha, float beta)
+{
+    migemm_tpl(c_arg, a_arg, b_arg, alpha, beta);
+}
+
+void migemm(const argument& c_arg,
+            const argument& a_arg,
+            const argument& b_arg,
+            int32_t alpha,
+            int32_t beta)
+{
+    migemm_tpl(c_arg, a_arg, b_arg, alpha, beta);
 }
 
 } // namespace cpu

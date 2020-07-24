@@ -1,6 +1,9 @@
 #include <migraphx/eliminate_concat.hpp>
 #include <migraphx/dead_code_elimination.hpp>
-#include <migraphx/operators.hpp>
+#include <migraphx/pass_manager.hpp>
+#include <migraphx/op/concat.hpp>
+#include <migraphx/op/load.hpp>
+#include <migraphx/op/identity.hpp>
 #include <basic_ops.hpp>
 #include <test.hpp>
 
@@ -8,9 +11,17 @@ struct concat
 {
     concat(std::size_t axis) { op.axis = axis; }
     migraphx::op::concat op;
+
+    template <class Self, class F>
+    static auto reflect(Self& self, F f)
+    {
+        return migraphx::reflect(self.op, f);
+    }
+
     std::string name() const { return "eliminate_concat::concat"; }
     migraphx::shape compute_shape(std::vector<migraphx::shape> inputs) const
     {
+        inputs.pop_back();
         return op.compute_shape(std::move(inputs));
     }
     migraphx::argument compute(migraphx::context&,
@@ -34,21 +45,23 @@ struct concat_test_optimization
     }
 };
 
-struct eliminate_concat_target
+void run_pass(migraphx::program& p)
 {
-    std::size_t align = 32;
-    std::string name() const { return "eliminate_target"; }
-    std::vector<migraphx::pass> get_passes(migraphx::context&) const
-    {
-        return {migraphx::eliminate_concat{concat_test_optimization{}},
-                migraphx::dead_code_elimination{}};
-    }
-    migraphx::context get_context() const { return {}; }
-};
+    migraphx::run_passes(p,
+                         {migraphx::eliminate_concat{concat_test_optimization{}},
+                          migraphx::dead_code_elimination{}});
+}
 
 struct allocate
 {
     migraphx::shape s{};
+
+    template <class Self, class F>
+    static auto reflect(Self& self, F f)
+    {
+        return migraphx::pack(f(self.s, "shape"));
+    }
+
     std::string name() const { return "allocate"; }
     migraphx::shape compute_shape(const std::vector<migraphx::shape>& inputs) const
     {
@@ -115,7 +128,122 @@ TEST_CASE(simple)
 
     auto p1 = create_test_program();
     auto p2 = create_control_program();
-    p1.compile(eliminate_concat_target{});
+    run_pass(p1);
+
+    EXPECT(p1 == p2);
+}
+
+TEST_CASE(negative_axis1)
+{
+    auto create_test_program = [] {
+        migraphx::program p;
+        auto a1          = p.add_instruction(allocate{create_shape(2, 2)});
+        auto p1          = p.add_instruction(simple_op{}, a1);
+        auto a2          = p.add_instruction(allocate{create_shape(2, 2)});
+        auto p2          = p.add_instruction(simple_op{}, a2);
+        std::size_t axis = -1;
+        auto a3          = p.add_instruction(allocate{create_shape(4, 2)});
+        p.add_instruction(concat(axis), p1, p2, a3);
+        return p;
+    };
+    auto create_control_program = create_test_program;
+
+    auto p1 = create_test_program();
+    auto p2 = create_control_program();
+    run_pass(p1);
+
+    EXPECT(p1 == p2);
+}
+
+TEST_CASE(negative_axis2)
+{
+    auto create_test_program = [] {
+        migraphx::program p;
+        auto a1          = p.add_instruction(allocate{create_shape(2, 2)});
+        auto p1          = p.add_instruction(simple_op{}, a1);
+        auto a2          = p.add_instruction(allocate{create_shape(2, 2)});
+        auto p2          = p.add_instruction(simple_op{}, a2);
+        std::size_t axis = -2;
+        auto a3          = p.add_instruction(allocate{create_shape(4, 2)});
+        p.add_instruction(concat(axis), p1, p2, a3);
+        return p;
+    };
+    auto create_control_program = [] {
+        migraphx::program p;
+        auto a1 = p.add_instruction(allocate{create_shape(4, 2)});
+        auto l1 = p.add_instruction(load{create_shape(2, 2), 0}, a1);
+        auto p1 = p.add_instruction(simple_op{}, l1);
+        auto l2 = p.add_instruction(load{create_shape(2, 2), 16}, a1);
+        auto p2 = p.add_instruction(simple_op{}, l2);
+        p.add_instruction(identity{}, a1, p1, p2);
+        return p;
+    };
+
+    auto p1 = create_test_program();
+    auto p2 = create_control_program();
+    run_pass(p1);
+
+    EXPECT(p1 == p2);
+}
+
+TEST_CASE(negative_axis3)
+{
+    auto create_test_program = [] {
+        migraphx::program p;
+        auto a1          = p.add_instruction(allocate{create_shape(1, 2, 2)});
+        auto p1          = p.add_instruction(simple_op{}, a1);
+        auto a2          = p.add_instruction(allocate{create_shape(1, 2, 2)});
+        auto p2          = p.add_instruction(simple_op{}, a2);
+        std::size_t axis = -2;
+        auto a3          = p.add_instruction(allocate{create_shape(1, 4, 2)});
+        p.add_instruction(concat(axis), p1, p2, a3);
+        return p;
+    };
+    auto create_control_program = [] {
+        migraphx::program p;
+        auto a1 = p.add_instruction(allocate{create_shape(1, 4, 2)});
+        auto l1 = p.add_instruction(load{create_shape(1, 2, 2), 0}, a1);
+        auto p1 = p.add_instruction(simple_op{}, l1);
+        auto l2 = p.add_instruction(load{create_shape(1, 2, 2), 16}, a1);
+        auto p2 = p.add_instruction(simple_op{}, l2);
+        p.add_instruction(identity{}, a1, p1, p2);
+        return p;
+    };
+
+    auto p1 = create_test_program();
+    auto p2 = create_control_program();
+    run_pass(p1);
+
+    EXPECT(p1 == p2);
+}
+
+TEST_CASE(reversed)
+{
+    auto create_test_program = [] {
+        migraphx::program p;
+        auto a1          = p.add_instruction(allocate{create_shape(1)});
+        auto p1          = p.add_instruction(simple_op{}, a1);
+        auto a2          = p.add_instruction(allocate{create_shape(1)});
+        auto p2          = p.add_instruction(simple_op{}, a2);
+        std::size_t axis = 0;
+        auto a3          = p.add_instruction(allocate{create_shape(2)});
+        p.add_instruction(concat(axis), p2, p1, a3);
+        return p;
+    };
+    auto create_control_program = [] {
+        migraphx::program p;
+        auto a1 = p.add_instruction(allocate{create_shape(2)});
+        auto l1 = p.add_instruction(load{create_shape(1), 4}, a1);
+        auto p1 = p.add_instruction(simple_op{}, l1);
+        auto l2 = p.add_instruction(load{create_shape(1), 0}, a1);
+        auto p2 = p.add_instruction(simple_op{}, l2);
+        p.add_instruction(identity{}, a1, p2, p1);
+        return p;
+    };
+
+    auto p1 = create_test_program();
+    auto p2 = create_control_program();
+    run_pass(p1);
 
     EXPECT(p1 == p2);
 }
@@ -160,7 +288,7 @@ TEST_CASE(nested)
 
     auto p1 = create_test_program();
     auto p2 = create_control_program();
-    p1.compile(eliminate_concat_target{});
+    run_pass(p1);
 
     EXPECT(p1 == p2);
 }
@@ -203,7 +331,7 @@ TEST_CASE(basic)
 
     auto p1 = create_test_program();
     auto p2 = create_control_program();
-    p1.compile(eliminate_concat_target{});
+    run_pass(p1);
 
     EXPECT(p1 == p2);
 }
@@ -247,7 +375,7 @@ TEST_CASE(wont_work)
 
     auto p1 = create_test_program();
     auto p2 = create_control_program();
-    p1.compile(eliminate_concat_target{});
+    run_pass(p1);
 
     EXPECT(p1 == p2);
 }

@@ -2,10 +2,14 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <migraphx/program.hpp>
+#include <migraphx/quantization.hpp>
 #include <migraphx/generate.hpp>
 #include <migraphx/cpu/target.hpp>
-#include <migraphx/onnx.hpp>
 #include <migraphx/stringutils.hpp>
+#include <migraphx/tf.hpp>
+#include <migraphx/onnx.hpp>
+#include <migraphx/type_name.hpp>
+
 #ifdef HAVE_GPU
 #include <migraphx/gpu/target.hpp>
 #include <migraphx/gpu/hip.hpp>
@@ -98,13 +102,27 @@ migraphx::shape to_shape(const py::buffer_info& info)
             t = as.type_enum();
             n = sizeof(as());
         }
-
     });
+
+    if(n == 0)
+    {
+        MIGRAPHX_THROW("MIGRAPHX PYTHON: Unsupported data type" + info.format);
+    }
+
     auto strides = info.strides;
     std::transform(strides.begin(), strides.end(), strides.begin(), [&](auto i) -> std::size_t {
         return n > 0 ? i / n : 0;
     });
-    return migraphx::shape{t, info.shape, strides};
+
+    // scalar support
+    if(info.shape.empty())
+    {
+        return migraphx::shape{t};
+    }
+    else
+    {
+        return migraphx::shape{t, info.shape, strides};
+    }
 }
 
 PYBIND11_MODULE(migraphx, m)
@@ -147,15 +165,50 @@ PYBIND11_MODULE(migraphx, m)
     py::class_<migraphx::target>(m, "target");
 
     py::class_<migraphx::program>(m, "program")
+        .def("clone", [](migraphx::program& p) { return *(new migraphx::program(p)); })
         .def("get_parameter_shapes", &migraphx::program::get_parameter_shapes)
-        .def("get_shape", &migraphx::program::get_shape)
-        .def("compile", [](migraphx::program& p, const migraphx::target& t) { p.compile(t); })
+        .def("get_output_shapes", &migraphx::program::get_output_shapes)
+        .def("compile",
+             [](migraphx::program& p, const migraphx::target& t, bool offload_copy) {
+                 migraphx::compile_options options;
+                 options.offload_copy = offload_copy;
+                 p.compile(t, options);
+             },
+             py::arg("t"),
+             py::arg("offload_copy") = true)
         .def("run", &migraphx::program::eval)
         .def("__eq__", std::equal_to<migraphx::program>{})
         .def("__ne__", std::not_equal_to<migraphx::program>{})
         .def("__repr__", [](const migraphx::program& p) { return migraphx::to_string(p); });
 
-    m.def("parse_onnx", &migraphx::parse_onnx);
+    m.def("parse_tf",
+          [](const std::string& filename, bool is_nhwc, unsigned int batch_size) {
+              return migraphx::parse_tf(filename, migraphx::tf_options{is_nhwc, batch_size});
+          },
+          "Parse tf protobuf (default format is nhwc)",
+          py::arg("filename"),
+          py::arg("is_nhwc")    = true,
+          py::arg("batch_size") = 1);
+
+    m.def("parse_onnx",
+          [](const std::string& filename,
+             unsigned int default_dim_value,
+             std::unordered_map<std::string, std::vector<std::size_t>> map_input_dims,
+             bool skip_unknown_operators,
+             bool print_program_on_error) {
+              migraphx::onnx_options options;
+              options.default_dim_value      = default_dim_value;
+              options.map_input_dims         = map_input_dims;
+              options.skip_unknown_operators = skip_unknown_operators;
+              options.print_program_on_error = print_program_on_error;
+              return migraphx::parse_onnx(filename, options);
+          },
+          "Parse onnx file",
+          py::arg("filename"),
+          py::arg("default_dim_value") = 1,
+          py::arg("map_input_dims") = std::unordered_map<std::string, std::vector<std::size_t>>(),
+          py::arg("skip_unknown_operators") = false,
+          py::arg("print_program_on_error") = false);
 
     m.def("get_target", [](const std::string& name) -> migraphx::target {
         if(name == "cpu")
@@ -168,13 +221,22 @@ PYBIND11_MODULE(migraphx, m)
     });
 
     m.def("generate_argument", &migraphx::generate_argument, py::arg("s"), py::arg("seed") = 0);
+    m.def("quantize_fp16",
+          &migraphx::quantize_fp16,
+          py::arg("prog"),
+          py::arg("ins_names") = std::vector<std::string>{"all"});
+    m.def("quantize_int8",
+          &migraphx::quantize_int8,
+          py::arg("prog"),
+          py::arg("t"),
+          py::arg("calibration") = std::vector<migraphx::program::parameter_map>{},
+          py::arg("ins_names")   = std::vector<std::string>{"dot", "convolution"});
 
 #ifdef HAVE_GPU
     m.def("allocate_gpu", &migraphx::gpu::allocate_gpu, py::arg("s"), py::arg("host") = false);
     m.def("to_gpu", &migraphx::gpu::to_gpu, py::arg("arg"), py::arg("host") = false);
     m.def("from_gpu", &migraphx::gpu::from_gpu);
     m.def("gpu_sync", &migraphx::gpu::gpu_sync);
-    m.def("copy_to_gpu", &migraphx::gpu::copy_to_gpu);
 #endif
 
 #ifdef VERSION_INFO

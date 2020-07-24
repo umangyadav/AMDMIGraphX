@@ -138,11 +138,43 @@ std::size_t shape::index(std::size_t i) const
         return result;
     }
 }
+
+std::vector<std::size_t> shape::multi(std::size_t i) const
+{
+    assert(this->standard());
+
+    std::vector<std::size_t> indices(lens().size());
+    std::transform(strides().begin(),
+                   strides().end(),
+                   lens().begin(),
+                   indices.begin(),
+                   [&](std::size_t stride, std::size_t len) {
+                       assert(len > 0 and stride > 0);
+                       return (i / stride) % len;
+                   });
+
+    return indices;
+}
+
 bool shape::packed() const { return this->elements() == this->element_space(); }
 
 bool shape::transposed() const
 {
-    return not std::is_sorted(this->strides().rbegin(), this->strides().rend());
+    if(this->broadcasted())
+    {
+        // TODO: Use a filter_iterator instead
+        std::vector<std::size_t> s;
+        s.reserve(this->strides().size());
+        std::copy_if(this->strides().begin(),
+                     this->strides().end(),
+                     std::back_inserter(s),
+                     [](std::size_t x) { return x != 0; });
+        return not std::is_sorted(s.rbegin(), s.rend());
+    }
+    else
+    {
+        return not std::is_sorted(this->strides().rbegin(), this->strides().rend());
+    }
 }
 
 bool shape::broadcasted() const
@@ -162,6 +194,14 @@ bool shape::scalar() const
 }
 
 bool shape::standard() const { return impl->m_standard; }
+
+shape shape::normalize_standard() const
+{
+    if(this->standard())
+        return {this->type(), this->lens()};
+    else
+        return *this;
+}
 
 std::size_t shape::element_space() const { return impl->element_space(); }
 

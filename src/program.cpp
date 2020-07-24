@@ -1,22 +1,21 @@
 #include <migraphx/program.hpp>
 #include <migraphx/stringutils.hpp>
 #include <migraphx/instruction.hpp>
-#include <migraphx/operators.hpp>
+#include <migraphx/op/identity.hpp>
 #include <migraphx/target.hpp>
 #include <migraphx/env.hpp>
 #include <migraphx/ranges.hpp>
 #include <migraphx/time.hpp>
 #include <migraphx/iterator_for.hpp>
+#include <migraphx/pass_manager.hpp>
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <set>
 #include <utility>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
-
-MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_TRACE_COMPILE)
-MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_TRACE_EVAL)
 
 struct program_impl
 {
@@ -54,21 +53,28 @@ static void print_instruction(std::ostream& os,
         os << ")";
     }
 
-    os << " -> " << ins->get_shape();
+    // skip return instruction shape
+    if(ins->name() != "@return")
+        os << " -> " << ins->get_shape();
 }
 
 template <class F>
-static void print_program(std::ostream& os, const program& p, F annonate)
+static void print_program(const program& p, F print_func)
 {
     std::unordered_map<instruction_ref, std::string> names;
     int count = 0;
 
     for(auto ins : iterator_for(p))
     {
-        std::string var_name = "@" + std::to_string(count);
+        std::string var_name;
         if(ins->name() == "@param")
         {
             var_name = any_cast<builtin::param>(ins->get_operator()).parameter;
+        }
+        else
+        {
+            var_name = "@" + std::to_string(count);
+            count++;
         }
         names.emplace(ins, var_name);
 
@@ -79,21 +85,84 @@ static void print_program(std::ostream& os, const program& p, F annonate)
             (void)arg;
         }
 
-        print_instruction(os, ins, names);
-
-        annonate(ins, names);
-
-        os << std::endl;
-
-        count++;
+        print_func(ins, names);
     }
 }
 
 program::program() : impl(std::make_unique<program_impl>()) {}
 
 program::program(program&&) noexcept = default;
-program& program::operator=(program&&) noexcept = default;
-program::~program() noexcept                    = default;
+program::~program() noexcept         = default;
+
+// copy constructor
+program::program(const program& p) { assign(p); }
+
+// copy assignment operator
+program& program::operator=(program p)
+{
+    std::swap(p.impl, this->impl);
+    return *this;
+}
+
+void program::assign(const program& p)
+{
+    // clean the current program
+    if(!impl)
+    {
+        impl = std::make_unique<program_impl>();
+    }
+    else if(!impl->instructions.empty())
+    {
+        impl->instructions.clear();
+    }
+    impl->ctx = p.impl->ctx;
+
+    std::unordered_map<instruction_ref, instruction_ref> ins_map;
+    for(auto ins : iterator_for(p))
+    {
+        instruction_ref copy_ins{};
+        if(ins->name() == "@literal")
+        {
+            auto l   = ins->get_literal();
+            copy_ins = impl->instructions.insert(impl->instructions.end(), instruction{l});
+        }
+        else if(ins->name() == "@param")
+        {
+            auto&& name = any_cast<builtin::param>(ins->get_operator()).parameter;
+            auto s      = ins->get_shape();
+            copy_ins    = impl->instructions.insert(impl->instructions.end(),
+                                                 {builtin::param{name}, std::move(s), {}});
+        }
+        else if(ins->name() == "@outline")
+        {
+            auto s = ins->get_shape();
+            copy_ins =
+                impl->instructions.insert(impl->instructions.end(), {builtin::outline{s}, s, {}});
+        }
+        else
+        {
+            // retrieve its mapped input
+            auto inputs = ins->inputs();
+            // ensure all inputs have its corresponding copy instructions
+            assert(std::all_of(
+                inputs.begin(), inputs.end(), [&](auto i) { return ins_map.count(i) > 0; }));
+            std::vector<instruction_ref> copy_inputs(inputs.size());
+            std::transform(inputs.begin(), inputs.end(), copy_inputs.begin(), [&](auto i) {
+                return ins_map[i];
+            });
+            if(ins->name() == "@return")
+            {
+                copy_ins = add_return(copy_inputs);
+            }
+            else
+            {
+                copy_ins = add_instruction(ins->get_operator(), copy_inputs);
+            }
+        }
+
+        ins_map[ins] = copy_ins;
+    }
+}
 
 instruction_ref program::add_instruction(const operation& op, std::vector<instruction_ref> args)
 {
@@ -107,11 +176,9 @@ instruction_ref program::insert_instruction(instruction_ref ins,
                args.begin(), args.end(), [&](instruction_ref x) { return has_instruction(x); }) &&
            "Argument is not an exisiting instruction");
     assert(not starts_with(op.name(), "@"));
-    // TODO: Use move
     shape r     = compute_shape(op, args);
     auto result = impl->instructions.insert(ins, {op, r, std::move(args)});
     instruction::backreference(result);
-    // assert(result->inputs() == args);
     assert(result->valid(begin()));
     return result;
 }
@@ -184,13 +251,21 @@ instruction_ref program::remove_instructions(instruction_ref first, instruction_
     // TODO: Check every element
     assert(has_instruction(first));
     std::for_each(first, last, [&](instruction& ins) { ins.clear_arguments(); });
-    assert(std::all_of(first, last, [&](instruction& ins) { return ins.outputs().empty(); }));
+    assert(std::all_of(first, last, [&](const instruction& ins) { return ins.outputs().empty(); }));
     return impl->instructions.erase(first, last);
 }
 
 instruction_ref program::move_instruction(instruction_ref src, instruction_ref dst)
 {
     impl->instructions.splice(dst, impl->instructions, src);
+    return src;
+}
+
+instruction_ref program::move_instructions(instruction_ref src, instruction_ref dst)
+{
+    this->move_instruction(src, dst);
+    for(auto ins : src->inputs())
+        this->move_instruction(ins, src);
     return src;
 }
 
@@ -211,6 +286,18 @@ instruction_ref program::add_parameter(std::string name, shape s)
     assert(get_parameter_shape(name) == shape{});
     impl->instructions.push_front({builtin::param{std::move(name)}, std::move(s), {}});
     return impl->instructions.begin();
+}
+
+instruction_ref program::add_return(std::vector<instruction_ref> args)
+{
+    assert(std::all_of(
+               args.begin(), args.end(), [&](instruction_ref x) { return has_instruction(x); }) &&
+           "Argument is not an exisiting instruction");
+    impl->instructions.push_back({builtin::returns{}, {}, args});
+    auto result = std::prev(impl->instructions.end());
+    instruction::backreference(result);
+    assert(result->valid(begin()));
+    return result;
 }
 
 shape program::get_parameter_shape(std::string name) const
@@ -277,7 +364,26 @@ std::size_t program::size() const { return impl->instructions.size(); }
 instruction_ref program::begin() const { return impl->instructions.begin(); }
 instruction_ref program::end() const { return impl->instructions.end(); }
 
-shape program::get_shape() const { return impl->instructions.back().get_shape(); }
+std::vector<shape> program::get_output_shapes() const
+{
+    auto last_ins = impl->instructions.back();
+    if(last_ins.name() == "@return")
+    {
+        auto& output_ins = last_ins.inputs();
+        std::vector<shape> output_shapes;
+        std::transform(output_ins.begin(),
+                       output_ins.end(),
+                       std::back_inserter(output_shapes),
+                       [](auto& ins) { return ins->get_shape(); });
+
+        return output_shapes;
+    }
+    // The else branch is to provide backward compatibility
+    else
+    {
+        return {last_ins.get_shape()};
+    }
+}
 
 context& program::get_context() const { return impl->ctx; }
 
@@ -288,31 +394,15 @@ instruction_ref program::validate() const
                         [&](const instruction& i) { return !i.valid(impl->instructions.begin()); });
 }
 
-void program::compile(const target& t, tracer trace)
+void program::compile(const target& t, compile_options options)
 {
     assert(this->validate() == impl->instructions.end());
     this->impl->ctx = t.get_context();
     if(enabled(MIGRAPHX_TRACE_COMPILE{}))
-        trace = tracer{std::cout};
-    trace(*this);
-    trace();
-    for(auto&& p : t.get_passes(this->impl->ctx))
-    {
-        trace("Pass: ", p.name());
-        p.apply(*this);
-        trace(*this);
-#ifndef NDEBUG
-        trace("Validate ...");
-        auto invalid = this->validate();
-        if(invalid != impl->instructions.end())
-        {
-            auto index = std::distance(impl->instructions.begin(), invalid);
-            MIGRAPHX_THROW(p.name() + " pass produces invalid program at instruction " +
-                           std::to_string(index) + ": " + invalid->name());
-        }
-        trace();
-#endif
-    }
+        options.trace = tracer{std::cout};
+    options.trace(*this);
+    options.trace();
+    run_passes(*this, t.get_passes(this->impl->ctx, options), options.trace);
     auto invalid = this->validate();
     if(invalid != impl->instructions.end())
     {
@@ -331,10 +421,10 @@ void program::finalize()
 }
 
 template <class F>
-argument generic_eval(const program& p,
-                      context& ctx,
-                      std::unordered_map<std::string, argument> params,
-                      F trace)
+std::vector<argument> generic_eval(const program& p,
+                                   context& ctx,
+                                   std::unordered_map<std::string, argument> params,
+                                   F trace)
 {
     assert(p.validate() == p.end());
     std::unordered_map<instruction_ref, argument> results;
@@ -343,27 +433,41 @@ argument generic_eval(const program& p,
     values.reserve(16);
     for(auto ins : iterator_for(p))
     {
-        if(ins->name() == "@literal")
+        const auto& name = ins->name();
+        if(name == "@literal")
         {
             results.emplace(ins, trace(ins, [&] { return ins->get_literal().get_argument(); }));
         }
-        else if(ins->name() == "@param")
+        else if(name == "@param")
         {
             results.emplace(
                 ins, trace(ins, [&] {
                     auto param_name = any_cast<builtin::param>(ins->get_operator()).parameter;
                     if(not contains(params, param_name))
                         MIGRAPHX_THROW("Parameter not found: " + param_name);
-                    auto param = params.at(param_name);
+                    auto param = params[param_name];
                     if(param.get_shape() != ins->get_shape())
                         MIGRAPHX_THROW("Incorrect shape {" + to_string(param.get_shape()) +
                                        "} for parameter: " + param_name);
                     return param;
                 }));
         }
-        else if(ins->name() == "@outline")
+        else if(name == "@outline")
         {
             results.emplace(ins, trace(ins, [&] { return argument{ins->get_shape(), nullptr}; }));
+        }
+        else if(name == "@return")
+        {
+            std::vector<argument> prog_outputs;
+            std::transform(ins->inputs().begin(),
+                           ins->inputs().end(),
+                           std::back_inserter(prog_outputs),
+                           [&](instruction_ref i) {
+                               assert(results.find(i) != results.end());
+                               return results[i];
+                           });
+
+            return prog_outputs;
         }
         else
         {
@@ -379,10 +483,11 @@ argument generic_eval(const program& p,
         }
         assert(results.find(ins) != results.end());
     }
-    return results.at(std::prev(p.end()));
+
+    return {results.at(std::prev(p.end()))};
 }
 
-argument program::eval(std::unordered_map<std::string, argument> params) const
+std::vector<argument> program::eval(parameter_map params) const
 {
     auto& ctx = this->impl->ctx;
 #ifndef NDEBUG
@@ -396,13 +501,20 @@ argument program::eval(std::unordered_map<std::string, argument> params) const
 #else
     auto check_context = [](auto f) { return f(); };
 #endif
-    if(enabled(MIGRAPHX_TRACE_EVAL{}))
+
+    auto trace_level = value_of(MIGRAPHX_TRACE_EVAL{});
+
+    if(trace_level > 0)
     {
         return generic_eval(*this, ctx, std::move(params), [&](auto& ins, auto f) {
             ctx.finish();
             std::cout << "Run instruction: ";
             this->debug_print(ins);
-            return check_context(f);
+            auto result = check_context(f);
+            ctx.finish();
+            if(trace_level > 1 and ins->name().front() != '@' and ins->name() != "load")
+                std::cout << "Ouput: " << result << std::endl;
+            return result;
         });
     }
     else
@@ -480,18 +592,31 @@ void program::perf_report(std::ostream& os, std::size_t n, parameter_map params)
     double calculate_overhead_time    = total_time - total_instruction_time;
     double calculate_overhead_percent = calculate_overhead_time * 100.0 / total_time;
 
-    print_program(os, *this, [&](auto ins, auto&&) {
+    print_program(*this, [&](auto ins, const auto& names) {
+        print_instruction(std::cout, ins, names);
+
+        // skip return instruction
+        if(ins->name() == "@return")
+            return;
+
         double avg     = common_average(ins_vec[ins]);
         double percent = std::ceil(100.0 * avg / total_instruction_time);
         os << ": " << avg << "ms, " << percent << "%";
+        os << std::endl;
     });
 
     os << std::endl;
     os << "Summary:" << std::endl;
-    for(auto&& p : op_times)
+    std::vector<std::pair<double, std::string>> op_times_sorted;
+    std::transform(op_times.begin(),
+                   op_times.end(),
+                   std::back_inserter(op_times_sorted),
+                   [](auto p) { return std::make_pair(p.second, p.first); });
+    std::sort(op_times_sorted.begin(), op_times_sorted.end(), std::greater<>{});
+    for(auto&& p : op_times_sorted)
     {
-        auto&& name    = p.first;
-        double avg     = p.second;
+        auto&& name    = p.second;
+        double avg     = p.first;
         double percent = std::ceil(100.0 * avg / total_instruction_time);
         os << name << ": " << avg << "ms, " << percent << "%" << std::endl;
     }
@@ -510,8 +635,18 @@ void program::perf_report(std::ostream& os, std::size_t n, parameter_map params)
 void program::debug_print() const { std::cout << *this << std::endl; }
 void program::debug_print(instruction_ref ins) const
 {
+    if(ins == this->end())
+    {
+        std::cout << "End instruction" << std::endl;
+        return;
+    }
+    if(not has_instruction(ins))
+    {
+        std::cout << "Instruction not part of program" << std::endl;
+        return;
+    }
     std::stringstream ss;
-    print_program(ss, *this, [&](auto x, auto&& names) {
+    print_program(*this, [&](auto x, const auto& names) {
         if(x == ins)
         {
             print_instruction(std::cout, x, names);
@@ -526,17 +661,169 @@ void program::debug_print(const std::vector<instruction_ref>& inss) const
     std::cout << std::endl;
 }
 
+static std::string enclose_name(const std::string& name)
+{
+    return '"' + replace_string(name, "\"", "\\\"") + '"';
+}
+
+void program::print_graph(std::ostream& os, bool brief) const
+{
+    os << "digraph {" << std::endl;
+    os << "\trankdir=LR;" << std::endl;
+    print_program(*this, [&](auto ins, const auto& names) {
+        std::string label;
+        if(brief)
+            label = ins->name();
+        else
+            label = to_string(ins->get_operator());
+        os << "\t" << enclose_name(names.at(ins)) << "[label=" << enclose_name(label) << "]";
+        os << ";" << std::endl;
+        if(!ins->inputs().empty())
+        {
+            for(auto&& arg : ins->inputs())
+            {
+                os << "\t" << enclose_name(names.at(arg)) << " -> " << enclose_name(names.at(ins));
+                if(not brief)
+                    os << "[label=" << enclose_name(to_string(ins->get_shape())) << "]";
+                os << ";" << std::endl;
+            }
+        }
+    });
+    os << "}" << std::endl;
+}
+
+static std::string cpp_var_name(const std::string& name)
+{
+    return "m" + replace_string(name, "@", "x");
+}
+
+static std::string cpp_op_var(const std::string& name, instruction_ref ins)
+{
+    return replace_string(name, "@", ins->name());
+}
+
+static void print_op_attributes(std::ostream& os, const std::string& name, const operation& op)
+{
+    std::string x = to_string(op);
+    if(contains(x, "["))
+    {
+        auto start                 = x.find('[');
+        auto end                   = x.find(']');
+        std::string attribute_text = x.substr(start + 1, end - start - 1);
+        std::vector<std::string> attributes;
+        for(auto&& attribute : split_string(attribute_text, ','))
+        {
+            if(contains(attribute, '='))
+                attributes.push_back(attribute);
+            else
+                attributes.back() += "," + attribute;
+        }
+        for(auto&& attribute : attributes)
+        {
+            auto p     = split_string(attribute, '=');
+            auto key   = p.front();
+            auto value = p.back();
+            if(contains({"bn_mode", "padding_mode"}, key))
+                continue;
+            if(key == "mode")
+                value = enclose_name(trim(value));
+            os << name << "." << key << " = " << value << ";" << std::endl;
+        }
+    }
+}
+
+static void print_cpp_shape(std::ostream& os, const migraphx::shape& s)
+{
+    os << "migraphx::shape{migraphx::shape::" << s.type_string();
+    os << ", {" << to_string_range(s.lens()) << "}";
+    if(not s.standard())
+        os << ", {" << to_string_range(s.strides()) << "}";
+    os << "}";
+}
+
+void program::print_cpp(std::ostream& os) const
+{
+    os << "migraphx::program p;" << std::endl;
+    // cppcheck-suppress variableScope
+    unsigned long seed = 0;
+    print_program(*this, [&](auto ins, const auto& names) {
+        auto op = cpp_op_var(names.at(ins), ins);
+        if(ins->name().front() != '@')
+        {
+            os << "migraphx::op::" << ins->name() << " " << op << ";" << std::endl;
+            print_op_attributes(os, op, ins->get_operator());
+        }
+        os << "auto " << cpp_var_name(names.at(ins)) << " = ";
+        if(ins->name() == "@literal")
+        {
+            os << "p.add_literal(";
+            bool use_abs = false;
+            ins->get_literal().visit([&](auto v) {
+                use_abs = std::none_of(v.begin(), v.end(), [](auto x) { return x < 0; });
+            });
+            if(use_abs)
+                os << "migraphx::abs(";
+            os << "migraphx::generate_literal(";
+            print_cpp_shape(os, ins->get_shape());
+            os << ", " << seed << ")";
+            if(use_abs)
+                os << ")";
+            os << ");" << std::endl;
+            seed++;
+        }
+        else if(ins->name() == "@param")
+        {
+            std::string name = any_cast<builtin::param>(ins->get_operator()).parameter;
+            os << "p.add_parameter(" << enclose_name(name) << ",";
+            print_cpp_shape(os, ins->get_shape());
+            os << ");" << std::endl;
+        }
+        else
+        {
+            os << "p.add_instruction(" << op;
+            for(auto input : ins->inputs())
+            {
+                os << ", " << cpp_var_name(names.at(input));
+            }
+            os << ");" << std::endl;
+        }
+    });
+}
+
 void program::dry_run(std::unordered_map<std::string, argument> params) const
 {
     auto& ctx = this->impl->ctx;
     generic_eval(*this, ctx, std::move(params), [](auto&&...) { return argument{}; });
 }
 
+void program::annotate(std::ostream& os, std::function<void(instruction_ref)> a) const
+{
+    print_program(*this, [&](auto ins, const auto& names) {
+        print_instruction(os, ins, names);
+        a(ins);
+        os << std::endl;
+    });
+}
+
+program& program::sort()
+{
+    fix([&](auto self, auto ins) {
+        this->move_instruction(ins, this->begin());
+        for(auto child : ins->inputs())
+            self(child);
+    })(std::prev(this->end()));
+    assert(this->validate() == this->end());
+    return *this;
+}
+
 bool operator==(const program& x, const program& y) { return to_string(x) == to_string(y); }
 
 std::ostream& operator<<(std::ostream& os, const program& p)
 {
-    print_program(os, p, [](auto&&...) {});
+    print_program(p, [&](auto ins, const auto& names) {
+        print_instruction(os, ins, names);
+        os << std::endl;
+    });
     return os;
 }
 

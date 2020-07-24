@@ -90,6 +90,7 @@ else()
                 -Wno-double-promotion
                 -Wno-exit-time-destructors
                 -Wno-extra-semi
+                -Wno-extra-semi-stmt
                 -Wno-float-conversion
                 -Wno-gnu-anonymous-struct
                 -Wno-gnu-zero-variadic-macro-arguments
@@ -100,11 +101,13 @@ else()
                 -Wno-sign-conversion
                 -Wno-unused-command-line-argument
                 -Wno-weak-vtables
+                -Wno-c99-extensions
+                # -Wno-c++2a-designator
             )
         else()
             list(APPEND CMAKE_COMPILER_WARNINGS
                 -Wno-missing-field-initializers
-                -Wno-deprecated-declarations
+                # -Wno-deprecated-declarations
             )
         endif()
         add_definitions(${CMAKE_COMPILER_WARNINGS})
