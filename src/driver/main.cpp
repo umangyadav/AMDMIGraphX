@@ -30,10 +30,11 @@ struct loader
     std::string model;
     std::string file;
     std::string file_type;
-    unsigned batch = 1;
-    bool is_nhwc   = true;
-    unsigned trim  = 0;
-    bool optimize  = false;
+    unsigned batch              = 1;
+    bool is_nhwc                = true;
+    unsigned trim               = 0;
+    bool optimize               = false;
+    bool skip_unknown_operators = false;
 
     void parse(argument_parser& ap)
     {
@@ -43,6 +44,10 @@ struct loader
         ap(file_type, {"--tf"}, ap.help("Load as tensorflow"), ap.set_value("tf"));
         ap(batch, {"--batch"}, ap.help("Set batch size for model"));
         ap(is_nhwc, {"--nhwc"}, ap.help("Treat tensorflow format as nhwc"), ap.set_value(true));
+        ap(skip_unknown_operators,
+           {"--skip-unknown-operators"},
+           ap.help("Skip unknown operators when parsing and continue to parse."),
+           ap.set_value(true));
         ap(is_nhwc, {"--nchw"}, ap.help("Treat tensorflow format as nchw"), ap.set_value(false));
         ap(trim, {"--trim", "-t"}, ap.help("Trim instructions from the end"));
         ap(optimize, {"--optimize", "-O"}, ap.help("Optimize when reading"), ap.set_value(true));
@@ -62,9 +67,17 @@ struct loader
             }
             std::cout << "Reading: " << file << std::endl;
             if(file_type == "onnx")
-                p = parse_onnx(file, onnx_options{batch});
+            {
+                onnx_options options;
+                options.default_dim_value      = batch;
+                options.skip_unknown_operators = skip_unknown_operators;
+                options.print_program_on_error = true;
+                p                              = parse_onnx(file, options);
+            }
             else if(file_type == "tf")
+            {
                 p = parse_tf(file, tf_options{is_nhwc, batch});
+            }
         }
         else
         {
@@ -119,7 +132,7 @@ struct compiler
         ap(offload_copy,
            {"--enable-offload-copy"},
            ap.help("Enable implicit offload copying"),
-           ap.set_value(false));
+           ap.set_value(true));
         ap(quantize, {"--fp16"}, ap.help("Quantize for fp16"), ap.set_value(q_fp16));
         ap(quantize, {"--int8"}, ap.help("Quantize for int8"), ap.set_value(q_int8));
         ap(fill1, {"--fill1"}, ap.help("Fill parameter with 1s"), ap.append());
@@ -213,9 +226,14 @@ struct verify : command<verify>
     double tolerance     = 80;
     bool per_instruction = false;
     bool reduce          = false;
+    bool offload_copy    = false;
     void parse(argument_parser& ap)
     {
         l.parse(ap);
+        ap(offload_copy,
+           {"--enable-offload-copy"},
+           ap.help("Enable implicit offload copying"),
+           ap.set_value(true));
         ap(tolerance, {"--tolerance"}, ap.help("Tolerance for errors"));
         ap(per_instruction,
            {"-i", "--per-instruction"},
@@ -229,17 +247,20 @@ struct verify : command<verify>
         auto p = l.load();
         std::cout << p << std::endl;
 
+        compile_options options;
+        options.offload_copy = offload_copy;
+
         if(per_instruction)
         {
-            verify_instructions(p, tolerance);
+            verify_instructions(p, options, tolerance);
         }
         else if(reduce)
         {
-            verify_reduced_program(p, tolerance);
+            verify_reduced_program(p, options, tolerance);
         }
         else
         {
-            verify_program(l.file, p, tolerance);
+            verify_program(l.file, p, options, tolerance);
         }
     }
 };

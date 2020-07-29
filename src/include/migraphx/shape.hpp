@@ -14,6 +14,7 @@
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 
+struct value;
 struct shape_impl;
 
 struct shape
@@ -93,7 +94,7 @@ struct shape
     {
         assert(std::distance(start, last) <= this->lens().size());
         assert(this->lens().size() == this->strides().size());
-        return std::inner_product(start, last, this->strides().begin(), std::size_t{0});
+        return std::inner_product(start, last, this->strides().begin(), std::size_t{0}); // NOLINT
     }
 
     /// Map element index to space index
@@ -113,6 +114,8 @@ struct shape
     bool standard() const;
     /// Returns true if all strides are equal to 0 (scalar tensor)
     bool scalar() const;
+
+    shape normalize_standard() const;
 
     friend bool operator==(const shape& x, const shape& y);
     friend bool operator!=(const shape& x, const shape& y);
@@ -182,12 +185,16 @@ struct shape
     }
 
     std::string type_string() const;
+    static type_t parse_type(const std::string& s);
 
     private:
     std::shared_ptr<const shape_impl> impl;
 
     std::size_t element_space() const;
 };
+
+void migraphx_to_value(value& v, const shape& s);
+void migraphx_from_value(const value& v, shape& s);
 
 } // namespace MIGRAPHX_INLINE_NS
 } // namespace migraphx
