@@ -143,6 +143,7 @@ struct onnx_parser
         add_mem_op("Tile", &onnx_parser::parse_tile);
         add_mem_op("Transpose", &onnx_parser::parse_transpose);
         add_mem_op("Unsqueeze", &onnx_parser::parse_unsqueeze);
+        add_mem_op("Where", &onnx_parser::parse_where);
 
         // init the activation function map
         init_actv_func();
@@ -2328,6 +2329,34 @@ struct onnx_parser
         MIGRAPHX_THROW("PARSE_ATEN: unsupported custom operator");
     }
 
+    instruction_ref
+    parse_where(const std::string&, const node_info&, std::vector<instruction_ref> args)
+    {
+        auto arg0 = args[1];
+        auto arg1 = args[2];
+        if(arg0->get_shape().lens() != arg1->get_shape().lens())
+        {
+            // Get lengths for both arguments
+            auto s0       = arg0->get_shape().lens();
+            auto s1       = arg1->get_shape().lens();
+            auto out_lens = compute_broadcasted_lens(s0, s1);
+
+            auto l0 = arg0;
+            if(arg0->get_shape().lens() != out_lens)
+                l0 = prog.add_instruction(op::multibroadcast{out_lens}, arg0);
+
+            auto l1 = arg1;
+            if(arg1->get_shape().lens() != out_lens)
+                l1 = prog.add_instruction(op::multibroadcast{out_lens}, arg1);
+
+            return prog.add_instruction(op::where{}, args[0], l0, l1);
+        }
+        else
+        {
+            return prog.add_instruction(op::where{}, std::move(args));
+        }
+    }
+
     void parse_from(std::istream& is)
     {
         onnx::ModelProto model;
@@ -2508,7 +2537,7 @@ struct onnx_parser
             case onnx::TensorProto::INT16:
             case onnx::TensorProto::INT32:
             case onnx::TensorProto::BOOL: return create_literal(shape::int32_type, dims, s.data());
-            case onnx::TensorProto::UINT8:
+            case onnx::TensorProto::UINT8: return create_literal(shape::int32_type, dims, s.data());
             case onnx::TensorProto::STRING:
             case onnx::TensorProto::UNDEFINED:
             case onnx::TensorProto::UINT32:
@@ -2636,6 +2665,7 @@ struct onnx_parser
         case 5: return shape::int16_type;
         case 6: return shape::int32_type;
         case 7: return shape::int64_type;
+        case 9: return shape::uint8_type;
         case 10: return shape::half_type;
         case 11: return shape::double_type;
         case 12: return shape::uint32_type;
