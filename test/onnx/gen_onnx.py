@@ -1112,6 +1112,21 @@ def embedding_bag_offset_test():
 
 
 @onnx_test
+def equal_test():
+    x = helper.make_tensor_value_info('x', TensorProto.FLOAT, [5])
+    y = helper.make_tensor_value_info('y', TensorProto.FLOAT, [5])
+    z = helper.make_tensor_value_info('z', TensorProto.FLOAT, [5])
+
+    node = onnx.helper.make_node(
+        'Equal',
+        inputs=['x', 'y'],
+        outputs=['z'],
+    )
+
+    return ([node], [x, y], [z])
+
+
+@onnx_test
 def erf_test():
     x = helper.make_tensor_value_info('x', TensorProto.FLOAT, [10, 15])
     y = helper.make_tensor_value_info('y', TensorProto.FLOAT, [10, 15])
