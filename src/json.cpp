@@ -55,7 +55,7 @@ void to_json(json& j, const value& val) { value_to_json(val, j); }
 std::string to_json_string(const value& val)
 {
     json j;
-    value_to_json(val, j);
+    to_json(j, val);
     return j.dump();
 }
 
@@ -103,11 +103,8 @@ void from_json(const json& j, value& val) { val = value_from_json(j); }
 
 migraphx::value from_json_string(const std::string& str)
 {
-    migraphx::value val;
     json j = json::parse(str);
-    val    = value_from_json(j);
-
-    return val;
+    return j.get<value>();
 }
 
 } // namespace MIGRAPHX_INLINE_NS
