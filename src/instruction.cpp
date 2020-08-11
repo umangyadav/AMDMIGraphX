@@ -156,8 +156,7 @@ void instruction::replace(instruction_ref ins,
     backreference(ins);
 }
 
-void instruction::replace(instruction_ref ins,
-                          std::vector<instruction_ref> args)
+void instruction::replace(instruction_ref ins, std::vector<instruction_ref> args)
 {
     ins->replace(std::move(args));
     ins->recompute_shape();

@@ -96,8 +96,8 @@ std::vector<shape> reduce_dims(const std::vector<shape>& shapes)
 {
     if(enabled(MIGRAPHX_TRACE_REDUCE_DIMS{}))
     {
-        std::cout << "reduce_dims: " <<  std::endl;
-        for(const auto&s:shapes)
+        std::cout << "reduce_dims: " << std::endl;
+        for(const auto& s : shapes)
             std::cout << s << std::endl;
     }
     if(shapes.empty())
@@ -119,8 +119,8 @@ std::vector<shape> reduce_dims(const std::vector<shape>& shapes)
     result.erase(result.begin() + shapes.size(), result.end());
     if(enabled(MIGRAPHX_TRACE_REDUCE_DIMS{}))
     {
-        std::cout << "reduced: " <<  std::endl;
-        for(const auto&s:result)
+        std::cout << "reduced: " << std::endl;
+        for(const auto& s : result)
             std::cout << s << std::endl;
     }
     return result;

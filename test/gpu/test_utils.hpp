@@ -185,9 +185,9 @@ void run_verify_program()
     // std::cout << migraphx::get_type_name<V>() << std::endl;
     migraphx::program cpu_prog;
     migraphx::program gpu_prog;
-    try 
+    try
     {
-        bool passed = true;
+        bool passed    = true;
         auto cpu_arg_f = detach_async([&] { return run_cpu<V>(cpu_prog); });
         auto gpu_arg   = run_gpu<V>(gpu_prog);
         auto cpu_arg   = cpu_arg_f.get();

@@ -411,7 +411,7 @@ void program::compile(const target& t, compile_options options)
         MIGRAPHX_THROW("Invalid program from compilation at instruction " + std::to_string(index));
     }
     // if (out_shapes != this->get_output_shapes())
-        // MIGRAPHX_THROW("Compilation has changed output shapes.");
+    // MIGRAPHX_THROW("Compilation has changed output shapes.");
     this->finalize();
 }
 
@@ -499,14 +499,14 @@ std::vector<argument> program::eval(parameter_map params) const
         assert(is_shared(ctx, sctx));
         auto x = f();
         assert(x.get_shape() == ins->get_shape());
-        sctx   = ctx;
+        sctx = ctx;
         return x;
     };
 #else
     auto check_context = [](auto f) {
         auto x = f();
         assert(x.get_shape() == ins->get_shape());
-        return x; 
+        return x;
     };
 #endif
 
@@ -527,8 +527,9 @@ std::vector<argument> program::eval(parameter_map params) const
     }
     else
     {
-        return generic_eval(
-            *this, ctx, std::move(params), [&](auto& ins, auto f) { return check_context(ins, f); });
+        return generic_eval(*this, ctx, std::move(params), [&](auto& ins, auto f) {
+            return check_context(ins, f);
+        });
     }
 }
 

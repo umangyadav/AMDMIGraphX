@@ -74,13 +74,13 @@ struct slice
         {
             MIGRAPHX_THROW("SLICE: starts and ends does not match");
         }
-        if (tuned_starts >= axis_lens)
+        if(tuned_starts >= axis_lens)
         {
-            MIGRAPHX_THROW("SLICE: starts is out of range: " + to_string_range(tuned_starts));  
+            MIGRAPHX_THROW("SLICE: starts is out of range: " + to_string_range(tuned_starts));
         }
-        if (tuned_ends > axis_lens)
+        if(tuned_ends > axis_lens)
         {
-            MIGRAPHX_THROW("SLICE: ends is out of range: " +  to_string_range(tuned_ends));  
+            MIGRAPHX_THROW("SLICE: ends is out of range: " + to_string_range(tuned_ends));
         }
     }
 
