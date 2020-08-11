@@ -30,6 +30,7 @@
 #endif
 
 MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_TRACE_GPU_COMPILE)
+MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_TRACE_CPU_COMPILE)
 
 static std::array<std::function<void()>, 2>& handlers()
 {
@@ -134,7 +135,7 @@ std::vector<migraphx::argument> run_cpu(migraphx::program& p)
     V v;
     p = v.create_program();
     auto_print pp{p, 0};
-    compile_check(p, migraphx::cpu::target{});
+    compile_check(p, migraphx::cpu::target{}, migraphx::enabled(MIGRAPHX_TRACE_CPU_COMPILE{}));
     migraphx::program::parameter_map m;
     for(auto&& x : p.get_parameter_shapes())
     {
@@ -184,19 +185,31 @@ void run_verify_program()
     // std::cout << migraphx::get_type_name<V>() << std::endl;
     migraphx::program cpu_prog;
     migraphx::program gpu_prog;
-    auto cpu_arg_f = detach_async([&] { return run_cpu<V>(cpu_prog); });
-    auto gpu_arg   = run_gpu<V>(gpu_prog);
-    auto cpu_arg   = cpu_arg_f.get();
-
-    bool passed = true;
-    passed &= (cpu_arg.size() == gpu_arg.size());
-    std::size_t num = cpu_arg.size();
-    for(std::size_t i = 0; ((i < num) and passed); ++i)
+    try 
     {
-        passed &= verify_args(migraphx::get_type_name<V>(), cpu_arg[i], gpu_arg[i]);
-    }
+        bool passed = true;
+        auto cpu_arg_f = detach_async([&] { return run_cpu<V>(cpu_prog); });
+        auto gpu_arg   = run_gpu<V>(gpu_prog);
+        auto cpu_arg   = cpu_arg_f.get();
 
-    if(not passed)
+        passed &= (cpu_arg.size() == gpu_arg.size());
+        std::size_t num = cpu_arg.size();
+        for(std::size_t i = 0; ((i < num) and passed); ++i)
+        {
+            CHECK(cpu_arg[i].get_shape() == gpu_arg[i].get_shape());
+            passed &= verify_args(migraphx::get_type_name<V>(), cpu_arg[i], gpu_arg[i]);
+        }
+        if(not passed)
+        {
+            V v;
+            auto p = v.create_program();
+            std::cout << p << std::endl;
+            std::cout << "cpu:\n" << cpu_prog << std::endl;
+            std::cout << "gpu:\n" << gpu_prog << std::endl;
+            std::cout << std::endl;
+        }
+    }
+    catch(...)
     {
         V v;
         auto p = v.create_program();
@@ -204,7 +217,9 @@ void run_verify_program()
         std::cout << "cpu:\n" << cpu_prog << std::endl;
         std::cout << "gpu:\n" << gpu_prog << std::endl;
         std::cout << std::endl;
+        throw;
     }
+
     std::set_terminate(nullptr);
 }
 

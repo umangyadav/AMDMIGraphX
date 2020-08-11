@@ -1,7 +1,10 @@
 #include <migraphx/reduce_dims.hpp>
+#include <migraphx/env.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
+
+MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_TRACE_REDUCE_DIMS);
 
 bool reduce_dim(std::vector<shape>& shapes, std::size_t n)
 {
@@ -91,6 +94,12 @@ shape mask_shape(const shape& s, const std::vector<std::size_t>& lens)
 
 std::vector<shape> reduce_dims(const std::vector<shape>& shapes)
 {
+    if(enabled(MIGRAPHX_TRACE_REDUCE_DIMS{}))
+    {
+        std::cout << "reduce_dims: " <<  std::endl;
+        for(const auto&s:shapes)
+            std::cout << s << std::endl;
+    }
     if(shapes.empty())
         return {};
     auto result = shapes;
@@ -108,6 +117,12 @@ std::vector<shape> reduce_dims(const std::vector<shape>& shapes)
     }
     reduce_dim_all(result);
     result.erase(result.begin() + shapes.size(), result.end());
+    if(enabled(MIGRAPHX_TRACE_REDUCE_DIMS{}))
+    {
+        std::cout << "reduced: " <<  std::endl;
+        for(const auto&s:result)
+            std::cout << s << std::endl;
+    }
     return result;
 }
 

@@ -219,6 +219,11 @@ std::string shape::type_string() const
     MIGRAPHX_THROW("Invalid type");
 }
 
+void shape::debug_print() const
+{
+    std::cout << *this << std::endl;
+}
+
 bool operator==(const shape& x, const shape& y)
 {
     return x.type() == y.type() && x.lens() == y.lens() && x.strides() == y.strides();

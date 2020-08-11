@@ -74,6 +74,14 @@ struct slice
         {
             MIGRAPHX_THROW("SLICE: starts and ends does not match");
         }
+        if (tuned_starts >= axis_lens)
+        {
+            MIGRAPHX_THROW("SLICE: starts is out of range: " + to_string_range(tuned_starts));  
+        }
+        if (tuned_ends > axis_lens)
+        {
+            MIGRAPHX_THROW("SLICE: ends is out of range: " +  to_string_range(tuned_ends));  
+        }
     }
 
     auto fix_index(const std::vector<std::size_t>& lens, std::size_t axis, int64_t index) const

@@ -187,6 +187,8 @@ struct shape
     std::string type_string() const;
     static type_t parse_type(const std::string& s);
 
+    void debug_print() const;
+
     private:
     std::shared_ptr<const shape_impl> impl;
 

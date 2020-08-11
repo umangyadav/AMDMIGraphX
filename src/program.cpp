@@ -397,6 +397,7 @@ instruction_ref program::validate() const
 void program::compile(const target& t, compile_options options)
 {
     assert(this->validate() == impl->instructions.end());
+    auto out_shapes = this->get_output_shapes();
     this->impl->ctx = t.get_context();
     if(enabled(MIGRAPHX_TRACE_COMPILE{}))
         options.trace = tracer{std::cout};
@@ -409,6 +410,8 @@ void program::compile(const target& t, compile_options options)
         auto index = std::distance(impl->instructions.begin(), invalid);
         MIGRAPHX_THROW("Invalid program from compilation at instruction " + std::to_string(index));
     }
+    // if (out_shapes != this->get_output_shapes())
+        // MIGRAPHX_THROW("Compilation has changed output shapes.");
     this->finalize();
 }
 
@@ -492,14 +495,19 @@ std::vector<argument> program::eval(parameter_map params) const
     auto& ctx = this->impl->ctx;
 #ifndef NDEBUG
     auto sctx          = ctx;
-    auto check_context = [&](auto f) {
+    auto check_context = [&](auto ins, auto f) {
         assert(is_shared(ctx, sctx));
         auto x = f();
+        assert(x.get_shape() == ins->get_shape());
         sctx   = ctx;
         return x;
     };
 #else
-    auto check_context = [](auto f) { return f(); };
+    auto check_context = [](auto f) {
+        auto x = f();
+        assert(x.get_shape() == ins->get_shape());
+        return x; 
+    };
 #endif
 
     auto trace_level = value_of(MIGRAPHX_TRACE_EVAL{});
@@ -510,7 +518,7 @@ std::vector<argument> program::eval(parameter_map params) const
             ctx.finish();
             std::cout << "Run instruction: ";
             this->debug_print(ins);
-            auto result = check_context(f);
+            auto result = check_context(ins, f);
             ctx.finish();
             if(trace_level > 1 and ins->name().front() != '@' and ins->name() != "load")
                 std::cout << "Ouput: " << result << std::endl;
@@ -520,7 +528,7 @@ std::vector<argument> program::eval(parameter_map params) const
     else
     {
         return generic_eval(
-            *this, ctx, std::move(params), [&](auto&, auto f) { return check_context(f); });
+            *this, ctx, std::move(params), [&](auto& ins, auto f) { return check_context(ins, f); });
     }
 }
 
