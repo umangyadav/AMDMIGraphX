@@ -69,9 +69,17 @@ struct slice
                            return (i < 0) ? (i + dim) : i;
                        });
 
-        if(!(tuned_ends >= tuned_starts))
+        if(std::equal(tuned_starts.begin(), tuned_starts.end(), tuned_ends.begin(), tuned_ends.begin(), std::greater<>{}))
         {
             MIGRAPHX_THROW("SLICE: starts and ends does not match");
+        }
+        if(std::equal(tuned_starts.begin(), tuned_starts.end(), axis_lens.begin(), axis_lens.begin(), std::greater_equal<>{}))
+        {
+            MIGRAPHX_THROW("SLICE: starts is out of range: " + to_string_range(tuned_starts));
+        }
+        if(std::equal(tuned_ends.begin(), tuned_ends.end(), axis_lens.begin(), axis_lens.begin(), std::greater<>{}))
+        {
+            MIGRAPHX_THROW("SLICE: ends is out of range: " + to_string_range(tuned_ends));
         }
     }
 

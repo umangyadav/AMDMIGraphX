@@ -34,7 +34,7 @@ void throws_shape(const migraphx::operation& op, Ts... xs)
     bool thrown = test::throws([&] { p.add_instruction(op, args); });
     if(not thrown)
     {
-        std::cout << "FAILED: No error found for " << op.name() << ": ";
+        std::cout << "FAILED: No error found for " << op << ": ";
         for(auto&& s : shapes)
             std::cout << "    " << s << std::endl;
     }
@@ -257,6 +257,9 @@ TEST_CASE(slice_shape)
     expect_shape(migraphx::shape{migraphx::shape::int32_type, {2, 2, 1}, {6, 3, 1}},
                  migraphx::op::slice{{2}, {2}, {10}},
                  input);
+    throws_shape(migraphx::op::slice{{3}, {0}, {1}}, input);
+    throws_shape(migraphx::op::slice{{1}, {3}, {4}}, input);
+    throws_shape(migraphx::op::slice{{1}, {1}, {4}}, input);
 }
 
 TEST_CASE(multibroadcast)
