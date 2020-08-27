@@ -17,6 +17,8 @@
 #include <migraphx/matcher.hpp>
 #include <migraphx/literal.hpp>
 #include <migraphx/algorithm.hpp>
+#include <migraphx/permutation.hpp>
+#include <map>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
@@ -892,6 +894,70 @@ struct find_split_transpose
             .bind("trans");
     }
 
+    static std::vector<std::int64_t> get_perm(const operation& op)
+    {
+        return any_cast<op::transpose>(op).dims;
+    }
+
+    static operation get_common_perm(const std::vector<instruction_ref>& vec_trans)
+    {
+        std::map<std::vector<std::int64_t>, int> perms;
+        for(auto ins:vec_trans)
+        {
+            auto perm = get_perm(ins->get_operator());
+            perms[perm]++;
+        }
+        auto it = std::max_element(perms.begin(), perms.end(), [](const auto& x, const auto& y) {
+            return x.second < y.second;
+        });
+        return op::transpose{it->first};
+    }
+
+    static std::vector<instruction_ref> layer_transpose(program& p, const std::vector<instruction_ref>& vec_trans)
+    {
+        std::vector<instruction_ref> result;
+        auto common = get_common_perm(vec_trans);
+        auto ipermutation = invert_permutation(get_perm(common));
+        for(auto ins:vec_trans)
+        {
+            if (ins->get_operator() == common)
+            {
+                result.push_back(ins);
+            }
+            else
+            {
+                auto nperm = reorder_dims(invert_permutation(get_perm(ins->get_operator())), ipermutation);
+                auto x = p.insert_instruction(ins, common, ins->inputs().front());
+                auto y = p.insert_instruction(std::next(ins), op::transpose{nperm}, x);
+                p.replace_instruction(ins, y);
+                result.push_back(x);
+            }
+        }
+        return result;
+    }
+
+    static std::vector<operation> get_post_transpose(program& p, const std::vector<instruction_ref>& vec_trans)
+    {
+        std::vector<operation> result;
+        auto common = get_common_perm(vec_trans);
+        auto ipermutation = invert_permutation(get_perm(common));
+        p.debug_print(vec_trans);
+        for(auto ins:vec_trans)
+        {
+            if (ins->get_operator() == common)
+            {
+                result.push_back(op::transpose{});
+            }
+            else
+            {
+                auto nperm = reorder_dims(invert_permutation(get_perm(ins->get_operator())), ipermutation);
+                result.push_back(op::transpose{nperm});
+                p.replace_instruction(ins, common, ins->inputs().front());
+            }
+        }
+        return result;
+    }
+
     void apply(program& p, match::matcher_result r) const
     {
         auto slc   = r.instructions["slice"];
@@ -909,6 +975,8 @@ struct find_split_transpose
             assert(i->outputs().size() == 1);
             return i->outputs().front();
         });
+
+        vec_trans = layer_transpose(p, vec_trans);
 
         // all transpose are the same
         auto perm = any_cast<op::transpose>(trans->get_operator()).dims;
