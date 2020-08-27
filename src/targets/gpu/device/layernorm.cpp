@@ -22,6 +22,29 @@ struct vector_type<vec<T, N>>
 template <class T>
 using vector_type_t = typename vector_type<T>::type;
 
+template<class T, class U, class Op>
+__device__ auto vec_reduce(T x, U, Op)
+{
+    return x;
+}
+
+template<class T, index_int N, class U, class Op>
+__device__ auto vec_reduce(vec<T, N> x, U init, Op op)
+{
+    T r = init;
+    for(index_int k = 0; k < N; k++)
+        r = op(r, x[k]);
+    return r;
+}
+
+template <index_int N, class Op, class T, class F>
+__device__ auto auto_block_reduce(index idx, Op op, T init, index_int n, F f)
+{
+    using type = decltype(f(0));
+    auto r = block_reduce<N>(idx, op, init, n, f);
+    return vec_reduce(r, 0, op);
+}
+
 // m = x - mean(x)
 // m / sqrt(mean(m ^ 2) + 1e-12)
 
