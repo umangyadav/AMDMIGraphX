@@ -9,6 +9,7 @@
 #include <migraphx/gpu/add.hpp>
 #include <migraphx/gpu/mul.hpp>
 #include <migraphx/gpu/gemm.hpp>
+#include <migraphx/gpu/softmax.hpp>
 #include <migraphx/gpu/device/layernorm.hpp>
 #include <migraphx/gpu/device/gelu.hpp>
 #include <migraphx/gpu/device/mul_add.hpp>
@@ -17,6 +18,7 @@
 #include <migraphx/gpu/device/add_sigmoid.hpp>
 #include <migraphx/gpu/device/add_tanh.hpp>
 #include <migraphx/gpu/device/mul_add_relu.hpp>
+#include <migraphx/gpu/device/softmax.hpp>
 #include <migraphx/gpu/device/add.hpp>
 #include <migraphx/instruction.hpp>
 #include <migraphx/register_op.hpp>
@@ -268,6 +270,38 @@ struct hip_mul_add_relu : ternary_device<hip_mul_add_relu, &device::mul_add_relu
 {
 };
 MIGRAPHX_REGISTER_OP(hip_mul_add_relu)
+
+struct hip_mul_add_softmax
+{
+    hip_softmax op;
+
+    template <class Self, class F>
+    static auto reflect(Self& self, F f)
+    {
+        return migraphx::reflect(self.op, f);
+    }
+
+    std::string name() const { return "gpu::mul_add_softmax"; }
+    shape compute_shape(const std::vector<shape>& inputs) const
+    {
+        check_shapes{inputs, *this}.has(4);
+        return op.compute_shape({inputs.front(), inputs.back()});
+    }
+    argument
+    compute(context& ctx, const shape&, const std::vector<argument>& args) const
+    {
+        auto n_dim      = args.front().get_shape().lens().size();
+        auto axis = op.op.axis;
+        auto tuned_axis = (axis < 0) ? axis + n_dim : axis;
+        device::mul_add_softmax(ctx.get_stream().get(), args.back(), args.at(0), args.at(1), args.at(2), tuned_axis);
+        return args.back();
+    }
+    std::ptrdiff_t output_alias(const std::vector<shape>& shapes) const
+    {
+        return shapes.size() - 1;
+    }
+};
+MIGRAPHX_REGISTER_OP(hip_mul_add_softmax)
 
 void move_broadcasted_back(std::vector<instruction_ref>& args)
 {
@@ -596,6 +630,26 @@ struct find_mul_add_relu
     }
 };
 
+struct find_mul_add_softmax
+{
+    auto matcher() const
+    {
+        return match::name("gpu::softmax")(
+            match::arg(0)(match::name("gpu::mul_add")(match::used_once()).bind("mul_add")));
+    }
+
+    void apply(program& p, match::matcher_result r) const
+    {
+        auto mul_add_ins = r.instructions["mul_add"];
+        auto ins         = r.result;
+        auto args        = mul_add_ins->inputs();
+
+        // Use the allocation from the softmax operator
+        args.back() = ins->inputs().back();
+        p.replace_instruction(ins, hip_mul_add_softmax{}, args);
+    }
+};
+
 struct miopen_conv_bias
 {
     op::convolution op;
@@ -808,6 +862,7 @@ void fuse_ops::apply(program& p) const
                         find_add_gelu_new{},
                         find_mul_add{},
                         find_mul_add_relu{},
+                        find_mul_add_softmax{},
                         find_add_unary{"gpu::relu", hip_add_relu{}, hip_triadd_relu{}},
                         find_add_unary{"gpu::sigmoid", hip_add_sigmoid{}, hip_triadd_sigmoid{}},
                         find_add_unary{"gpu::tanh", hip_add_tanh{}, hip_triadd_tanh{}},

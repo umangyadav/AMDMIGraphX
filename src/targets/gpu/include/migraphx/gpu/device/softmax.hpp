@@ -12,6 +12,8 @@ namespace device {
 
 void softmax(hipStream_t stream, const argument& result, const argument& arg, int64_t axis);
 
+void mul_add_softmax(hipStream_t stream, const argument& result, const argument& arg1, const argument& arg2, const argument& arg3, int64_t axis);
+
 } // namespace device
 } // namespace gpu
 } // namespace MIGRAPHX_INLINE_NS
