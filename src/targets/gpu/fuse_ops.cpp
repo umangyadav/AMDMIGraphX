@@ -287,13 +287,13 @@ struct hip_mul_add_softmax
         check_shapes{inputs, *this}.has(4);
         return op.compute_shape({inputs.front(), inputs.back()});
     }
-    argument
-    compute(context& ctx, const shape&, const std::vector<argument>& args) const
+    argument compute(context& ctx, const shape&, const std::vector<argument>& args) const
     {
         auto n_dim      = args.front().get_shape().lens().size();
-        auto axis = op.op.axis;
+        auto axis       = op.op.axis;
         auto tuned_axis = (axis < 0) ? axis + n_dim : axis;
-        device::mul_add_softmax(ctx.get_stream().get(), args.back(), args.at(0), args.at(1), args.at(2), tuned_axis);
+        device::mul_add_softmax(
+            ctx.get_stream().get(), args.back(), args.at(0), args.at(1), args.at(2), tuned_axis);
         return args.back();
     }
     std::ptrdiff_t output_alias(const std::vector<shape>& shapes) const
