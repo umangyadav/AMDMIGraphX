@@ -48,7 +48,7 @@ struct stream_info
                 if(not is_context_free(op) and op.name()[0] != '@')
                     weight = model.weight(op);
                 // This will ensure a stream will be assigned to return
-                if (op.name() == "@return")
+                if(op.name() == "@return")
                     weight = 1;
                 iweights[ins] = weight;
                 weights[ins] =
@@ -513,12 +513,12 @@ void schedule::apply(program& p) const
         auto stream = si.get_stream(ins);
         assert(stream < model.concurrency());
         // Make gemms run serially
-        if (contains(ins->name(), "gemm") and ins != last)
+        if(contains(ins->name(), "gemm") and ins != last)
         {
             std::vector<std::size_t> waits;
-            for(std::size_t s= 0;s<nstreams;s++)
+            for(std::size_t s = 0; s < nstreams; s++)
             {
-                if (s == stream)
+                if(s == stream)
                     continue;
                 auto id = p.insert_instruction(ins, op::undefined{});
                 model.sched(p, id, s);
@@ -527,11 +527,11 @@ void schedule::apply(program& p) const
                 wait_id++;
             }
             model.sched(p, ins, stream);
-            for(auto w:waits)
+            for(auto w : waits)
                 model.wait(p, ins, w);
-            for(std::size_t s= 0;s<nstreams;s++)
+            for(std::size_t s = 0; s < nstreams; s++)
             {
-                if (s == stream)
+                if(s == stream)
                     continue;
                 auto id = p.insert_instruction(std::next(ins), op::undefined{});
                 model.sched(p, id, s);
