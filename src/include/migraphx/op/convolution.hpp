@@ -3,7 +3,6 @@
 
 #include <array>
 #include <migraphx/op/common.hpp>
-#include <migraphx/operation.hpp>
 #include <migraphx/check_shapes.hpp>
 #include <migraphx/stringutils.hpp>
 #include <migraphx/streamutils.hpp>
@@ -42,7 +41,7 @@ struct convolution
     {
         if(not(padding.size() == stride.size() and padding.size() == dilation.size()))
         {
-            MIGRAPHX_THROW("convolution: inconsistent attribute sizes");
+            MIGRAPHX_THROW("CONVOLUTION: inconsistent attribute sizes");
         }
     }
 
@@ -50,11 +49,20 @@ struct convolution
     {
         check_shapes{inputs, *this}.has(2).same_type().same_ndims().min_ndims(3);
         check_attribute_size();
+        // dim num of input and attribute should match
+        if(inputs[0].lens().size() != padding.size() + 2)
+        {
+            MIGRAPHX_THROW("CONVOLUTION: input and attribute size mismatch!");
+        }
 
         const shape& input   = inputs.at(0);
         const shape& weights = inputs.at(1);
         auto t               = input.type();
         size_t kdims         = input.lens().size() - 2;
+        if(kdims != this->kdims())
+        {
+            MIGRAPHX_THROW("convolution: input k-dims does not match attribute size");
+        }
 
         if(input.lens().at(1) != (weights.lens().at(1) * group))
             MIGRAPHX_THROW("CONVOLUTION: Mismatch channel numbers");
