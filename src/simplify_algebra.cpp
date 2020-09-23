@@ -499,7 +499,7 @@ struct find_splits
                     // Insert contiguous for reshapes
                     for(auto output : i->outputs())
                     {
-                        if(not contains({"reshape", "squeeze", "unsqueeze"}, output->name()))
+                        if(not output->get_operator().attributes().contains("reshape"))
                             continue;
                         auto x = p.insert_instruction(output, op::contiguous{}, output->inputs());
                         p.replace_instruction(output, output->get_operator(), x);
