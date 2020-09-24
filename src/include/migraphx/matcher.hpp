@@ -214,6 +214,7 @@ matcher_result match_instruction(program& p, instruction_ref ins, M&& m)
 }
 
 MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_TRACE_MATCHES)
+MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_VALIDATE_MATCHES)
 
 /// Find matches for an instruction in the program
 template <class... Ms>
@@ -223,6 +224,10 @@ void find_matches(program& p, instruction_ref ins, Ms&&... ms)
     const
 #endif
         int trace = value_of(MIGRAPHX_TRACE_MATCHES{});
+#if !defined(__GNUC__) || defined(__clang__) || __GNUC__ > 5
+    const
+#endif
+        bool validate = enabled(MIGRAPHX_VALIDATE_MATCHES{});
     bool match    = false;
     each_args(
         [&](auto&& m) {
@@ -239,16 +244,17 @@ void find_matches(program& p, instruction_ref ins, Ms&&... ms)
                 p.debug_print(ins);
             }
             m.apply(p, r);
-#ifndef NDEBUG
-            auto invalid = p.validate();
-            if(invalid != p.end())
+            if (validate)
             {
-                auto index = std::distance(p.begin(), invalid);
-                MIGRAPHX_THROW(get_type_name(m) +
-                               " matcher produces invalid program at instruction " +
-                               std::to_string(index) + ": " + invalid->name());
+                auto invalid = p.validate();
+                if(invalid != p.end())
+                {
+                    auto index = std::distance(p.begin(), invalid);
+                    MIGRAPHX_THROW(get_type_name(m) +
+                                   " matcher produces invalid program at instruction " +
+                                   std::to_string(index) + ": " + invalid->name());
+                }
             }
-#endif
             match = true;
         },
         ms...);
