@@ -228,7 +228,7 @@ void find_matches(program& p, instruction_ref ins, Ms&&... ms)
     const
 #endif
         bool validate = enabled(MIGRAPHX_VALIDATE_MATCHES{});
-    bool match    = false;
+    bool match        = false;
     each_args(
         [&](auto&& m) {
             if(match)
@@ -244,7 +244,7 @@ void find_matches(program& p, instruction_ref ins, Ms&&... ms)
                 p.debug_print(ins);
             }
             m.apply(p, r);
-            if (validate)
+            if(validate)
             {
                 auto invalid = p.validate();
                 if(invalid != p.end())
