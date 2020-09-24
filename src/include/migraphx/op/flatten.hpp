@@ -19,6 +19,8 @@ struct flatten
 {
     int64_t axis = 1;
 
+    value attributes() const { return {{"reshape", true}}; }
+
     template <class Self, class F>
     static auto reflect(Self& self, F f)
     {

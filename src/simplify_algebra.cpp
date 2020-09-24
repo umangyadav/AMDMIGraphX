@@ -353,6 +353,32 @@ struct find_concat_op
     }
 };
 
+struct find_concat_reshape_op
+{
+    auto matcher() const
+    {
+        return match::name("concat")(match::any_of[match::inputs()](match::has_attribute("reshape")(match::arg(0)(pointwise(), match::used_once()))));
+    }
+
+    void apply(program& p, const match::matcher_result& r) const
+    {
+        for(auto rshp:r.result->inputs())
+        {
+            if (not rshp->get_operator().attributes().contains("reshape"))
+                continue;
+            auto pw = rshp->inputs().front();
+            if (not pw->get_operator().attributes().contains("pointwise"))
+                continue;
+            std::vector<instruction_ref> args;
+            for(auto arg:pw->inputs())
+            {
+                args.push_back(p.insert_instruction(std::next(arg), rshp->get_operator(), arg));
+            }
+            p.replace_instruction(rshp, pw->get_operator(), args);
+        }
+    }
+};
+
 std::vector<instruction_ref> get_splits(instruction_ref ins)
 {
     std::vector<instruction_ref> result;
@@ -387,6 +413,35 @@ std::vector<instruction_ref> get_splits(instruction_ref ins)
     return result;
 }
 
+static std::pair<instruction_ref, instruction_ref> order(instruction_ref end, instruction_ref a, instruction_ref b)
+{
+    auto a1 = a;
+    auto b1 = b;
+    for(;;)
+    {
+        a1++;
+        b1++;
+        if (a1 == b)
+            return std::make_pair(a, b);
+        else if (b1 == a)
+            return std::make_pair(b, a);
+        else if (a1 == end)
+            return std::make_pair(b, a);
+        else if (b1 == end)
+            return std::make_pair(a, b);
+
+    }
+}
+
+static instruction_ref find_last(instruction_ref end, std::vector<instruction_ref> inss)
+{
+    if (inss.empty())
+        return end;
+    return std::accumulate(inss.begin(), inss.end(), inss.front(), [&](instruction_ref a, instruction_ref b) {
+        return order(end, a, b).second;
+    });
+}
+
 struct find_splits
 {
     auto matcher() const
@@ -395,10 +450,16 @@ struct find_splits
             match::name("slice")(match::any_of[match::outputs()](pointwise()))));
     }
 
-    static std::vector<std::vector<instruction_ref>>
-    get_split_groups(const std::vector<instruction_ref>& splits)
+    struct split_group
     {
         std::vector<std::vector<instruction_ref>> groups;
+        std::unordered_map<instruction_ref, instruction_ref> split_arg;
+    };
+
+    static split_group
+    get_split_groups(const std::vector<instruction_ref>& splits)
+    {
+        split_group result;
         for(auto out : splits.front()->outputs())
         {
             if(out->name() == "slice")
@@ -417,12 +478,13 @@ struct find_splits
                 if(contains(group, *it))
                     return {};
                 group.push_back(*it);
+                result.split_arg[*it] = split;
             }
             if(group.size() != splits.size())
                 continue;
-            groups.push_back(group);
+            result.groups.push_back(group);
         }
-        return groups;
+        return result;
     }
 
     void apply(program& p, const match::matcher_result& r) const
@@ -432,18 +494,22 @@ struct find_splits
         auto splits = get_splits(ins);
         if(splits.empty())
             return;
-        for(const auto& group : get_split_groups(splits))
+        const auto& sg = get_split_groups(splits);
+        for(const auto& group : sg.groups)
         {
             auto start = group.front();
             auto op    = start->get_operator();
             if(op.name() == "slice")
                 continue;
 
+            assert(std::all_of(group.begin(), group.end(), [](auto i) {
+                return std::any_of(i->inputs().begin(), i->inputs().end(), [](auto ii) { return ii->name() == "slice"; });
+            }));
+
             // Make sure there is no duplicates
             assert(std::none_of(
                 std::next(group.begin()), group.end(), [&](auto i) { return i == start; }));
 
-            auto split_idx    = 0;
             instruction_ref c = p.end();
             if(start->inputs().size() == 1)
             {
@@ -454,27 +520,31 @@ struct find_splits
                 assert(not std::none_of(start->inputs().begin(), start->inputs().end(), [](auto i) {
                     return i->name() == "slice";
                 }) && "one argument must be a split");
+                auto split_idx    = 0;
                 auto data_idx = 1;
-                if(start->inputs().back()->name() == "slice")
+                if(start->inputs().back() == sg.split_arg.at(start))
                 {
                     split_idx = 1;
                     data_idx  = 0;
                 }
 
+                std::vector<std::size_t> data_indices;
+                std::transform(group.begin(), group.end(), std::back_inserter(data_indices), [&](auto i) {
+                    if(i->inputs().back() == sg.split_arg.at(i))
+                        return 0;
+                    else
+                        return 1;
+                });
+                // If arguments are flipped then make sure the op is commutative
+                if (not std::all_of(data_indices.begin(), data_indices.end(), [&](auto i) { return i == data_idx; }) and not op.attributes().contains("commutative"))
+                    continue;
+
                 std::vector<instruction_ref> data_args;
                 std::transform(group.begin(),
                                group.end(),
+                               data_indices.begin(),
                                std::back_inserter(data_args),
-                               [&](auto i) { return i->inputs()[data_idx]; });
-
-                // Data arguments must be a constant
-                if(std::any_of(data_args.begin(), data_args.end(), [](auto i) {
-                       return not i->can_eval();
-                   }))
-                    return;
-
-                for(auto data : data_args)
-                    p.move_instructions(data, ins);
+                               [&](auto i, auto idx) { return i->inputs()[idx]; });
 
                 auto slice_op = any_cast<op::slice>(splits.front()->get_operator());
                 assert(not slice_op.axes.empty());
@@ -482,19 +552,21 @@ struct find_splits
                     return;
                 auto concat_axis = slice_op.axes.front();
                 // TODO: Check if axises match
-                auto concat = p.insert_instruction(ins, op::concat{concat_axis}, data_args);
+                auto last_arg = find_last(p.end(), data_args);
+                auto concat = p.insert_instruction(std::next(last_arg), op::concat{concat_axis}, data_args);
+                auto final_ins = order(p.end(), concat, ins).second;
 
                 std::vector<instruction_ref> args;
                 args.resize(2);
                 args[split_idx] = ins;
                 args[data_idx]  = concat;
-                c               = p.insert_instruction(std::next(ins), op, args);
+                c               = p.insert_instruction(std::next(final_ins), op, args);
             }
             if(c != p.end())
             {
                 for(auto i : group)
                 {
-                    auto split = i->inputs()[split_idx];
+                    auto split = sg.split_arg.at(i);
                     assert(split->name() == "slice");
                     // Insert contiguous for reshapes
                     for(auto output : i->outputs())
@@ -505,7 +577,8 @@ struct find_splits
                         p.replace_instruction(output, output->get_operator(), x);
                     }
 
-                    p.replace_instruction(i, split->get_operator(), c);
+                    auto d = p.insert_instruction(std::next(c), split->get_operator(), c);
+                    p.replace_instruction(i, d);
                 }
             }
         }
@@ -736,8 +809,6 @@ struct find_conv_dot_horiz_fusion
                 concat_axis = axis;
             }
 
-            for(auto arg : args)
-                p.move_instructions(arg, input);
             // TODO: Check if axises match
             auto concat    = p.insert_instruction(input, op::concat{concat_axis}, args);
             auto fused     = p.insert_instruction(std::next(input), op, input, concat);
@@ -967,6 +1038,7 @@ void simplify_algebra::apply(program& p) const
                             find_sub_const{},
                             find_rsqrt{},
                             find_concat_op{},
+                            find_concat_reshape_op{},
                             find_split_concat{},
                             find_splits{},
                             find_split_reshape{},

@@ -222,7 +222,7 @@ void find_matches(program& p, instruction_ref ins, Ms&&... ms)
 #if !defined(__GNUC__) || defined(__clang__) || __GNUC__ > 5
     const
 #endif
-        bool trace = enabled(MIGRAPHX_TRACE_MATCHES{});
+        int trace = value_of(MIGRAPHX_TRACE_MATCHES{});
     bool match     = false;
     each_args(
         [&](auto&& m) {
@@ -231,12 +231,23 @@ void find_matches(program& p, instruction_ref ins, Ms&&... ms)
             auto r = match_instruction(p, ins, m.matcher());
             if(r.result == p.end())
                 return;
-            if(trace)
+            if(trace > 0)
             {
+                if (trace > 1)
+                    p.debug_print();
                 std::cout << "Matched by " << get_type_name(m) << std::endl;
                 p.debug_print(ins);
             }
             m.apply(p, r);
+#ifndef NDEBUG
+            auto invalid = p.validate();
+            if(invalid != p.end())
+            {
+                auto index = std::distance(p.begin(), invalid);
+                MIGRAPHX_THROW(get_type_name(m) + " matcher produces invalid program at instruction " +
+                               std::to_string(index) + ": " + invalid->name());
+            }
+#endif
             match = true;
         },
         ms...);
