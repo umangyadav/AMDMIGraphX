@@ -969,20 +969,20 @@ TEST_CASE(simplify_split_sub_relu_flipped_args)
 
     migraphx::program p2;
     {
-        auto b     = migraphx::op::broadcast{1, {3, 1, 4}};
-        auto input = p2.add_parameter("input", s);
-        auto x     = p2.add_instruction(migraphx::op::slice{{1}, {0}, {1}}, input);
-        auto y     = p2.add_instruction(migraphx::op::slice{{1}, {1}, {2}}, input);
-        auto one   = p2.add_literal(1);
-        auto oneb  = p2.add_instruction(b, one);
-        auto two   = p2.add_literal(2);
-        auto twob  = p2.add_instruction(b, two);
+        auto b      = migraphx::op::broadcast{1, {3, 1, 4}};
+        auto input  = p2.add_parameter("input", s);
+        auto x      = p2.add_instruction(migraphx::op::slice{{1}, {0}, {1}}, input);
+        auto y      = p2.add_instruction(migraphx::op::slice{{1}, {1}, {2}}, input);
+        auto one    = p2.add_literal(1);
+        auto oneb   = p2.add_instruction(b, one);
+        auto two    = p2.add_literal(2);
+        auto twob   = p2.add_instruction(b, two);
         auto oneneg = p2.add_instruction(migraphx::op::neg{}, oneb);
-        auto sum1  = p2.add_instruction(migraphx::op::add{}, x, oneneg);
-        auto relu1 = p2.add_instruction(migraphx::op::relu{}, sum1);
-        auto sum2  = p2.add_instruction(migraphx::op::sub{}, twob, y);
-        auto relu2 = p2.add_instruction(migraphx::op::relu{}, sum2);
-        auto add   = p2.add_instruction(migraphx::op::add{}, relu1, relu2);
+        auto sum1   = p2.add_instruction(migraphx::op::add{}, x, oneneg);
+        auto relu1  = p2.add_instruction(migraphx::op::relu{}, sum1);
+        auto sum2   = p2.add_instruction(migraphx::op::sub{}, twob, y);
+        auto relu2  = p2.add_instruction(migraphx::op::relu{}, sum2);
+        auto add    = p2.add_instruction(migraphx::op::add{}, relu1, relu2);
         p2.add_instruction(pass_op{}, add);
     }
 

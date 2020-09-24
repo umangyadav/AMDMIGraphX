@@ -357,20 +357,21 @@ struct find_concat_reshape_op
 {
     auto matcher() const
     {
-        return match::name("concat")(match::any_of[match::inputs()](match::has_attribute("reshape")(match::arg(0)(pointwise(), match::used_once()))));
+        return match::name("concat")(match::any_of[match::inputs()](
+            match::has_attribute("reshape")(match::arg(0)(pointwise(), match::used_once()))));
     }
 
     void apply(program& p, const match::matcher_result& r) const
     {
-        for(auto rshp:r.result->inputs())
+        for(auto rshp : r.result->inputs())
         {
-            if (not rshp->get_operator().attributes().contains("reshape"))
+            if(not rshp->get_operator().attributes().contains("reshape"))
                 continue;
             auto pw = rshp->inputs().front();
-            if (not pw->get_operator().attributes().contains("pointwise"))
+            if(not pw->get_operator().attributes().contains("pointwise"))
                 continue;
             std::vector<instruction_ref> args;
-            for(auto arg:pw->inputs())
+            for(auto arg : pw->inputs())
             {
                 args.push_back(p.insert_instruction(std::next(arg), rshp->get_operator(), arg));
             }
@@ -413,7 +414,8 @@ std::vector<instruction_ref> get_splits(instruction_ref ins)
     return result;
 }
 
-static std::pair<instruction_ref, instruction_ref> order(instruction_ref end, instruction_ref a, instruction_ref b)
+static std::pair<instruction_ref, instruction_ref>
+order(instruction_ref end, instruction_ref a, instruction_ref b)
 {
     auto a1 = a;
     auto b1 = b;
@@ -421,25 +423,25 @@ static std::pair<instruction_ref, instruction_ref> order(instruction_ref end, in
     {
         a1++;
         b1++;
-        if (a1 == b)
+        if(a1 == b)
             return std::make_pair(a, b);
-        else if (b1 == a)
+        else if(b1 == a)
             return std::make_pair(b, a);
-        else if (a1 == end)
+        else if(a1 == end)
             return std::make_pair(b, a);
-        else if (b1 == end)
+        else if(b1 == end)
             return std::make_pair(a, b);
-
     }
 }
 
 static instruction_ref find_last(instruction_ref end, std::vector<instruction_ref> inss)
 {
-    if (inss.empty())
+    if(inss.empty())
         return end;
-    return std::accumulate(inss.begin(), inss.end(), inss.front(), [&](instruction_ref a, instruction_ref b) {
-        return order(end, a, b).second;
-    });
+    return std::accumulate(
+        inss.begin(), inss.end(), inss.front(), [&](instruction_ref a, instruction_ref b) {
+            return order(end, a, b).second;
+        });
 }
 
 struct find_splits
@@ -456,8 +458,7 @@ struct find_splits
         std::unordered_map<instruction_ref, instruction_ref> split_arg;
     };
 
-    static split_group
-    get_split_groups(const std::vector<instruction_ref>& splits)
+    static split_group get_split_groups(const std::vector<instruction_ref>& splits)
     {
         split_group result;
         for(auto out : splits.front()->outputs())
@@ -503,7 +504,9 @@ struct find_splits
                 continue;
 
             assert(std::all_of(group.begin(), group.end(), [](auto i) {
-                return std::any_of(i->inputs().begin(), i->inputs().end(), [](auto ii) { return ii->name() == "slice"; });
+                return std::any_of(i->inputs().begin(), i->inputs().end(), [](auto ii) {
+                    return ii->name() == "slice";
+                });
             }));
 
             // Make sure there is no duplicates
@@ -520,8 +523,8 @@ struct find_splits
                 assert(not std::none_of(start->inputs().begin(), start->inputs().end(), [](auto i) {
                     return i->name() == "slice";
                 }) && "one argument must be a split");
-                auto split_idx    = 0;
-                auto data_idx = 1;
+                auto split_idx = 0;
+                auto data_idx  = 1;
                 if(start->inputs().back() == sg.split_arg.at(start))
                 {
                     split_idx = 1;
@@ -529,14 +532,18 @@ struct find_splits
                 }
 
                 std::vector<std::size_t> data_indices;
-                std::transform(group.begin(), group.end(), std::back_inserter(data_indices), [&](auto i) {
-                    if(i->inputs().back() == sg.split_arg.at(i))
-                        return 0;
-                    else
-                        return 1;
-                });
+                std::transform(
+                    group.begin(), group.end(), std::back_inserter(data_indices), [&](auto i) {
+                        if(i->inputs().back() == sg.split_arg.at(i))
+                            return 0;
+                        else
+                            return 1;
+                    });
                 // If arguments are flipped then make sure the op is commutative
-                if (not std::all_of(data_indices.begin(), data_indices.end(), [&](auto i) { return i == data_idx; }) and not op.attributes().contains("commutative"))
+                if(not std::all_of(data_indices.begin(),
+                                   data_indices.end(),
+                                   [&](auto i) { return i == data_idx; }) and
+                   not op.attributes().contains("commutative"))
                     continue;
 
                 std::vector<instruction_ref> data_args;
@@ -553,7 +560,8 @@ struct find_splits
                 auto concat_axis = slice_op.axes.front();
                 // TODO: Check if axises match
                 auto last_arg = find_last(p.end(), data_args);
-                auto concat = p.insert_instruction(std::next(last_arg), op::concat{concat_axis}, data_args);
+                auto concat =
+                    p.insert_instruction(std::next(last_arg), op::concat{concat_axis}, data_args);
                 auto final_ins = order(p.end(), concat, ins).second;
 
                 std::vector<instruction_ref> args;

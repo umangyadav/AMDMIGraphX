@@ -223,7 +223,7 @@ void find_matches(program& p, instruction_ref ins, Ms&&... ms)
     const
 #endif
         int trace = value_of(MIGRAPHX_TRACE_MATCHES{});
-    bool match     = false;
+    bool match    = false;
     each_args(
         [&](auto&& m) {
             if(match)
@@ -233,7 +233,7 @@ void find_matches(program& p, instruction_ref ins, Ms&&... ms)
                 return;
             if(trace > 0)
             {
-                if (trace > 1)
+                if(trace > 1)
                     p.debug_print();
                 std::cout << "Matched by " << get_type_name(m) << std::endl;
                 p.debug_print(ins);
@@ -244,7 +244,8 @@ void find_matches(program& p, instruction_ref ins, Ms&&... ms)
             if(invalid != p.end())
             {
                 auto index = std::distance(p.begin(), invalid);
-                MIGRAPHX_THROW(get_type_name(m) + " matcher produces invalid program at instruction " +
+                MIGRAPHX_THROW(get_type_name(m) +
+                               " matcher produces invalid program at instruction " +
                                std::to_string(index) + ": " + invalid->name());
             }
 #endif
