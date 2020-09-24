@@ -987,7 +987,7 @@ struct find_split_transpose
 {
     auto matcher() const
     {
-        return match::name("transpose")(match::arg(0)(match::name("slice").bind("slice")))
+        return match::name("transpose")(match::arg(0)(match::name("slice")(match::arg(0)(match::all_of[match::outputs()](match::name("slice")(match::used_once())))).bind("slice")))
             .bind("trans");
     }
 
