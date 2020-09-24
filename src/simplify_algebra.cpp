@@ -563,9 +563,9 @@ struct find_splits
 
                 // If not all of the operators happen after the last_arg then stop
                 // TODO: Try to reorder instructions if possible
-                if (not std::all_of(group.begin(), group.end(), [&](auto i) {
-                    return order(p.end(), i, last_arg).second == i;
-                }))
+                if(not std::all_of(group.begin(), group.end(), [&](auto i) {
+                       return order(p.end(), i, last_arg).second == i;
+                   }))
                     continue;
 
                 auto concat =
