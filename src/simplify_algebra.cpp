@@ -357,33 +357,40 @@ struct find_concat_reshape_op
 {
     auto matcher() const
     {
-        return match::name("concat")(match::any_of[match::inputs()](
-            match::has_attribute("reshape")(match::arg(0)(pointwise(match::all_of[match::inputs()](match::standard_shape())), match::used_once()))));
+        return match::name("concat")(match::any_of[match::inputs()](match::has_attribute("reshape")(
+            match::arg(0)(pointwise(match::all_of[match::inputs()](match::standard_shape())),
+                          match::used_once()))));
     }
 
     void apply(program& p, const match::matcher_result& r) const
     {
         auto ins = r.result;
         std::vector<instruction_ref> cargs;
-        std::transform(ins->inputs().begin(), ins->inputs().end(), std::back_inserter(cargs), [&](auto rshp) {
-            if(not rshp->get_operator().attributes().contains("reshape"))
-                return rshp;
-            auto pw = rshp->inputs().front();
-            if(not pw->get_operator().attributes().contains("pointwise"))
-                return rshp;
-            std::vector<int64_t> dims(pw->get_shape().lens().begin(), pw->get_shape().lens().end());
-            std::vector<instruction_ref> args;
-            std::transform(pw->inputs().begin(), pw->inputs().end(), std::back_inserter(args), [&](auto arg) {
-                return p.insert_instruction(std::next(arg), rshp->get_operator(), arg);
+        std::transform(
+            ins->inputs().begin(), ins->inputs().end(), std::back_inserter(cargs), [&](auto rshp) {
+                if(not rshp->get_operator().attributes().contains("reshape"))
+                    return rshp;
+                auto pw = rshp->inputs().front();
+                if(not pw->get_operator().attributes().contains("pointwise"))
+                    return rshp;
+                std::vector<int64_t> dims(pw->get_shape().lens().begin(),
+                                          pw->get_shape().lens().end());
+                std::vector<instruction_ref> args;
+                std::transform(pw->inputs().begin(),
+                               pw->inputs().end(),
+                               std::back_inserter(args),
+                               [&](auto arg) {
+                                   return p.insert_instruction(
+                                       std::next(arg), rshp->get_operator(), arg);
+                               });
+                auto carg = p.insert_instruction(rshp, pw->get_operator(), args);
+                if(pw->outputs().size() > 1)
+                {
+                    auto restore_shp = p.insert_instruction(rshp, op::reshape{{dims}}, carg);
+                    p.replace_instruction(pw, restore_shp);
+                }
+                return carg;
             });
-            auto carg = p.insert_instruction(rshp, pw->get_operator(), args);
-            if (pw->outputs().size() > 1)
-            {
-                auto restore_shp = p.insert_instruction(rshp, op::reshape{{dims}}, carg);
-                p.replace_instruction(pw, restore_shp);
-            }
-            return carg;
-        });
         p.replace_instruction(ins, ins->get_operator(), cargs);
     }
 };
