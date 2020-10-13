@@ -18,7 +18,7 @@ replace_string(std::string subject, const string_view& search, const string_view
     size_t pos = 0;
     while((pos = subject.find(search.data(), pos, search.size())) != std::string::npos)
     {
-        subject.replace(pos, search.length(), replace);
+        subject.replace(pos, search.length(), replace.data(), replace.length());
         pos += replace.length();
     }
     return subject;
@@ -45,11 +45,10 @@ inline std::string join_strings(Strings strings, const std::string& delim)
     });
 }
 
-inline std::vector<std::string> split_string(const string_view& s, char delim)
+inline std::vector<std::string> split_string(const std::string& s, char delim)
 {
     std::vector<std::string> elems;
-    std::stringstream ss(s);
-    ss << ' ';
+    std::stringstream ss(s + ' ');
     std::string item;
     while(std::getline(ss, item, delim))
     {
