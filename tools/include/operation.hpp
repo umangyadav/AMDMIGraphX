@@ -13,6 +13,7 @@
 #include <migraphx/serialize.hpp>
 #include <migraphx/auto_any_cast.hpp>
 #include <migraphx/config.hpp>
+#include <migraphx/string_view.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
@@ -26,7 +27,7 @@ struct context;
 struct operation
 {
     /// A unique name identifying the operation
-    std::string name() const;
+    string_view name() const;
     /// An optional method that can be used to finalize the operator before running
     void finalize(context& ctx);
     /// This is used to compute the resulting shape from an operation. If an
@@ -242,7 +243,7 @@ void from_value_op(T& x, const value& v)
 <%
  interface(
      'operation',
-     virtual('name', returns = 'std::string', const = True),
+     virtual('name', returns = 'string_view', const = True),
      virtual(
          'is_context_free', returns = 'bool', const = True, default = 'detail::is_context_free_op'),
      virtual('has_finalize', returns = 'bool', const = True, default = 'detail::has_finalize_op'),

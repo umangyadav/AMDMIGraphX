@@ -14,6 +14,7 @@
 #include <migraphx/compile_options.hpp>
 #include <migraphx/argument.hpp>
 #include <migraphx/rank.hpp>
+#include <migraphx/string_view.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
@@ -24,7 +25,7 @@ inline namespace MIGRAPHX_INLINE_NS {
 struct target
 {
     /// A unique name used to identify the target
-    std::string name() const;
+    string_view name() const;
     /**
      * @brief The transformation pass to be run during compilation.
      *
@@ -87,7 +88,7 @@ argument copy_from_target(T&, const argument& arg)
  *
  * struct target
  * {
- *      std::string name() const;
+ *      string_view name() const;
  *      std::vector<pass> get_passes(context& ctx,const compile_options& options) const;
  *      context get_context() const;
  *      argument copy_to(const argument& input) const;
@@ -160,7 +161,7 @@ struct target
             return private_detail_te_get_handle().type();
     }
 
-    std::string name() const
+    string_view name() const
     {
         assert((*this).private_detail_te_handle_mem_var);
         return (*this).private_detail_te_get_handle().name();
@@ -209,7 +210,7 @@ struct target
         virtual std::shared_ptr<private_detail_te_handle_base_type> clone() const = 0;
         virtual const std::type_info& type() const                                = 0;
 
-        virtual std::string name() const                                           = 0;
+        virtual string_view name() const                                           = 0;
         virtual std::vector<pass> get_passes(context& ctx,
                                              const compile_options& options) const = 0;
         virtual context get_context() const                                        = 0;
@@ -290,7 +291,7 @@ struct target
 
         const std::type_info& type() const override { return typeid(private_detail_te_value); }
 
-        std::string name() const override { return private_detail_te_value.name(); }
+        string_view name() const override { return private_detail_te_value.name(); }
 
         std::vector<pass> get_passes(context& ctx, const compile_options& options) const override
         {

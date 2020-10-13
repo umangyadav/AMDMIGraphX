@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <utility>
 #include <migraphx/config.hpp>
+#include <migraphx/string_view.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
@@ -21,7 +22,7 @@ struct program;
 struct pass
 {
     /// A unique name used to identify the pass
-    std::string name() const;
+    string_view name() const;
     /// Run the pass on the program
     void apply(program& p) const;
 };
@@ -33,7 +34,7 @@ struct pass
  *
  * struct pass
  * {
- *      std::string name() const;
+ *      string_view name() const;
  *      void apply(program & p) const;
  * };
  *
@@ -102,7 +103,7 @@ struct pass
             return private_detail_te_get_handle().type();
     }
 
-    std::string name() const
+    string_view name() const
     {
         assert((*this).private_detail_te_handle_mem_var);
         return (*this).private_detail_te_get_handle().name();
@@ -127,7 +128,7 @@ struct pass
         virtual std::shared_ptr<private_detail_te_handle_base_type> clone() const = 0;
         virtual const std::type_info& type() const                                = 0;
 
-        virtual std::string name() const     = 0;
+        virtual string_view name() const     = 0;
         virtual void apply(program& p) const = 0;
     };
 
@@ -159,7 +160,7 @@ struct pass
 
         const std::type_info& type() const override { return typeid(private_detail_te_value); }
 
-        std::string name() const override { return private_detail_te_value.name(); }
+        string_view name() const override { return private_detail_te_value.name(); }
 
         void apply(program& p) const override { private_detail_te_value.apply(p); }
 

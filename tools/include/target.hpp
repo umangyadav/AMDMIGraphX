@@ -14,6 +14,7 @@
 #include <migraphx/compile_options.hpp>
 #include <migraphx/argument.hpp>
 #include <migraphx/rank.hpp>
+#include <migraphx/string_view.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
@@ -24,7 +25,7 @@ inline namespace MIGRAPHX_INLINE_NS {
 struct target
 {
     /// A unique name used to identify the target
-    std::string name() const;
+    string_view name() const;
     /**
      * @brief The transformation pass to be run during compilation.
      *
@@ -84,7 +85,7 @@ argument copy_from_target(T&, const argument& arg)
 
 <%
 interface('target',
-     virtual('name', returns='std::string', const=True),
+     virtual('name', returns='string_view', const=True),
      virtual('get_passes', ctx='context&', options='const compile_options&', returns='std::vector<pass>', const=True),
      virtual('get_context', returns='context', const=True),
      virtual('copy_to',

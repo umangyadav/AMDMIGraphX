@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <utility>
 #include <migraphx/config.hpp>
+#include <migraphx/string_view.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
@@ -21,7 +22,7 @@ struct program;
 struct pass
 {
     /// A unique name used to identify the pass
-    std::string name() const;
+    string_view name() const;
     /// Run the pass on the program
     void apply(program& p) const;
 };
@@ -30,7 +31,7 @@ struct pass
 
 <%
 interface('pass',
-    virtual('name', returns='std::string', const=True),
+    virtual('name', returns='string_view', const=True),
     virtual('apply', returns='void', p='program &', const=True)
 )
 %>

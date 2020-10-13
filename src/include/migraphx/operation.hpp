@@ -13,6 +13,7 @@
 #include <migraphx/serialize.hpp>
 #include <migraphx/auto_any_cast.hpp>
 #include <migraphx/config.hpp>
+#include <migraphx/string_view.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
@@ -26,7 +27,7 @@ struct context;
 struct operation
 {
     /// A unique name identifying the operation
-    std::string name() const;
+    string_view name() const;
     /// An optional method that can be used to finalize the operator before running
     void finalize(context& ctx);
     /// This is used to compute the resulting shape from an operation. If an
@@ -244,7 +245,7 @@ void from_value_op(T& x, const value& v)
  *
  * struct operation
  * {
- *      std::string name() const;
+ *      string_view name() const;
  *      bool is_context_free() const;
  *      bool has_finalize() const;
  *      std::ptrdiff_t output_alias(const std::vector<shape>& input) const;
@@ -324,7 +325,7 @@ struct operation
             return private_detail_te_get_handle().type();
     }
 
-    std::string name() const
+    string_view name() const
     {
         assert((*this).private_detail_te_handle_mem_var);
         return (*this).private_detail_te_get_handle().name();
@@ -415,7 +416,7 @@ struct operation
         virtual std::shared_ptr<private_detail_te_handle_base_type> clone() const = 0;
         virtual const std::type_info& type() const                                = 0;
 
-        virtual std::string name() const                                           = 0;
+        virtual string_view name() const                                           = 0;
         virtual bool is_context_free() const                                       = 0;
         virtual bool has_finalize() const                                          = 0;
         virtual std::ptrdiff_t output_alias(const std::vector<shape>& input) const = 0;
@@ -605,7 +606,7 @@ struct operation
 
         const std::type_info& type() const override { return typeid(private_detail_te_value); }
 
-        std::string name() const override { return private_detail_te_value.name(); }
+        string_view name() const override { return private_detail_te_value.name(); }
 
         bool is_context_free() const override
         {
