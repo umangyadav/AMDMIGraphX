@@ -7,6 +7,7 @@
 #include <migraphx/operation.hpp>
 #include <migraphx/erase.hpp>
 #include <migraphx/config.hpp>
+#include <migraphx/string_view.hpp>
 #include <string>
 #include <utility>
 
@@ -41,7 +42,7 @@ struct instruction
 
     const operation& get_operator() const;
 
-    std::string name() const;
+    string_view name() const;
 
     const std::vector<instruction_ref>& inputs() const;
 

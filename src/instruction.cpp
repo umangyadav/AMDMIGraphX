@@ -103,7 +103,7 @@ const literal& instruction::get_literal() const
 
 const operation& instruction::get_operator() const { return op; }
 
-std::string instruction::name() const { return op.name(); }
+string_view instruction::name() const { return op.name(); }
 
 const std::vector<instruction_ref>& instruction::inputs() const { return arguments; }
 

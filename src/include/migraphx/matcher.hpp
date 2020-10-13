@@ -477,7 +477,7 @@ inline auto name(std::string s)
 inline auto name(std::unordered_set<std::string> names)
 {
     return make_basic_pred_matcher([ =, names = std::move(names) ](instruction_ref ins) {
-        return names.count(ins->name()) > 0;
+        return names.count(std::string{ins->name()}) > 0;
     });
 }
 
