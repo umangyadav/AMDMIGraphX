@@ -7,15 +7,16 @@
 #include <sstream>
 #include <vector>
 #include <migraphx/config.hpp>
+#include <migraphx/string_view.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 
 inline std::string
-replace_string(std::string subject, const std::string& search, const std::string& replace)
+replace_string(std::string subject, const string_view& search, const string_view& replace)
 {
     size_t pos = 0;
-    while((pos = subject.find(search, pos)) != std::string::npos)
+    while((pos = subject.find(search.data(), pos, search.size())) != std::string::npos)
     {
         subject.replace(pos, search.length(), replace);
         pos += replace.length();
@@ -23,7 +24,7 @@ replace_string(std::string subject, const std::string& search, const std::string
     return subject;
 }
 
-inline bool ends_with(const std::string& value, const std::string& suffix)
+inline bool ends_with(const string_view& value, const string_view& suffix)
 {
     if(suffix.size() > value.size())
         return false;
@@ -44,10 +45,11 @@ inline std::string join_strings(Strings strings, const std::string& delim)
     });
 }
 
-inline std::vector<std::string> split_string(const std::string& s, char delim)
+inline std::vector<std::string> split_string(const string_view& s, char delim)
 {
     std::vector<std::string> elems;
-    std::stringstream ss(s + ' ');
+    std::stringstream ss(s);
+    ss << ' ';
     std::string item;
     while(std::getline(ss, item, delim))
     {
@@ -80,7 +82,7 @@ inline std::string to_upper(std::string s) { return transform_string(std::move(s
 
 inline std::string to_lower(std::string s) { return transform_string(std::move(s), ::tolower); }
 
-inline bool starts_with(const std::string& value, const std::string& prefix)
+inline bool starts_with(const string_view& value, const string_view& prefix)
 {
     if(prefix.size() > value.size())
         return false;
@@ -88,7 +90,7 @@ inline bool starts_with(const std::string& value, const std::string& prefix)
         return std::equal(prefix.begin(), prefix.end(), value.begin());
 }
 
-inline std::string remove_prefix(std::string s, const std::string& prefix)
+inline string_view remove_prefix(string_view s, const string_view& prefix)
 {
     if(starts_with(s, prefix))
         return s.substr(prefix.length());
