@@ -53,10 +53,11 @@ script:
     - export CXXFLAGS='-Werror -Wno-fallback'
     - export SANFLAGS='-fno-omit-frame-pointer -fsanitize-address-use-after-scope -fsanitize=address,undefined -fno-sanitize-recover=address,undefined'
     - if [[ "$SAN" == "on" ]]; then export CXXFLAGS="$CXXFLAGS $SANFLAGS"; fi
+    - if [[ "$SAN" == "on" ]]; then export CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_EXE_LINKER_FLAGS='-fuse-ld=gold' -DCMAKE_SHARED_LINKER_FLAGS='-fuse-ld=gold'"; fi
     - if [[ "$COVERAGE" == "on" ]]; then export CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage"; fi
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE=$DEPS_DIR/cget/cget.cmake ..
+    - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE=$DEPS_DIR/cget/cget.cmake $CMAKE_FLAGS ..
     - make -j$(nproc) all doc package check
     - |
         if [[ "$COVERAGE" == "on" ]]; then
