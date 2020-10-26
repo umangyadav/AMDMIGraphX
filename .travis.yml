@@ -1,0 +1,67 @@
+sudo: required
+dist: trusty
+language: cpp
+script: cmake
+
+matrix:
+    include:
+        # OSX
+        - os: osx
+          env: BUILD_TYPE=release
+          compiler: clang
+
+        - os: linux
+          env: CC=gcc-7 CXX=g++-7 BUILD_TYPE=debug SAN=on COVERAGE=on
+          compiler: gcc-7
+          addons: &gcc7
+            apt:
+              packages:
+                - g++-7
+                - lcov
+                - python3-pip
+                - realpath
+                - util-linux
+              sources:
+                - ubuntu-toolchain-r-test
+        - os: linux
+          env: CC=gcc-7 CXX=g++-7 BUILD_TYPE=release
+          compiler: gcc-7
+          addons: *gcc7
+
+
+install:
+    - export CHECKOUT_PATH=`pwd`
+    # Show compiler info
+    - $CXX --version
+    - which $CXX
+    - $CC --version
+    - which $CC
+    - which cmake
+    - cmake --version
+    - python3 --version
+    # Add path for mac
+    - export PATH="/Users/travis/Library/Python/3.7/bin:$PATH"
+    - pip3 install --user cget
+    - export CMAKE_PREFIX_PATH=${TRAVIS_BUILD_DIR}/deps
+    - cget -p $CMAKE_PREFIX_PATH install pfultz2/rocm-recipes
+    - cget -p $CMAKE_PREFIX_PATH ignore ROCmSoftwarePlatform/rocBLAS ROCmSoftwarePlatform/MIOpen
+    - cget -p $CMAKE_PREFIX_PATH install -f requirements.txt
+    
+script:
+    - export CXXFLAGS='-Werror -Wno-fallback'
+    - export SANFLAGS='-fno-omit-frame-pointer -fsanitize-address-use-after-scope -fsanitize=address,undefined -fno-sanitize-recover=address,undefined'
+    - if [[ "$SAN" == "on" ]]; then export CXXFLAGS="$CXXFLAGS $SANFLAGS"; fi
+    - if [[ "$COVERAGE" == "on" ]]; then export CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage"; fi
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+    - make -j$(nproc) generate all doc package check
+    - |
+        if [[ "$COVERAGE" == "on" ]]; then
+            lcov --directory . --capture --output-file $(pwd)/coverage.info
+            lcov --remove $(pwd)/coverage.info '/usr/*' --output-file $(pwd)/coverage.info
+            lcov --list $(pwd)/coverage.info
+            curl -s https://codecov.io/bash | bash
+            echo "Uploaded"
+        fi
+
