@@ -42,10 +42,12 @@ install:
     # Add path for mac
     - export PATH="/Users/travis/Library/Python/3.7/bin:$PATH"
     - pip3 install --user cget
-    - export CMAKE_PREFIX_PATH=${TRAVIS_BUILD_DIR}/deps
-    - cget -p $CMAKE_PREFIX_PATH install pfultz2/rocm-recipes
-    - cget -p $CMAKE_PREFIX_PATH ignore ROCmSoftwarePlatform/rocBLAS ROCmSoftwarePlatform/MIOpen
-    - cget -p $CMAKE_PREFIX_PATH install -f requirements.txt
+    - cget --version
+    - export DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
+    - cget -p $DEPS_DIR init -DPYTHON_EXECUTABLE=$(which python3)
+    - cget -p $DEPS_DIR install pfultz2/rocm-recipes
+    - cget -p $DEPS_DIR ignore ROCmSoftwarePlatform/rocBLAS ROCmSoftwarePlatform/MIOpen
+    - cget -p $DEPS_DIR install -f requirements.txt
     
 script:
     - export CXXFLAGS='-Werror -Wno-fallback'
@@ -54,7 +56,7 @@ script:
     - if [[ "$COVERAGE" == "on" ]]; then export CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage"; fi
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+    - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE=$DEPS_DIR/cget/cget/cmake ..
     - make -j$(nproc) generate all doc package check
     - |
         if [[ "$COVERAGE" == "on" ]]; then
