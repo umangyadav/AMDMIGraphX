@@ -56,7 +56,7 @@ script:
     - if [[ "$COVERAGE" == "on" ]]; then export CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage"; fi
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE=$DEPS_DIR/cget/cget/cmake ..
+    - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE=$DEPS_DIR/cget/cget.cmake ..
     - make -j$(nproc) generate all doc package check
     - |
         if [[ "$COVERAGE" == "on" ]]; then
