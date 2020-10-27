@@ -4,6 +4,7 @@
 #include <migraphx/migraphx.h>
 #include <memory>
 #include <exception>
+#include <string>
 #include <vector>
 #include <cassert>
 
