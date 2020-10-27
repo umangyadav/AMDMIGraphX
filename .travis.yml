@@ -26,6 +26,7 @@ matrix:
                 - g++-7
                 - lcov
                 - python3-pip
+                - python3-setuptools
                 - realpath
                 - util-linux
               sources:
@@ -75,7 +76,7 @@ script:
     - mkdir build
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE=$DEPS_DIR/cget/cget.cmake $CMAKE_FLAGS ..
-    - make -j$(nproc) all doc package check
+    - make -j$(nproc) all package check
     - |
         if [[ "$COVERAGE" == "on" ]]; then
             lcov --directory . --capture --output-file $(pwd)/coverage.info
