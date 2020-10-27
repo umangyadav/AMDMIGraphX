@@ -4,8 +4,6 @@ language: cpp
 script: cmake
 cache:
     ccache: true
-    directories:
-        - deps
 
 matrix:
     include:
@@ -37,6 +35,7 @@ matrix:
 install:
     - export CHECKOUT_PATH=`pwd`
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ccache; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="/usr/local/opt/ccache/libexec:$PATH"; fi
     # Show compiler info
     - $CXX --version
     - which $CXX
