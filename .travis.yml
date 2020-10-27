@@ -79,7 +79,7 @@ script:
     - mkdir build
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE=$DEPS_DIR/cget/cget.cmake $CMAKE_FLAGS ..
-    - make -j$(nproc) all package check
+    - make -j2 all package check
     - |
         if [[ "$COVERAGE" == "on" ]]; then
             lcov --directory . --capture --output-file $(pwd)/coverage.info
