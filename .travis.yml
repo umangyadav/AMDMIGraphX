@@ -48,7 +48,7 @@ install:
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ccache; fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="/usr/local/opt/ccache/libexec:$PATH"; fi
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pyenv versions; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pyenv global system 3.5; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pyenv global system $(pyenv versions | grep -v system); fi
     # Show compiler info
     - $CXX --version
     - which $CXX
