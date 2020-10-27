@@ -2,6 +2,10 @@ sudo: required
 dist: trusty
 language: cpp
 script: cmake
+cache:
+    ccache: true
+    directories:
+        - deps
 
 matrix:
     include:
@@ -16,6 +20,7 @@ matrix:
           addons: &gcc7
             apt:
               packages:
+                - ccache
                 - g++-7
                 - lcov
                 - python3-pip
@@ -31,6 +36,7 @@ matrix:
 
 install:
     - export CHECKOUT_PATH=`pwd`
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ccache; fi
     # Show compiler info
     - $CXX --version
     - which $CXX
@@ -38,12 +44,15 @@ install:
     - which $CC
     - which cmake
     - cmake --version
+    - which ccache
+    - ccache --version
     - python3 --version
     # Add path for mac
     - export PATH="/Users/travis/Library/Python/3.7/bin:$PATH"
     - pip3 install --user cget
     - cget --version
-    - export DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
+    - export DEPS_KEY=$(md5sum requirements.txt | awk '{print $1}')
+    - export DEPS_DIR=${TRAVIS_BUILD_DIR}/deps/$DEPS_KEY
     - cget -p $DEPS_DIR init -DPYTHON_EXECUTABLE=$(which python3)
     - cget -p $DEPS_DIR install pfultz2/rocm-recipes
     - cget -p $DEPS_DIR ignore ROCmSoftwarePlatform/rocBLAS ROCmSoftwarePlatform/MIOpen
