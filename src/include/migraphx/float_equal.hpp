@@ -23,9 +23,11 @@ struct float_equal_fn
     template <class T, MIGRAPHX_REQUIRES(is_floating_point<T>{})>
     static bool apply(T x, T y)
     {
-        return std::isfinite(x) and std::isfinite(y) and
-               std::nextafter(x, std::numeric_limits<T>::lowest()) <= y and
-               std::nextafter(x, std::numeric_limits<T>::max()) >= y;
+        using std::isfinite;
+        using std::nextafter;
+        return isfinite(x) and isfinite(y) and
+               nextafter(x, std::numeric_limits<T>::lowest()) <= y and
+               nextafter(x, std::numeric_limits<T>::max()) >= y;
     }
 
     template <class T, MIGRAPHX_REQUIRES(not is_floating_point<T>{})>
