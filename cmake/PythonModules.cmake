@@ -37,6 +37,9 @@ function(py_add_module NAME)
     pybind11_strip(${NAME})
     py_extension(${NAME} ${PYTHON_VERSION})
     target_link_libraries(${NAME} PRIVATE pybind11::module pybind11::lto python${PYTHON_VERSION}::headers)
+    if(APPLE)
+        target_link_libraries(${NAME} PRIVATE -Wl,-undefined,dynamic_lookup)
+    endif()
     set_target_properties(${NAME} PROPERTIES 
         OUTPUT_NAME ${PARSE_PYTHON_MODULE}
         C_VISIBILITY_PRESET hidden
