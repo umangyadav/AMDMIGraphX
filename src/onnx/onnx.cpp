@@ -2938,15 +2938,16 @@ struct onnx_parser
         MIGRAPHX_THROW("PARSE_VALUE: Invalid attribute type " + std::to_string(attr.type()));
     }
 
-    static void tune_inf(const std::vector<std::size_t>& dims, shape::type_t t, const std::string& s)
+    static void
+    tune_inf(const std::vector<std::size_t>& dims, shape::type_t t, const std::string& s)
     {
         std::size_t num = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<>{});
-        float f_inf = -1.0f/0.0f;
-        float* f_ptr = (float*)s.data();
-        if (num == 1 and t == shape::float_type)
+        float f_inf     = -1.0f / 0.0f;
+        float* f_ptr    = (float*)s.data();
+        if(num == 1 and t == shape::float_type)
         {
             std::cout << "tune " << std::endl;
-            if (f_inf == *f_ptr)
+            if(f_inf == *f_ptr)
             {
                 std::cout << "tuned " << std::endl;
                 float f = 1.0f;
