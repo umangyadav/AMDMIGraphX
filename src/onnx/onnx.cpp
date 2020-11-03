@@ -8,6 +8,7 @@
 #include <array>
 #include <utility>
 #include <vector>
+#include <memory>
 
 #include <migraphx/fallthrough.hpp>
 #include <migraphx/program.hpp>
@@ -2937,6 +2938,23 @@ struct onnx_parser
         MIGRAPHX_THROW("PARSE_VALUE: Invalid attribute type " + std::to_string(attr.type()));
     }
 
+    static void tune_inf(const std::vector<std::size_t>& dims, shape::type_t t, const std::string& s)
+    {
+        std::size_t num = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<>{});
+        float f_inf = -1.0f/0.0f;
+        float* f_ptr = (float*)s.data();
+        if (num == 1 and t == shape::float_type)
+        {
+            std::cout << "tune " << std::endl;
+            if (f_inf == *f_ptr)
+            {
+                std::cout << "tuned " << std::endl;
+                float f = 1.0f;
+                std::memcpy((void*)s.data(), (void*)&f, 4);
+            }
+        }
+    }
+
     static literal parse_tensor(const onnx::TensorProto& t)
     {
         std::vector<std::size_t> dims(t.dims().begin(), t.dims().end());
@@ -2944,6 +2962,7 @@ struct onnx_parser
         {
             const std::string& s = t.raw_data();
             auto type            = get_type(t.data_type());
+            tune_inf(dims, type, s);
             return create_literal(type, dims, s.data());
         }
 
