@@ -2628,9 +2628,9 @@ TEST_CASE(where_test)
 {
     migraphx::program p;
     auto* mm = p.get_main_module();
-    auto lc = mm->add_parameter("c", migraphx::shape{migraphx::shape::bool_type, {2}});
-    auto lx = mm->add_parameter("x", migraphx::shape{migraphx::shape::float_type, {2, 2, 2}});
-    auto ly = mm->add_parameter("y", migraphx::shape{migraphx::shape::float_type, {2, 1, 2, 2}});
+    auto lc  = mm->add_parameter("c", migraphx::shape{migraphx::shape::bool_type, {2}});
+    auto lx  = mm->add_parameter("x", migraphx::shape{migraphx::shape::float_type, {2, 2, 2}});
+    auto ly  = mm->add_parameter("y", migraphx::shape{migraphx::shape::float_type, {2, 1, 2, 2}});
 
     auto int_c = mm->add_instruction(migraphx::op::convert{migraphx::shape::int32_type}, lc);
     auto lccm  = mm->add_instruction(migraphx::op::multibroadcast{{2, 2, 2, 2}}, int_c);
