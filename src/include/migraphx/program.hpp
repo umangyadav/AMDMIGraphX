@@ -98,7 +98,6 @@ struct program
     friend bool operator==(const program& x, const program& y);
     friend bool operator!=(const program& x, const program& y) { return !(x == y); }
 
-
     private:
     void assign(const program& p);
     std::unique_ptr<program_impl> impl;

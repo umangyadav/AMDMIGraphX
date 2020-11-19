@@ -473,11 +473,11 @@ void program::annotate(std::ostream& os, std::function<void(instruction_ref)> a)
 
 module* program::create_module(const std::string& name)
 {
-    if (contains(impl->modules, name))
+    if(contains(impl->modules, name))
     {
         MIGRAPHX_THROW("CREATE_MODULE: module " + name + " already exists");
     }
-    
+
     impl->modules[name] = {};
 
     return &impl->modules[name];

@@ -2796,10 +2796,10 @@ struct onnx_parser
     instruction_ref
     parse_loop(const std::string&, const node_info& info, std::vector<instruction_ref> args)
     {
-        if (contains(info.attributes, "body"))
+        if(contains(info.attributes, "body"))
         {
             auto&& sub_graph = info.attributes["body"].g();
-            auto* lm = prog.create_module("test");
+            auto* lm         = prog.create_module("test");
         }
     }
 
