@@ -152,6 +152,7 @@ struct onnx_parser
         add_mem_op("InstanceNormalization", &onnx_parser::parse_instancenorm);
         add_mem_op("LeakyRelu", &onnx_parser::parse_leaky_relu);
         add_mem_op("Less", "less", &onnx_parser::parse_compare_op);
+        add_mem_op("Loop", &onnx_parser::parse_loop);
         add_mem_op("LRN", &onnx_parser::parse_lrn);
         add_mem_op("LSTM", &onnx_parser::parse_lstm);
         add_mem_op("MatMul", "dot", &onnx_parser::parse_matmul);
@@ -2790,6 +2791,16 @@ struct onnx_parser
         auto ins_ind    = mm->add_instruction(make_op("add"), ins_offset, l_ind);
 
         return mm->add_instruction(make_op("gather", {{"axis", 0}}), rsp_data, ins_ind);
+    }
+
+    instruction_ref
+    parse_loop(const std::string&, const node_info& info, std::vector<instruction_ref> args)
+    {
+        if (contains(info.attributes, "body"))
+        {
+            auto&& sub_graph = info.attributes["body"].g();
+            auto* lm = prog.create_module("test");
+        }
     }
 
     void parse_from(std::istream& is, std::string name = "")

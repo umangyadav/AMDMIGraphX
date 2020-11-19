@@ -471,6 +471,36 @@ void program::annotate(std::ostream& os, std::function<void(instruction_ref)> a)
     modl.annotate(os, std::move(a));
 }
 
+module* program::create_module(const std::string& name)
+{
+    if (contains(impl->modules, name))
+    {
+        MIGRAPHX_THROW("CREATE_MODULE: module " + name + " already exists");
+    }
+    
+    impl->modules[name] = {};
+
+    return &impl->modules[name];
+}
+
+module* program::get_module(const std::string& name)
+{
+    assert(contains(impl->modules, name));
+    return &impl->modules[name];
+}
+
+const module* program::get_module(const std::string& name) const
+{
+    assert(contains(impl->modules, name));
+    return &impl->modules[name];
+}
+
+void program::remove_module(const std::string& name)
+{
+    assert(contains(impl->modules, name));
+    impl->modules.erase(name);
+}
+
 module* program::get_main_module()
 {
     if(!contains(impl->modules, "main"))

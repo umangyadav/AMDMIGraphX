@@ -85,12 +85,19 @@ struct program
 
     program& sort();
 
+    // module related api
+    module* create_module(const std::string& name);
+    module* get_module(const std::string& name);
+    const module* get_module(const std::string& name) const;
+    void remove_module(const std::string& name);
+
+    module* get_main_module();
+    const module* get_main_module() const;
+
     friend std::ostream& operator<<(std::ostream& os, const program& p);
     friend bool operator==(const program& x, const program& y);
     friend bool operator!=(const program& x, const program& y) { return !(x == y); }
 
-    module* get_main_module();
-    const module* get_main_module() const;
 
     private:
     void assign(const program& p);
