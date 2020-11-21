@@ -2800,6 +2800,7 @@ struct onnx_parser
         {
             auto&& sub_graph = info.attributes["body"].g();
             auto* lm         = prog.create_module("test");
+            parse_graph(sub_graph);
         }
     }
 
