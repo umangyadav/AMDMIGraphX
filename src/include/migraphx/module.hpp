@@ -17,9 +17,6 @@
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 
-MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_TRACE_COMPILE)
-MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_TRACE_EVAL)
-
 const operation& get_operation(instruction_ref ins);
 
 struct module_impl;
@@ -44,7 +41,7 @@ struct module
 
     ~module() noexcept;
 
-    std::string name() const;
+    std::string name() const { return module_name; }
 
     template <class... Ts>
     instruction_ref add_instruction(operation op, Ts... args)
@@ -100,8 +97,6 @@ struct module
 
     std::unordered_map<std::string, shape> get_parameter_shapes() const;
 
-    std::vector<argument> eval(parameter_map params) const;
-
     bool has_instruction(instruction_ref ins) const;
 
     std::size_t size() const;
@@ -110,15 +105,9 @@ struct module
 
     std::vector<shape> get_output_shapes() const;
 
-    context& get_context() const;
-
     instruction_ref validate() const;
 
-    void compile(const target& t, compile_options options = compile_options{});
-
-    void finalize();
-
-    void perf_report(std::ostream& os, std::size_t n, parameter_map params) const;
+    void finalize(context& ctx);
 
     value to_value() const;
     void from_value(const value& v);
@@ -128,8 +117,6 @@ struct module
     void debug_print(const std::vector<instruction_ref>& inss) const;
     void print_graph(std::ostream& os, bool brief = false) const;
     void print_cpp(std::ostream& os) const;
-
-    void dry_run(parameter_map params) const;
 
     void annotate(std::ostream& os, std::function<void(instruction_ref)> a) const;
 
@@ -142,6 +129,7 @@ struct module
     private:
     void assign(const module& m);
     std::unique_ptr<module_impl> impl;
+    std::string module_name;
 };
 
 } // namespace MIGRAPHX_INLINE_NS
