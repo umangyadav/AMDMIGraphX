@@ -9,7 +9,7 @@ namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 
 struct program;
-struct module;
+using module = program;
 
 /**
  * Remove contiguous instructions by checking if the operator can use non-standard shapes.

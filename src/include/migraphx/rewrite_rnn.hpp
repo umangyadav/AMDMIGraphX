@@ -11,7 +11,8 @@
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 
-struct module;
+struct program;
+using module = program;
 
 /**
  * Rewrite rnn to gemm and add.

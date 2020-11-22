@@ -9,7 +9,7 @@ namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 
 struct program;
-struct module;
+using module = program;
 
 /**
  * Remove instructions where the output is not used.

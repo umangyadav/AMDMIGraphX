@@ -8,7 +8,7 @@
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 struct program;
-struct module;
+using module = program;
 
 /**
  * Remove memory allocations. It uses graph coloring to find memory allocations that can be reused.
