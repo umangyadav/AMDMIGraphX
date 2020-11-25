@@ -5,11 +5,7 @@
 #include <migraphx/operators.hpp>
 
 migraphx::instruction_ref
-<<<<<<< HEAD
-add_layernorm(migraphx::program& p, migraphx::instruction_ref x, std::vector<size_t> dims)
-=======
 add_layernorm(migraphx::module& m, migraphx::instruction_ref x, std::vector<size_t> dims)
->>>>>>> ac627b187620129964160c91c2654205f5a6092a
 {
     auto scale =
         m.add_parameter("scale", migraphx::shape{migraphx::shape::float_type, {dims.back()}});
