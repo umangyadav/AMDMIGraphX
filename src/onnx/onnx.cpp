@@ -2942,8 +2942,8 @@ struct onnx_parser
         case 1: return shape::float_type;
         case 2: return shape::uint8_type;
         case 3: return shape::int8_type;
-        case 4: return shape::uint16_type;
-        case 5: return shape::int16_type;
+        // case 4: return shape::uint16_type;
+        // case 5: return shape::int16_type;
         case 6: return shape::int32_type;
         case 7: return shape::int64_type;
         case 9: return shape::bool_type;
@@ -3010,10 +3010,10 @@ struct onnx_parser
         case onnx::TensorProto::INT8: return create_literal(shape::int8_type, dims, t.int32_data());
         case onnx::TensorProto::UINT8:
             return create_literal(shape::uint8_type, dims, t.int32_data());
-        case onnx::TensorProto::INT16:
-            return create_literal(shape::int16_type, dims, t.int32_data());
-        case onnx::TensorProto::UINT16:
-            return create_literal(shape::uint16_type, dims, t.int32_data());
+        // case onnx::TensorProto::INT16:
+        //     return create_literal(shape::int16_type, dims, t.int32_data());
+        // case onnx::TensorProto::UINT16:
+        //     return create_literal(shape::uint16_type, dims, t.int32_data());
         case onnx::TensorProto::INT32:
             return create_literal(shape::int32_type, dims, t.int32_data());
         case onnx::TensorProto::UINT32:

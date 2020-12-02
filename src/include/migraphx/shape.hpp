@@ -29,8 +29,6 @@ struct shape
     m(double_type, double) \
     m(uint8_type, uint8_t) \
     m(int8_type, int8_t) \
-    m(uint16_type, uint16_t) \
-    m(int16_type, int16_t) \
     m(int32_type, int32_t) \
     m(int64_type, int64_t) \
     m(uint32_type, uint32_t) \
