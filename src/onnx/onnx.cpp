@@ -2941,7 +2941,8 @@ struct onnx_parser
         {
         case 1: return shape::float_type;
         case 2: return shape::uint8_type;
-        case 3: return shape::int8_type;
+        case 3:
+            return shape::int8_type;
         // case 4: return shape::uint16_type;
         // case 5: return shape::int16_type;
         case 6: return shape::int32_type;
