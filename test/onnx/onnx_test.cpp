@@ -2398,9 +2398,10 @@ TEST_CASE(sub_scalar_test)
 //     auto input0 = mm->add_parameter("0", migraphx::shape{migraphx::shape::int16_type, {3}});
 //     auto input1 = mm->add_parameter("1", migraphx::shape{migraphx::shape::uint16_type, {3}});
 //     auto input2 = mm->add_parameter("2", migraphx::shape{migraphx::shape::uint32_type, {3}});
-//     auto cin0   = mm->add_instruction(migraphx::op::convert{migraphx::shape::uint32_type}, input0);
-//     auto cin1   = mm->add_instruction(migraphx::op::convert{migraphx::shape::uint32_type}, input1);
-//     auto l0     = mm->add_instruction(migraphx::op::add{}, cin0, cin1);
+//     auto cin0   = mm->add_instruction(migraphx::op::convert{migraphx::shape::uint32_type},
+//     input0); auto cin1   =
+//     mm->add_instruction(migraphx::op::convert{migraphx::shape::uint32_type}, input1); auto l0
+//     = mm->add_instruction(migraphx::op::add{}, cin0, cin1);
 //     mm->add_instruction(migraphx::op::add{}, l0, input2);
 
 //     auto prog = optimize_onnx("sum_int_test.onnx");
@@ -2428,14 +2429,15 @@ TEST_CASE(sum_test)
 //     auto l_bool   = mm->add_literal({migraphx::shape{migraphx::shape::bool_type, {2}}, {1, 0}});
 //     auto l_int8   = mm->add_literal({migraphx::shape{migraphx::shape::int8_type, {2}}, {1, 1}});
 //     auto l_uint8  = mm->add_literal({migraphx::shape{migraphx::shape::uint8_type, {2}}, {1, 1}});
-//     auto l_uint16 = mm->add_literal({migraphx::shape{migraphx::shape::uint16_type, {2}}, {1, 1}});
-//     auto l_uint32 = mm->add_literal({migraphx::shape{migraphx::shape::uint32_type, {2}}, {1, 1}});
-//     auto l_uint64 = mm->add_literal({migraphx::shape{migraphx::shape::uint64_type, {2}}, {1, 1}});
-//     auto l_double = mm->add_literal({migraphx::shape{migraphx::shape::double_type, {2}}, {1, 1}});
-//     auto l_raw  = mm->add_literal({migraphx::shape{migraphx::shape::double_type, {2}}, {1.5, 2.0}});
-//     auto o_bool = mm->add_instruction(migraphx::op::convert{migraphx::shape::double_type}, l_bool);
-//     auto o_int8 = mm->add_instruction(migraphx::op::convert{migraphx::shape::double_type}, l_int8);
-//     auto o_uint8 =
+//     auto l_uint16 = mm->add_literal({migraphx::shape{migraphx::shape::uint16_type, {2}}, {1,
+//     1}}); auto l_uint32 = mm->add_literal({migraphx::shape{migraphx::shape::uint32_type, {2}},
+//     {1, 1}}); auto l_uint64 = mm->add_literal({migraphx::shape{migraphx::shape::uint64_type,
+//     {2}}, {1, 1}}); auto l_double =
+//     mm->add_literal({migraphx::shape{migraphx::shape::double_type, {2}}, {1, 1}}); auto l_raw  =
+//     mm->add_literal({migraphx::shape{migraphx::shape::double_type, {2}}, {1.5, 2.0}}); auto
+//     o_bool = mm->add_instruction(migraphx::op::convert{migraphx::shape::double_type}, l_bool);
+//     auto o_int8 = mm->add_instruction(migraphx::op::convert{migraphx::shape::double_type},
+//     l_int8); auto o_uint8 =
 //         mm->add_instruction(migraphx::op::convert{migraphx::shape::double_type}, l_uint8);
 //     auto o_uint16 =
 //         mm->add_instruction(migraphx::op::convert{migraphx::shape::double_type}, l_uint16);
