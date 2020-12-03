@@ -1166,10 +1166,10 @@ struct tf_parser
         case tensorflow::DataType::DT_FLOAT: shape_type = shape::float_type; break;
         case tensorflow::DataType::DT_DOUBLE: shape_type = shape::double_type; break;
         case tensorflow::DataType::DT_INT32: shape_type = shape::int32_type; break;
-        case tensorflow::DataType::DT_INT16: shape_type = shape::int16_type; break;
+        // case tensorflow::DataType::DT_INT16: shape_type = shape::int16_type; break;
         case tensorflow::DataType::DT_INT8: shape_type = shape::int8_type; break;
         case tensorflow::DataType::DT_INT64: shape_type = shape::int64_type; break;
-        case tensorflow::DataType::DT_UINT16: shape_type = shape::uint16_type; break;
+        // case tensorflow::DataType::DT_UINT16: shape_type = shape::uint16_type; break;
         case tensorflow::DataType::DT_HALF: shape_type = shape::half_type; break;
         case tensorflow::DataType::DT_UINT32: shape_type = shape::uint32_type; break;
         case tensorflow::DataType::DT_UINT64: shape_type = shape::uint64_type; break;
@@ -1231,9 +1231,9 @@ struct tf_parser
                 return literal{{shape::float_type, dims}, s.data()};
             case tensorflow::DataType::DT_BOOL:
             case tensorflow::DataType::DT_INT8: return literal{{shape::int8_type, dims}, s.data()};
-            case tensorflow::DataType::DT_UINT16:
-            case tensorflow::DataType::DT_INT16:
-                return literal{{shape::int16_type, dims}, s.data()};
+            // case tensorflow::DataType::DT_UINT16:
+            // case tensorflow::DataType::DT_INT16:
+            //     return literal{{shape::int16_type, dims}, s.data()};
             case tensorflow::DataType::DT_INT32:
                 return literal{{shape::int32_type, dims}, s.data()};
             case tensorflow::DataType::DT_INT64:
@@ -1292,10 +1292,10 @@ struct tf_parser
                 shape::float_type, dims, get_data_vals(t.float_val(), shape_size));
         case tensorflow::DataType::DT_INT8:
             return create_literal(shape::int8_type, dims, get_data_vals(t.int_val(), shape_size));
-        case tensorflow::DataType::DT_UINT16:
-            return create_literal(shape::uint16_type, dims, get_data_vals(t.int_val(), shape_size));
-        case tensorflow::DataType::DT_INT16:
-            return create_literal(shape::int16_type, dims, get_data_vals(t.int_val(), shape_size));
+        // case tensorflow::DataType::DT_UINT16:
+        //     return create_literal(shape::uint16_type, dims, get_data_vals(t.int_val(), shape_size));
+        // case tensorflow::DataType::DT_INT16:
+        //     return create_literal(shape::int16_type, dims, get_data_vals(t.int_val(), shape_size));
         case tensorflow::DataType::DT_INT32:
             return create_literal(shape::int32_type, dims, get_data_vals(t.int_val(), shape_size));
         case tensorflow::DataType::DT_INT64:
