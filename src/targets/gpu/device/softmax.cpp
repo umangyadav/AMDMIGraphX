@@ -29,31 +29,35 @@ void softmax(hipStream_t stream, const argument& result, const argument& arg, in
                   block_size)([=](auto i, auto idx) __device__ {
             auto offset = batch_item_num * idx.group;
             using type    = device_type<std::remove_cv_t<typename decltype(input)::value_type>>;
-            MIGRAPHX_DEVICE_SHARED type buffer[384];
+            MIGRAPHX_DEVICE_SHARED type buffer[64];
+
+            // buffer[idx.local] = lowest();
+            // for (int tidx = idx.local; tidx < batch_item_num; tidx += block_size)
+            // {
+            //     auto val = input_ptr[offset + tidx];
+            //     buffer[idx.local] = val > buffer[idx.local] ? val : buffer[idx.local];
+            // }
+
+            // // block_reduce to compute max
+            // int stride = 32;
+            // while (stride > 0)
+            // {
+            //     for (int tidx = idx.local; tidx < stride; ++tidx)
+            //     {
+            //         buffer[tidx] = (buffer[tidx] < buffer[tidx + stride]) ? buffer[tidx + stride] : buffer[tidx];
+            //     }
+            //     __syncthreads();
+            //     stride = stride / 2;
+            // }
+
+            // type max_val = buffer[0];
+            buffer[idx.local] = 0;
             for (int tidx = idx.local; tidx < batch_item_num; tidx += block_size)
             {
-                buffer[tidx] = input_ptr[offset + tidx];
+                buffer[idx.local] += ::exp(to_hip_type(input_ptr[tidx]));
             }
 
-            // block_reduce to compute max
-            int stride = batch_item_num / 2;
-            while (stride > 0)
-            {
-                for (int tidx = idx.local; tidx < stride; ++tidx)
-                {
-                    buffer[tidx] = (buffer[tidx] < buffer[tidx + stride]) ? buffer[tidx + stride] : buffer[tidx];
-                }
-                __syncthreads();
-                stride = stride / 2;
-            }
-
-            type max_val = buffer[0];
-            for (int tidx = idx.local; tidx < batch_item_num; tidx += block_size)
-            {
-                buffer[tidx] = ::exp(to_hip_type(input_ptr[tidx] - max_val));
-            }
-
-            stride = batch_item_num / 2;
+            int stride = 32;
             while (stride > 0)
             {
                 for (int tidx = idx.local; tidx < stride; ++tidx)
@@ -68,7 +72,7 @@ void softmax(hipStream_t stream, const argument& result, const argument& arg, in
 
             for (int tidx = idx.local; tidx < batch_item_num; tidx += block_size)
             {
-                output_ptr[offset + tidx] = ::exp(to_hip_type(input_ptr[tidx] - max_val)) / sum_val;
+                output_ptr[offset + tidx] = ::exp(to_hip_type(input_ptr[tidx])) / sum_val;
             }
 
             // auto data_idx = batch.multi(i / block_size);
