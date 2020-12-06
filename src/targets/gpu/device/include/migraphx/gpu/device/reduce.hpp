@@ -84,6 +84,7 @@ struct highest
     }
 };
 
+#define MIGRAPHX_NO_DPP
 #ifdef MIGRAPHX_NO_DPP
 template <index_int N,
           class Op,

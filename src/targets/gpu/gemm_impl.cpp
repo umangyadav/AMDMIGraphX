@@ -60,6 +60,10 @@ void gemm_impl(
         output_type = rocblas_datatype_i32_r;
     }
     auto compute_type = output_type;
+    if (output_type == rocblas_datatype_f16_r)
+    {
+        compute_type = rocblas_datatype_f32_r;
+    }
 
     auto a_lens = args[0].get_shape().lens();
     auto b_lens = args[1].get_shape().lens();
