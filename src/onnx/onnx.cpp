@@ -68,12 +68,12 @@ struct onnx_parser
     node_map nodes;
     std::unordered_map<std::string, instruction_ref> instructions;
     program prog                  = program();
-    module* cur_modl                    = prog.get_main_module();
+    module* cur_modl              = prog.get_main_module();
     bool is_pytorch               = false;
     std::size_t default_dim_value = 1;
     std::unordered_map<std::string, std::vector<std::size_t>> map_input_dims;
     bool skip_unknown_operators = false;
-    int subgraph_index = 0;
+    int subgraph_index          = 0;
 
     std::unordered_map<std::string, op_func> ops;
     std::unordered_map<std::string, operation> map_actv_funcs;
@@ -270,8 +270,8 @@ struct onnx_parser
                 if(broadcasted != 0)
                 {
                     uint64_t axis = parse_value(info.attributes.at("axis")).at<uint64_t>();
-                    auto l = cur_modl->add_instruction(op::broadcast{axis, args[0]->get_shape().lens()},
-                                                 args[1]);
+                    auto l        = cur_modl->add_instruction(
+                        op::broadcast{axis, args[0]->get_shape().lens()}, args[1]);
                     return cur_modl->add_instruction(make_op(op_name), args[0], l);
                 }
                 return cur_modl->add_instruction(make_op(op_name), args);
@@ -401,8 +401,8 @@ struct onnx_parser
     {
         if(args.size() == 3)
         {
-            auto bias_bcast =
-                cur_modl->add_instruction(op::broadcast{axis, curr_ins->get_shape().lens()}, args[2]);
+            auto bias_bcast = cur_modl->add_instruction(
+                op::broadcast{axis, curr_ins->get_shape().lens()}, args[2]);
             return cur_modl->add_instruction(make_op("add"), curr_ins, bias_bcast);
         }
         return curr_ins;
@@ -527,7 +527,8 @@ struct onnx_parser
 
         if(keep_dims == 0)
         {
-            auto ins = cur_modl->add_instruction(make_op(op_name, {{"axis", axis}}), std::move(args));
+            auto ins =
+                cur_modl->add_instruction(make_op(op_name, {{"axis", axis}}), std::move(args));
             return cur_modl->add_instruction(op::squeeze{{axis}}, ins);
         }
         else
@@ -1305,12 +1306,13 @@ struct onnx_parser
 
         auto l_shape_idx =
             cur_modl->add_literal(literal(ind_s, data_indices.begin(), data_indices.end()));
-        auto l_dim_idx = cur_modl->add_literal(literal(ind_s, vec_axis_ind.begin(), vec_axis_ind.end()));
-        auto l_stride  = cur_modl->add_literal(literal{{ind_s.type(), {1}}, {axis_stride}});
-        l_stride       = cur_modl->add_instruction(op::multibroadcast{ind_s.lens()}, l_stride);
-        auto dim_diff  = cur_modl->add_instruction(make_op("sub"), arg_ind, l_dim_idx);
-        auto delta     = cur_modl->add_instruction(make_op("mul"), dim_diff, l_stride);
-        auto ind       = cur_modl->add_instruction(make_op("add"), l_shape_idx, delta);
+        auto l_dim_idx =
+            cur_modl->add_literal(literal(ind_s, vec_axis_ind.begin(), vec_axis_ind.end()));
+        auto l_stride = cur_modl->add_literal(literal{{ind_s.type(), {1}}, {axis_stride}});
+        l_stride      = cur_modl->add_instruction(op::multibroadcast{ind_s.lens()}, l_stride);
+        auto dim_diff = cur_modl->add_instruction(make_op("sub"), arg_ind, l_dim_idx);
+        auto delta    = cur_modl->add_instruction(make_op("mul"), dim_diff, l_stride);
+        auto ind      = cur_modl->add_instruction(make_op("add"), l_shape_idx, delta);
 
         op::gather op{0};
         return cur_modl->add_instruction(op, arg_data, ind);
@@ -1450,7 +1452,8 @@ struct onnx_parser
             }
         }
 
-        return cur_modl->add_instruction(make_op("dot", {{"alpha", alpha}, {"beta", beta}}), l1, l2);
+        return cur_modl->add_instruction(
+            make_op("dot", {{"alpha", alpha}, {"beta", beta}}), l1, l2);
     }
 
     instruction_ref parse_matmul(const std::string&,
@@ -1503,7 +1506,8 @@ struct onnx_parser
             }
         }
 
-        auto dot_res = cur_modl->add_instruction(make_op(op_name, {{"alpha", 1}, {"beta", 0}}), bl0, bl1);
+        auto dot_res =
+            cur_modl->add_instruction(make_op(op_name, {{"alpha", 1}, {"beta", 0}}), bl0, bl1);
         int64_t num_axis = static_cast<int64_t>(dot_res->get_shape().lens().size());
         if(is_a_prepended)
         {
@@ -1565,18 +1569,18 @@ struct onnx_parser
         std::vector<int64_t> axes(kdims);
         std::iota(axes.begin(), axes.end(), 2);
 
-        auto mean            = cur_modl->add_instruction(make_op("reduce_mean", {{"axes", axes}}), x);
-        auto mean_bcast      = cur_modl->add_instruction(op::multibroadcast{dims}, mean);
-        auto l0              = cur_modl->add_instruction(make_op("sqdiff"), x, mean_bcast);
-        auto variance        = cur_modl->add_instruction(make_op("reduce_mean", {{"axes", axes}}), l0);
-        auto l1              = cur_modl->add_instruction(make_op("sub"), x, mean_bcast);
+        auto mean       = cur_modl->add_instruction(make_op("reduce_mean", {{"axes", axes}}), x);
+        auto mean_bcast = cur_modl->add_instruction(op::multibroadcast{dims}, mean);
+        auto l0         = cur_modl->add_instruction(make_op("sqdiff"), x, mean_bcast);
+        auto variance   = cur_modl->add_instruction(make_op("reduce_mean", {{"axes", axes}}), l0);
+        auto l1         = cur_modl->add_instruction(make_op("sub"), x, mean_bcast);
         auto epsilon_literal = cur_modl->add_literal(epsilon);
         auto epsilon_bcast   = cur_modl->add_instruction(op::multibroadcast{dims}, epsilon_literal);
         auto variance_bcast  = cur_modl->add_instruction(op::multibroadcast{dims}, variance);
-        auto l2              = cur_modl->add_instruction(make_op("add"), variance_bcast, epsilon_bcast);
-        auto l3              = cur_modl->add_instruction(make_op("rsqrt"), l2);
-        auto l4              = cur_modl->add_instruction(make_op("mul"), l1, l3);
-        auto scale_bcast     = cur_modl->add_instruction(op::broadcast{1, dims}, scale);
+        auto l2          = cur_modl->add_instruction(make_op("add"), variance_bcast, epsilon_bcast);
+        auto l3          = cur_modl->add_instruction(make_op("rsqrt"), l2);
+        auto l4          = cur_modl->add_instruction(make_op("mul"), l1, l3);
+        auto scale_bcast = cur_modl->add_instruction(op::broadcast{1, dims}, scale);
         ;
         auto bias_bcast = cur_modl->add_instruction(op::broadcast{1, dims}, bias);
         auto l5         = cur_modl->add_instruction(make_op("mul"), l4, scale_bcast);
@@ -1649,8 +1653,10 @@ struct onnx_parser
         auto bias_vals = cur_modl->add_literal(literal{shape{input_type, {bias.size()}}, bias});
 
         auto scale_tensor = cur_modl->add_instruction(migraphx::op::scalar{input_lens}, scale_val);
-        auto img_scaled = cur_modl->add_instruction(migraphx::make_op("mul"), args.front(), scale_tensor);
-        auto bias_bcast = cur_modl->add_instruction(migraphx::op::broadcast{1, input_lens}, bias_vals);
+        auto img_scaled =
+            cur_modl->add_instruction(migraphx::make_op("mul"), args.front(), scale_tensor);
+        auto bias_bcast =
+            cur_modl->add_instruction(migraphx::op::broadcast{1, input_lens}, bias_vals);
         return cur_modl->add_instruction(migraphx::make_op("add"), img_scaled, bias_bcast);
     }
 
@@ -1748,10 +1754,10 @@ struct onnx_parser
         auto l_gamma = cur_modl->add_literal({{type, {1}}, {gamma / 2.0f}});
         if(lens != std::vector<std::size_t>{1})
         {
-            l_alpha =
-                cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", lens}}), l_alpha);
-            l_gamma =
-                cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", lens}}), l_gamma);
+            l_alpha = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", lens}}),
+                                                l_alpha);
+            l_gamma = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", lens}}),
+                                                l_gamma);
         }
 
         auto sign_x = cur_modl->add_instruction(make_op("sign"), args[0]);
@@ -2009,8 +2015,8 @@ struct onnx_parser
         }
 
         // first output for the concatenation of hidden states
-        auto hidden_states =
-            cur_modl->add_instruction(op::rnn{hidden_size, vec_actv_funcs, dirct, clip}, std::move(args));
+        auto hidden_states = cur_modl->add_instruction(
+            op::rnn{hidden_size, vec_actv_funcs, dirct, clip}, std::move(args));
 
         // second output for the last hidden state
         auto last_output = cur_modl->add_instruction(op::rnn_last_hs_output{}, hidden_states);
@@ -2318,7 +2324,8 @@ struct onnx_parser
         auto last_output = cur_modl->add_instruction(op::rnn_last_hs_output{}, hidden_states);
 
         // third output for last cell output
-        auto last_cell_output = cur_modl->add_instruction(op::rnn_last_cell_output{}, hidden_states);
+        auto last_cell_output =
+            cur_modl->add_instruction(op::rnn_last_cell_output{}, hidden_states);
 
         return {hidden_states, last_output, last_cell_output};
     }
@@ -2352,7 +2359,8 @@ struct onnx_parser
         }
         else
         {
-            auto ins = cur_modl->add_instruction(make_op(op_name, {{"axes", axes}}), std::move(args));
+            auto ins =
+                cur_modl->add_instruction(make_op(op_name, {{"axes", axes}}), std::move(args));
             return cur_modl->add_instruction(op::squeeze{axes}, ins);
         }
     }
@@ -2407,7 +2415,8 @@ struct onnx_parser
 
         int to_type        = parse_value(info.attributes.at("to")).at<int>();
         shape::type_t type = get_type(to_type);
-        return cur_modl->add_instruction(make_op("convert", {{"target_type", type}}), std::move(args));
+        return cur_modl->add_instruction(make_op("convert", {{"target_type", type}}),
+                                         std::move(args));
     }
 
     std::vector<instruction_ref>
@@ -2565,7 +2574,8 @@ struct onnx_parser
                 return result;
             });
 
-            l0 = cur_modl->add_literal({shape{args[0]->get_shape().type(), {num_elements}}, range_vals});
+            l0 = cur_modl->add_literal(
+                {shape{args[0]->get_shape().type(), {num_elements}}, range_vals});
         });
         return l0;
     }
@@ -2681,7 +2691,8 @@ struct onnx_parser
         auto l = add_broadcastable_binary_op(args[0], args[1], op_name);
         if(l->get_shape().type() != shape::bool_type)
         {
-            l = cur_modl->add_instruction(make_op("convert", {{"target_type", shape::bool_type}}), l);
+            l = cur_modl->add_instruction(make_op("convert", {{"target_type", shape::bool_type}}),
+                                          l);
         }
         return l;
     }
@@ -2754,34 +2765,37 @@ struct onnx_parser
     instruction_ref
     parse_where(const std::string&, const node_info&, std::vector<instruction_ref> args)
     {
-        auto cond =
-            cur_modl->add_instruction(make_op("convert", {{"target_type", shape::int32_type}}), args[0]);
+        auto cond = cur_modl->add_instruction(
+            make_op("convert", {{"target_type", shape::int32_type}}), args[0]);
         auto lens = compute_broadcasted_lens(cond->get_shape().lens(), args[1]->get_shape().lens());
         lens      = compute_broadcasted_lens(lens, args[2]->get_shape().lens());
         if(cond->get_shape().lens() != lens)
         {
-            cond = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", lens}}), cond);
+            cond =
+                cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", lens}}), cond);
         }
 
         if(args[1]->get_shape().lens() != lens)
         {
-            args[1] =
-                cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", lens}}), args[1]);
+            args[1] = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", lens}}),
+                                                args[1]);
         }
 
         if(args[2]->get_shape().lens() != lens)
         {
-            args[2] =
-                cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", lens}}), args[2]);
+            args[2] = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", lens}}),
+                                                args[2]);
         }
 
         // compute index
         auto elem_num = args[1]->get_shape().elements();
 
         // concatenation of input data
-        auto concat_data = cur_modl->add_instruction(make_op("concat", {{"axis", 0}}), args[2], args[1]);
+        auto concat_data =
+            cur_modl->add_instruction(make_op("concat", {{"axis", 0}}), args[2], args[1]);
         std::vector<int64_t> dims = {static_cast<int64_t>(2 * elem_num)};
-        auto rsp_data = cur_modl->add_instruction(make_op("reshape", {{"dims", dims}}), concat_data);
+        auto rsp_data =
+            cur_modl->add_instruction(make_op("reshape", {{"dims", dims}}), concat_data);
 
         std::vector<int> ind(elem_num);
         std::iota(ind.begin(), ind.end(), 0);
@@ -2802,39 +2816,39 @@ struct onnx_parser
         check_arg_empty(arg_cond, "PARSE_IF: Cond input must be a constant value!");
         std::vector<bool> vec_cond;
         arg_cond.visit([&](auto v) { vec_cond.assign(v.begin(), v.end()); });
-        if (vec_cond.size() != 1)
+        if(vec_cond.size() != 1)
         {
             MIGRAPHX_THROW("PARSE_IF, Cond input can contain only 1 elements!");
         }
         bool cond = vec_cond[0];
 
         // parse the then branch subgraph
-        if (cond)
+        if(cond)
         {
-            if (!contains(info.attributes, "then_branch"))
+            if(!contains(info.attributes, "then_branch"))
             {
                 MIGRAPHX_THROW("PARSE_IF: then branch subgraph not available");
             }
 
-            auto && sub_graph = info.attributes["then_branch"].g();
+            auto&& sub_graph = info.attributes["then_branch"].g();
             std::string name = "if_then_sg_" + std::to_string(subgraph_index++);
-            cur_modl = prog.create_module(name);
+            cur_modl         = prog.create_module(name);
             parse_graph(sub_graph);
             cur_modl = prog.get_main_module();
 
-            return 
+            return
         }
         // parse the else branch subgraph
         else
         {
-            if (!contains(info.attributes, "else_branch"))
+            if(!contains(info.attributes, "else_branch"))
             {
                 MIGRAPHX_THROW("PARSE_IF: else branch subgraph not available");
             }
 
-            auto && sub_graph = info.attributes["then_branch"].g();
+            auto&& sub_graph = info.attributes["then_branch"].g();
             std::string name = "if_else_sg_" + std::to_string(subgraph_index++);
-            cur_modl = prog.create_module(name);
+            cur_modl         = prog.create_module(name);
             parse_graph(sub_graph);
             cur_modl = prog.get_main_module();
         }
