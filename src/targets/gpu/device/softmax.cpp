@@ -15,64 +15,16 @@ namespace device {
 void softmax(hipStream_t stream, const argument& result, const argument& arg, int64_t axis)
 {
     auto batch_lens          = result.get_shape().lens();
-    const index_int batch_item_num = batch_lens[axis];
+    index_int batch_item_num = batch_lens[axis];
     batch_lens[axis]         = 1;
     migraphx::shape batch_shape{result.get_shape().type(), batch_lens};
 
     hip_visit_all(result, arg, batch_shape)([&](auto output, auto input, auto batch) {
         const index_int max_block_size = 128;
         const index_int block_size     = compute_block_size(batch_item_num, max_block_size);
-        const auto* input_ptr = device_cast(input.data());
-        auto* output_ptr        = device_cast(output.data());
         gs_launch(stream,
                   batch_shape.elements() * block_size,
                   block_size)([=](auto i, auto idx) __device__ {
-            auto offset = batch_item_num * idx.group;
-            using type    = device_type<std::remove_cv_t<typename decltype(input)::value_type>>;
-            // MIGRAPHX_DEVICE_SHARED type buffer[128];
-            // type in_val[3];
-            // in_val[0] = input_ptr[idx.local + offset];
-            // in_val[1] = input_ptr[idx.local + offset + 128];
-            // in_val[2] = input_ptr[idx.local + offset + 256];
-
-            // buffer[idx.local] = (in_val[0] > in_val[1]) ? in_val[0] : in_val[1];
-            // buffer[idx.local] = (in_val[2] > buffer[idx.local]) ? in_val[2] : buffer[idx.local];
-
-            // // block_reduce to compute max
-            // int stride = 64;
-            // while (stride > 0)
-            // {
-            //     for (int tidx = idx.local; tidx < stride; ++tidx)
-            //     {
-            //         buffer[tidx] = (buffer[tidx] < buffer[tidx + stride]) ? buffer[tidx + stride] : buffer[tidx];
-            //     }
-            //     __syncthreads();
-            //     stride = stride / 2;
-            // }
-
-            // type max_val = buffer[0];
-            // __syncthreads();
-
-            // buffer[idx.local] = ::exp(to_hip_type((in_val[0] - max_val) * (in_val[1] - max_val) * (in_val[2] - max_val)));
-
-            // stride = 64;
-            // while (stride > 0)
-            // {
-            //     for (int tidx = idx.local; tidx < stride; ++tidx)
-            //     {
-            //         buffer[tidx] = buffer[tidx] + buffer[tidx + stride];
-            //     }
-            //     __syncthreads();
-            //     stride = stride / 2;
-            // }
-
-            // type sum_val = buffer[0];
-            // __syncthreads();
-
-            // output_ptr[idx.local + offset] = ::exp(to_hip_type(in_val[0] - max_val)) / sum_val;
-            // output_ptr[idx.local + offset + 128] = ::exp(to_hip_type(in_val[1] - max_val)) / sum_val;
-            // output_ptr[idx.local + offset + 256] = ::exp(to_hip_type(in_val[2] - max_val)) / sum_val;
-
             auto data_idx = batch.multi(i / block_size);
             using type    = device_type<std::remove_cv_t<typename decltype(input)::value_type>>;
             type init     = lowest();
