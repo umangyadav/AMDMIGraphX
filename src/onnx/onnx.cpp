@@ -350,13 +350,13 @@ struct onnx_parser
 
             auto l0 = arg0;
             if(arg0->get_shape().lens() != out_lens)
-                l0 = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", out_lens}}),
-                                         arg0);
+                l0 = cur_modl->add_instruction(
+                    make_op("multibroadcast", {{"output_lens", out_lens}}), arg0);
 
             auto l1 = arg1;
             if(arg1->get_shape().lens() != out_lens)
-                l1 = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", out_lens}}),
-                                         arg1);
+                l1 = cur_modl->add_instruction(
+                    make_op("multibroadcast", {{"output_lens", out_lens}}), arg1);
 
             return cur_modl->add_instruction(make_op(name), l0, l1);
         }
@@ -449,8 +449,8 @@ struct onnx_parser
             asym_pads.insert(asym_pads.begin() + 2, left_pad_it, right_pad_it);
             // add right pads
             asym_pads.insert(asym_pads.begin() + pad_ndims + 4, right_pad_it, padding.end());
-            ins =
-                cur_modl->add_instruction(make_op("pad", {{"pads", asym_pads}, {"value", pad_val}}), ins);
+            ins = cur_modl->add_instruction(
+                make_op("pad", {{"pads", asym_pads}, {"value", pad_val}}), ins);
         }
         else
         {
@@ -492,14 +492,14 @@ struct onnx_parser
 
         if(min_used)
         {
-            min_arg = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", input_lens}}),
-                                          min_arg);
+            min_arg = cur_modl->add_instruction(
+                make_op("multibroadcast", {{"output_lens", input_lens}}), min_arg);
         }
 
         if(max_used)
         {
-            max_arg = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", input_lens}}),
-                                          max_arg);
+            max_arg = cur_modl->add_instruction(
+                make_op("multibroadcast", {{"output_lens", input_lens}}), max_arg);
         }
 
         if(min_used and max_used)
@@ -539,7 +539,8 @@ struct onnx_parser
 
         if(keep_dims == 0)
         {
-            auto ins = cur_modl->add_instruction(make_op(op_name, {{"axis", axis}}), std::move(args));
+            auto ins =
+                cur_modl->add_instruction(make_op(op_name, {{"axis", axis}}), std::move(args));
             return cur_modl->add_instruction(make_op("squeeze", {{"axes", {axis}}}), ins);
         }
         else
@@ -1303,7 +1304,8 @@ struct onnx_parser
         int64_t data_elem_num = static_cast<int64_t>(data_s.elements());
         // reshape the input data as one dimension and used as input data
         // to the gather operator
-        arg_data = cur_modl->add_instruction(make_op("reshape", {{"dims", {data_elem_num}}}), arg_data);
+        arg_data =
+            cur_modl->add_instruction(make_op("reshape", {{"dims", {data_elem_num}}}), arg_data);
 
         std::size_t elem_num = ind_s.elements();
         std::vector<int> ind_index(elem_num);
@@ -1322,10 +1324,11 @@ struct onnx_parser
 
         auto l_shape_idx =
             cur_modl->add_literal(literal(ind_s, data_indices.begin(), data_indices.end()));
-        auto l_dim_idx = cur_modl->add_literal(literal(ind_s, vec_axis_ind.begin(), vec_axis_ind.end()));
-        auto l_stride  = cur_modl->add_literal(literal{{ind_s.type(), {1}}, {axis_stride}});
-        l_stride = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", ind_s.lens()}}),
-                                       l_stride);
+        auto l_dim_idx =
+            cur_modl->add_literal(literal(ind_s, vec_axis_ind.begin(), vec_axis_ind.end()));
+        auto l_stride = cur_modl->add_literal(literal{{ind_s.type(), {1}}, {axis_stride}});
+        l_stride      = cur_modl->add_instruction(
+            make_op("multibroadcast", {{"output_lens", ind_s.lens()}}), l_stride);
         auto dim_diff = cur_modl->add_instruction(make_op("sub"), arg_ind, l_dim_idx);
         auto delta    = cur_modl->add_instruction(make_op("mul"), dim_diff, l_stride);
         auto ind      = cur_modl->add_instruction(make_op("add"), l_shape_idx, delta);
@@ -1449,10 +1452,12 @@ struct onnx_parser
         // swap the last two elements
         std::swap(*perm.rbegin(), *(perm.rbegin() + 1));
 
-        auto l1 = (transa) ? cur_modl->add_instruction(make_op("transpose", {{"dims", perm}}), args[0])
-                           : args[0];
-        auto l2 = (transb) ? cur_modl->add_instruction(make_op("transpose", {{"dims", perm}}), args[1])
-                           : args[1];
+        auto l1 = (transa)
+                      ? cur_modl->add_instruction(make_op("transpose", {{"dims", perm}}), args[0])
+                      : args[0];
+        auto l2 = (transb)
+                      ? cur_modl->add_instruction(make_op("transpose", {{"dims", perm}}), args[1])
+                      : args[1];
         if(args.size() == 3)
         {
             if(beta != 0.f && args[2]->get_shape().elements() > 0)
@@ -1463,8 +1468,8 @@ struct onnx_parser
                 auto l3_lens    = l3->get_shape().lens();
                 if(!std::equal(out_lens.begin(), out_lens.end(), l3_lens.begin(), l3_lens.end()))
                 {
-                    l3 = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", out_lens}}),
-                                             args[2]);
+                    l3 = cur_modl->add_instruction(
+                        make_op("multibroadcast", {{"output_lens", out_lens}}), args[2]);
                 }
                 return cur_modl->add_instruction(
                     make_op("dot", {{"alpha", alpha}, {"beta", beta}}), l1, l2, l3);
@@ -1532,12 +1537,14 @@ struct onnx_parser
         int64_t num_axis = static_cast<int64_t>(dot_res->get_shape().lens().size());
         if(is_a_prepended)
         {
-            dot_res = cur_modl->add_instruction(make_op("squeeze", {{"axes", {num_axis - 2}}}), dot_res);
+            dot_res =
+                cur_modl->add_instruction(make_op("squeeze", {{"axes", {num_axis - 2}}}), dot_res);
             --num_axis;
         }
         if(is_b_appended)
         {
-            dot_res = cur_modl->add_instruction(make_op("squeeze", {{"axes", {num_axis - 1}}}), dot_res);
+            dot_res =
+                cur_modl->add_instruction(make_op("squeeze", {{"axes", {num_axis - 1}}}), dot_res);
         }
 
         return dot_res;
@@ -1593,12 +1600,12 @@ struct onnx_parser
         auto mean = cur_modl->add_instruction(make_op("reduce_mean", {{"axes", axes}}), x);
         auto mean_bcast =
             cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", dims}}), mean);
-        auto l0              = cur_modl->add_instruction(make_op("sqdiff"), x, mean_bcast);
-        auto variance        = cur_modl->add_instruction(make_op("reduce_mean", {{"axes", axes}}), l0);
-        auto l1              = cur_modl->add_instruction(make_op("sub"), x, mean_bcast);
+        auto l0       = cur_modl->add_instruction(make_op("sqdiff"), x, mean_bcast);
+        auto variance = cur_modl->add_instruction(make_op("reduce_mean", {{"axes", axes}}), l0);
+        auto l1       = cur_modl->add_instruction(make_op("sub"), x, mean_bcast);
         auto epsilon_literal = cur_modl->add_literal(epsilon);
-        auto epsilon_bcast = cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", dims}}),
-                                                 epsilon_literal);
+        auto epsilon_bcast   = cur_modl->add_instruction(
+            make_op("multibroadcast", {{"output_lens", dims}}), epsilon_literal);
         auto variance_bcast =
             cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", dims}}), variance);
         auto l2 = cur_modl->add_instruction(make_op("add"), variance_bcast, epsilon_bcast);
@@ -1680,7 +1687,8 @@ struct onnx_parser
 
         auto scale_tensor = cur_modl->add_instruction(
             migraphx::make_op("scalar", {{"scalar_bcst_dims", input_lens}}), scale_val);
-        auto img_scaled = cur_modl->add_instruction(migraphx::make_op("mul"), args.front(), scale_tensor);
+        auto img_scaled =
+            cur_modl->add_instruction(migraphx::make_op("mul"), args.front(), scale_tensor);
         auto bias_bcast = cur_modl->add_instruction(
             migraphx::make_op("broadcast", {{"axis", 1}, {"dims", input_lens}}), bias_vals);
         return cur_modl->add_instruction(migraphx::make_op("add"), img_scaled, bias_bcast);
@@ -1695,7 +1703,8 @@ struct onnx_parser
             auto&& perm_vals = info.attributes["perm"].ints();
             perm             = std::vector<int64_t>(perm_vals.begin(), perm_vals.end());
         }
-        return cur_modl->add_instruction(migraphx::make_op("transpose", {{"dims", perm}}), args.front());
+        return cur_modl->add_instruction(migraphx::make_op("transpose", {{"dims", perm}}),
+                                         args.front());
     }
 
     instruction_ref parse_pad(const std::string&, node_info info, std::vector<instruction_ref> args)
@@ -1756,8 +1765,8 @@ struct onnx_parser
             value = parse_value(info.attributes.at("value")).at<float>();
         }
 
-        return cur_modl->add_instruction(migraphx::make_op("pad", {{"pads", pads}, {"value", value}}),
-                                   args.front());
+        return cur_modl->add_instruction(
+            migraphx::make_op("pad", {{"pads", pads}, {"value", value}}), args.front());
     }
 
     instruction_ref
@@ -1954,7 +1963,8 @@ struct onnx_parser
         std::vector<std::size_t> dims;
         arg_s.visit([&](auto input) { dims.assign(input.begin(), input.end()); });
         auto out_lens = compute_broadcasted_lens(in_lens, dims);
-        return cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", out_lens}}), args[0]);
+        return cur_modl->add_instruction(make_op("multibroadcast", {{"output_lens", out_lens}}),
+                                         args[0]);
     }
 
     std::vector<instruction_ref>
@@ -2042,12 +2052,13 @@ struct onnx_parser
         }
 
         // first output for the concatenation of hidden states
-        auto hidden_states = cur_modl->add_instruction(make_op("rnn",
-                                                         {{"hidden_size", hidden_size},
-                                                          {"actv_func", to_value(vec_actv_funcs)},
-                                                          {"direction", dirct},
-                                                          {"clip", clip}}),
-                                                 std::move(args));
+        auto hidden_states =
+            cur_modl->add_instruction(make_op("rnn",
+                                              {{"hidden_size", hidden_size},
+                                               {"actv_func", to_value(vec_actv_funcs)},
+                                               {"direction", dirct},
+                                               {"clip", clip}}),
+                                      std::move(args));
 
         // second output for the last hidden state
         auto last_output = cur_modl->add_instruction(make_op("rnn_last_hs_output"), hidden_states);
@@ -2169,12 +2180,12 @@ struct onnx_parser
         // first output for concatenation of hidden states
         auto hidden_states =
             cur_modl->add_instruction(make_op("gru",
-                                        {{"hidden_size", hidden_size},
-                                         {"actv_func", to_value(vec_actv_funcs)},
-                                         {"direction", dirct},
-                                         {"clip", clip},
-                                         {"linear_before_reset", linear_before_reset}}),
-                                std::move(args));
+                                              {{"hidden_size", hidden_size},
+                                               {"actv_func", to_value(vec_actv_funcs)},
+                                               {"direction", dirct},
+                                               {"clip", clip},
+                                               {"linear_before_reset", linear_before_reset}}),
+                                      std::move(args));
 
         // second output for last gru output
         auto last_output = cur_modl->add_instruction(make_op("rnn_last_hs_output"), hidden_states);
@@ -2354,18 +2365,20 @@ struct onnx_parser
         }
 
         // first output for concatenation of hidden states
-        auto hidden_states = cur_modl->add_instruction(make_op("lstm",
-                                                         {{"hidden_size", hidden_size},
-                                                          {"actv_func", to_value(vec_actv_funcs)},
-                                                          {"direction", dirct},
-                                                          {"clip", clip},
-                                                          {"input_forget", input_forget}}),
-                                                 std::move(args));
+        auto hidden_states =
+            cur_modl->add_instruction(make_op("lstm",
+                                              {{"hidden_size", hidden_size},
+                                               {"actv_func", to_value(vec_actv_funcs)},
+                                               {"direction", dirct},
+                                               {"clip", clip},
+                                               {"input_forget", input_forget}}),
+                                      std::move(args));
 
         auto last_output = cur_modl->add_instruction(make_op("rnn_last_hs_output"), hidden_states);
 
         // third output for last cell output
-        auto last_cell_output = cur_modl->add_instruction(make_op("rnn_last_cell_output"), hidden_states);
+        auto last_cell_output =
+            cur_modl->add_instruction(make_op("rnn_last_cell_output"), hidden_states);
 
         return {hidden_states, last_output, last_cell_output};
     }
@@ -2399,7 +2412,8 @@ struct onnx_parser
         }
         else
         {
-            auto ins = cur_modl->add_instruction(make_op(op_name, {{"axes", axes}}), std::move(args));
+            auto ins =
+                cur_modl->add_instruction(make_op(op_name, {{"axes", axes}}), std::move(args));
             return cur_modl->add_instruction(make_op("squeeze", {{"axes", axes}}), ins);
         }
     }
@@ -2533,8 +2547,9 @@ struct onnx_parser
 
         auto type = args[2]->get_shape().type();
         shape s{type, {depth, depth}};
-        auto l_val      = cur_modl->add_literal({s, depth_input});
-        auto gather_out = cur_modl->add_instruction(make_op("gather", {{"axis", 0}}), {l_val, args[0]});
+        auto l_val = cur_modl->add_literal({s, depth_input});
+        auto gather_out =
+            cur_modl->add_instruction(make_op("gather", {{"axis", 0}}), {l_val, args[0]});
 
         // Finally, we need a transpose to move the inner most dim to the axis dim
         int n_rank = gather_out->get_shape().lens().size();
