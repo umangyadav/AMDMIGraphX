@@ -43,6 +43,12 @@ struct onnx_parser
         {
             return add_instruction(op, {xs...});
         }
+        instruction_ref add_literal(literal l) const;
+        template <class... Ts>
+        instruction_ref add_literal(Ts&&... xs) const
+        {
+            return add_literal(literal{std::forward<Ts>(xs)...});
+        }
     };
     using node_map = std::unordered_map<std::string, onnx::NodeProto>;
     using op_func  = std::function<std::vector<instruction_ref>(
@@ -50,7 +56,6 @@ struct onnx_parser
     node_map nodes;
     std::unordered_map<std::string, instruction_ref> instructions;
     program prog                  = program();
-    bool is_pytorch               = false;
     std::size_t default_dim_value = 1;
     std::unordered_map<std::string, std::vector<std::size_t>> map_input_dims;
     bool skip_unknown_operators = false;

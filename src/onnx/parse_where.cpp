@@ -13,7 +13,7 @@ struct parse_where : op_parser<parse_where>
 
     instruction_ref parse(const op_desc& /*opd*/,
                           const onnx_parser& /*parser*/,
-                          onnx_parser::node_info info,
+                          const onnx_parser::node_info& info,
                           std::vector<instruction_ref> args) const
     {
         auto cond =
@@ -48,9 +48,9 @@ struct parse_where : op_parser<parse_where>
         std::vector<int> ind(elem_num);
         std::iota(ind.begin(), ind.end(), 0);
         shape ind_s{shape::int32_type, lens};
-        auto l_ind = info.mm->add_literal(literal(ind_s, ind));
+        auto l_ind = info.add_literal(literal(ind_s, ind));
         std::vector<int> offset(elem_num, elem_num);
-        auto l_offset   = info.mm->add_literal(literal({shape::int32_type, lens}, offset));
+        auto l_offset   = info.add_literal(literal({shape::int32_type, lens}, offset));
         auto ins_offset = info.add_instruction(make_op("mul"), l_offset, cond);
         auto ins_ind    = info.add_instruction(make_op("add"), ins_offset, l_ind);
 
