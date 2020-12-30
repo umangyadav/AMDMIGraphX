@@ -194,7 +194,7 @@ void onnx_parser::parse_undefined(module* mdl, const std::string& name)
 
 void onnx_parser::parse_from(std::istream& is, std::string name)
 {
-    auto* mm = prog.get_main_module();
+    auto* mm         = prog.get_main_module();
     this->filename   = std::move(name);
     auto parent_path = fs::path(this->filename).parent_path();
     if(not parent_path.empty())
@@ -283,7 +283,8 @@ void onnx_parser::parse_graph(module* mdl, const onnx::GraphProto& graph)
         }
         else
         {
-            std::string node_name = "migraphx_node_" + node.op_type() + "_" + std::to_string(node_index);
+            std::string node_name =
+                "migraphx_node_" + node.op_type() + "_" + std::to_string(node_index);
             result = ops[node.op_type()](
                 *this, {get_attributes(node), output_num, node_name, mdl}, args);
         }
