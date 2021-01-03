@@ -19,7 +19,7 @@ struct iff
     module_ref sub_module;
 
     template <class Self, class F>
-    static auto reflect(Self & self, F f)
+    static auto reflect(Self& self, F f)
     {
         return pack(f(self.sub_module_name, "sub_graph"));
     }
