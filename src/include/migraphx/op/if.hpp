@@ -14,7 +14,7 @@ namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 namespace op {
 
-struct if
+struct iff
 {
     module_ref sub_module;
 
@@ -28,7 +28,7 @@ struct if
     shape compute_shape(const std::vector<shape>&) const
     {
         std::vector<shape> out_shapes = sub_module->get_output_shapes();
-        return output_shapes[0];
+        return out_shapes[0];
     }
 };
 

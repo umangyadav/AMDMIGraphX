@@ -3,7 +3,7 @@
 
 #include <list>
 #include <functional>
-#include <module.hpp>
+#include <migraphx/module.hpp>
 #include <migraphx/config.hpp>
 
 namespace migraphx {
