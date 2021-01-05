@@ -8,7 +8,7 @@
 #include <migraphx/time.hpp>
 #include <migraphx/pass_manager.hpp>
 #include <migraphx/register_target.hpp>
-#include <migraphx/generic_eval.hpp>
+#include <migraphx/iterator_for.hpp>
 #include <iostream>
 #include <sstream>
 #include <algorithm>
@@ -62,13 +62,6 @@ static void print_instruction(std::ostream& os,
         os << " -> " << ins->get_shape();
 }
 
-template <class F>
-static void print_program(const program& p, F print_func)
-{
-    const auto* mm = p.get_main_module();
-    print_module(*mm, print_func);
-}
-
 program::program() : impl(std::make_unique<program_impl>()) { impl->modules["main"] = {}; }
 
 program::program(program&&) noexcept = default;
@@ -96,11 +89,7 @@ void program::assign(const program& p)
     }
     impl->ctx         = p.impl->ctx;
     impl->target_name = p.impl->target_name;
-
-    for(auto& modl_pair : p.impl->modules)
-    {
-        impl->modules[modl_pair.first] = module(modl_pair.second);
-    }
+    impl->modules     = p.impl->modules;
 }
 
 shape program::get_parameter_shape(std::string name) const
@@ -127,25 +116,7 @@ std::unordered_map<std::string, shape> program::get_parameter_shapes() const
     return mm->get_parameter_shapes();
 }
 
-bool program::has_instruction(instruction_ref ins) const
-{
-    const auto* mm = this->get_main_module();
-    return mm->has_instruction(ins);
-}
-
 std::size_t program::size() const { return impl->modules.size(); }
-
-instruction_ref program::begin() const
-{
-    const auto* mm = this->get_main_module();
-    return mm->begin();
-}
-
-instruction_ref program::end() const
-{
-    const auto* mm = this->get_main_module();
-    return mm->end();
-}
 
 std::vector<shape> program::get_output_shapes() const
 {
@@ -197,6 +168,73 @@ void program::finalize()
     {
         mp.second.finalize(this->impl->ctx);
     }
+}
+
+template <class F>
+std::vector<argument> generic_eval(const module& p,
+                                   context& ctx,
+                                   std::unordered_map<std::string, argument> params,
+                                   F trace)
+{
+    assert(p.validate() == p.end());
+    std::unordered_map<instruction_ref, argument> results;
+    results.reserve(p.size() * 2);
+    std::vector<argument> values;
+    values.reserve(16);
+    for(auto ins : iterator_for(p))
+    {
+        const auto& name = ins->name();
+        if(name == "@literal")
+        {
+            results.emplace(ins, trace(ins, [&] { return ins->get_literal().get_argument(); }));
+        }
+        else if(name == "@param")
+        {
+            results.emplace(
+                ins, trace(ins, [&] {
+                    auto param_name = any_cast<builtin::param>(ins->get_operator()).parameter;
+                    if(not contains(params, param_name))
+                        MIGRAPHX_THROW("Parameter not found: " + param_name);
+                    auto param = params[param_name];
+                    if(param.get_shape() != ins->get_shape())
+                        MIGRAPHX_THROW("Incorrect shape {" + to_string(param.get_shape()) +
+                                       "} for parameter: " + param_name);
+                    return param;
+                }));
+        }
+        else if(name == "@outline")
+        {
+            results.emplace(ins, trace(ins, [&] { return argument{ins->get_shape(), nullptr}; }));
+        }
+        else if(name == "@return")
+        {
+            std::vector<argument> prog_outputs;
+            std::transform(ins->inputs().begin(),
+                           ins->inputs().end(),
+                           std::back_inserter(prog_outputs),
+                           [&](instruction_ref i) {
+                               assert(results.find(i) != results.end());
+                               return results[i];
+                           });
+
+            return prog_outputs;
+        }
+        else
+        {
+            values.resize(ins->inputs().size());
+            std::transform(
+                ins->inputs().begin(), ins->inputs().end(), values.begin(), [&](instruction_ref i) {
+                    assert(results.find(i) != results.end());
+                    return results[i];
+                });
+            results.emplace(ins, trace(ins, [&] {
+                                return ins->get_operator().compute(ctx, ins->get_shape(), values);
+                            }));
+        }
+        assert(results.find(ins) != results.end());
+    }
+
+    return {results.at(std::prev(p.end()))};
 }
 
 template <class F>
@@ -269,7 +307,9 @@ void program::from_value(const value& v)
 {
     auto version = v.at("version").to<int>();
     if(version != program_file_version)
-        std::cout << "Warning: Program version mismatch" << std::endl;
+    {
+        MIGRAPHX_THROW("Warning: Program version mismatch");
+    }
 
     this->impl->target_name = v.at("target").to<std::string>();
     if(not this->impl->target_name.empty())
@@ -359,7 +399,7 @@ void program::perf_report(std::ostream& os, std::size_t n, parameter_map params)
     double calculate_overhead_time    = total_time - total_instruction_time;
     double calculate_overhead_percent = calculate_overhead_time * 100.0 / total_time;
 
-    print_program(*this, [&](auto ins, const auto& names) {
+    this->print([&](auto ins, auto names) {
         print_instruction(std::cout, ins, names);
 
         // skip return instruction
@@ -402,24 +442,39 @@ void program::perf_report(std::ostream& os, std::size_t n, parameter_map params)
 void program::debug_print() const { std::cout << *this << std::endl; }
 void program::debug_print(instruction_ref ins) const
 {
-    if(ins == this->end())
+    if(std::any_of(this->impl->modules.begin(), this->impl->modules.end(), [&](auto it) {
+           return (it.second.end() == ins);
+       }))
     {
         std::cout << "End instruction" << std::endl;
         return;
     }
-    if(not has_instruction(ins))
+    else if(not std::any_of(this->impl->modules.begin(), this->impl->modules.end(), [&](auto it) {
+                return it.second.has_instruction(ins);
+            }))
     {
         std::cout << "Instruction not part of program" << std::endl;
         return;
     }
+
     std::stringstream ss;
-    print_program(*this, [&](auto x, const auto& names) {
+    this->print([&](auto x, const auto& names) {
         if(x == ins)
         {
             print_instruction(std::cout, x, names);
             std::cout << std::endl;
         }
     });
+}
+
+void program::print(const std::function<
+                    void(instruction_ref, const std::unordered_map<instruction_ref, std::string>&)>&
+                        print_func) const
+{
+    for(const auto& mdl : this->impl->modules)
+    {
+        mdl.second.print(print_func);
+    }
 }
 
 void program::print_graph(std::ostream& os, bool brief) const
@@ -480,21 +535,9 @@ void program::remove_module(const std::string& name)
     impl->modules.erase(name);
 }
 
-module* program::get_main_module()
-{
-    if(!contains(impl->modules, "main"))
-    {
-        impl->modules["main"] = {};
-    }
+module* program::get_main_module() { return &impl->modules["main"]; }
 
-    return &impl->modules["main"];
-}
-
-const module* program::get_main_module() const
-{
-    assert(contains(impl->modules, "main"));
-    return &impl->modules["main"];
-}
+const module* program::get_main_module() const { return &impl->modules["main"]; }
 
 program& program::sort()
 {
