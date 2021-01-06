@@ -505,6 +505,12 @@ void program::annotate(std::ostream& os, const std::function<void(instruction_re
     }
 }
 
+const module* program::get_module(const std::string& name) const
+{
+    assert(contains(impl->modules, name));
+    return &impl->modules[name];
+}
+
 module* program::create_module(const std::string& name)
 {
     if(contains(impl->modules, name))
@@ -517,22 +523,16 @@ module* program::create_module(const std::string& name)
     return &impl->modules[name];
 }
 
-module* program::get_module(const std::string& name)
-{
-    assert(contains(impl->modules, name));
-    return &impl->modules[name];
-}
-
-const module* program::get_module(const std::string& name) const
-{
-    assert(contains(impl->modules, name));
-    return &impl->modules[name];
-}
-
 void program::remove_module(const std::string& name)
 {
     assert(contains(impl->modules, name));
     impl->modules.erase(name);
+}
+
+module* program::get_module(const std::string& name)
+{
+    assert(contains(impl->modules, name));
+    return &impl->modules[name];
 }
 
 module* program::get_main_module() { return &impl->modules["main"]; }
