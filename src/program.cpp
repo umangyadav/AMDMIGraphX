@@ -7,14 +7,14 @@
 #include <migraphx/ranges.hpp>
 #include <migraphx/time.hpp>
 #include <migraphx/pass_manager.hpp>
-#include <migraphx/make_op.hpp>
 #include <migraphx/register_target.hpp>
-#include <migraphx/generic_eval.hpp>
+#include <migraphx/iterator_for.hpp>
 #include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <set>
 #include <utility>
+
 #include <unordered_set>
 #include <map>
 #include <cassert>
@@ -24,7 +24,7 @@ inline namespace MIGRAPHX_INLINE_NS {
 
 struct program_impl
 {
-    // A list is used to keep references to modules of the program
+    // A map is used to keep references to modules of the program
     std::map<std::string, module> modules;
     context ctx;
     std::string target_name;
@@ -62,37 +62,6 @@ static void print_instruction(std::ostream& os,
         os << " -> " << ins->get_shape();
 }
 
-template <class F>
-static void print_program(const program& p, F print_func)
-{
-    std::unordered_map<instruction_ref, std::string> names;
-    int count = 0;
-
-    for(auto ins : iterator_for(*p.get_main_module()))
-    {
-        std::string var_name;
-        if(ins->name() == "@param")
-        {
-            var_name = any_cast<builtin::param>(ins->get_operator()).parameter;
-        }
-        else
-        {
-            var_name = "@" + std::to_string(count);
-            count++;
-        }
-        names.emplace(ins, var_name);
-
-        // TODO: Use all_of
-        for(auto&& arg : ins->inputs())
-        {
-            assert(p.has_instruction(arg) && "Instruction not found");
-            (void)arg;
-        }
-
-        print_func(ins, names);
-    }
-}
-
 program::program() : impl(std::make_unique<program_impl>()) { impl->modules["main"] = {}; }
 
 program::program(program&&) noexcept = default;
@@ -120,69 +89,47 @@ void program::assign(const program& p)
     }
     impl->ctx         = p.impl->ctx;
     impl->target_name = p.impl->target_name;
-
-    for(auto& modl_pair : p.impl->modules)
-    {
-        impl->modules[modl_pair.first] = module(modl_pair.second);
-    }
+    impl->modules     = p.impl->modules;
 }
 
 shape program::get_parameter_shape(std::string name) const
 {
-    assert(contains(impl->modules, "main"));
-    return impl->modules["main"].get_parameter_shape(std::move(name));
-}
-
-std::vector<std::string> program::get_parameter_names() const
-{
-    assert(contains(impl->modules, "main"));
-    return impl->modules["main"].get_parameter_names();
-}
-
-instruction_ref program::get_parameter(std::string name) const
-{
-    assert(contains(impl->modules, "main"));
-    return impl->modules["main"].get_parameter(std::move(name));
-}
-
-std::unordered_map<std::string, shape> program::get_parameter_shapes() const
-{
-    assert(contains(impl->modules, "main"));
-    return impl->modules["main"].get_parameter_shapes();
+    const auto* mm = this->get_main_module();
+    return mm->get_parameter_shape(std::move(name));
 }
 
 bool program::has_instruction(instruction_ref ins) const
 {
-    assert(contains(impl->modules, "main"));
-    return impl->modules["main"].has_instruction(ins);
+    const auto* mm = this->get_main_module();
+    return mm->get_parameter_names();
+}
+
+instruction_ref program::get_parameter(std::string name) const
+{
+    const auto* mm = this->get_main_module();
+    return mm->get_parameter(std::move(name));
+}
+
+instruction_ref program::begin() const
+{
+    const auto* mm = this->get_main_module();
+    return mm->get_parameter_shapes();
 }
 
 std::size_t program::size() const { return impl->modules.size(); }
 
-instruction_ref program::begin() const
-{
-    assert(contains(impl->modules, "main"));
-    return impl->modules["main"].begin();
-}
-
-instruction_ref program::end() const
-{
-    assert(contains(impl->modules, "main"));
-    return impl->modules["main"].end();
-}
-
 std::vector<shape> program::get_output_shapes() const
 {
-    assert(contains(impl->modules, "main"));
-    return impl->modules["main"].get_output_shapes();
+    const auto* mm = this->get_main_module();
+    return mm->get_output_shapes();
 }
 
 context& program::get_context() const { return impl->ctx; }
 
 instruction_ref program::validate() const
 {
-    assert(contains(impl->modules, "main"));
-    return impl->modules["main"].validate();
+    const auto* mm = this->get_main_module();
+    return mm->validate();
 }
 
 bool program::is_compiled() const { return not this->impl->target_name.empty(); }
@@ -217,8 +164,20 @@ void program::compile(const target& t, compile_options options)
 
 void program::finalize()
 {
-    assert(contains(impl->modules, "main"));
-    impl->modules["main"].finalize(impl->ctx);
+    for(auto& mp : this->impl->modules)
+    {
+        mp.second.finalize(this->impl->ctx);
+    }
+}
+
+template <class F>
+std::vector<argument> generic_eval(const module& p,
+                                   context& ctx,
+                                   std::unordered_map<std::string, argument> params,
+                                   F trace)
+{
+    const auto* mm = p.get_main_module();
+    return generic_eval(*mm, ctx, params, trace);
 }
 
 template <class F>
@@ -291,7 +250,9 @@ void program::from_value(const value& v)
 {
     auto version = v.at("version").to<int>();
     if(version != program_file_version)
-        std::cout << "Warning: Program version mismatch" << std::endl;
+    {
+        MIGRAPHX_THROW("Warning: Program version mismatch");
+    }
 
     this->impl->target_name = v.at("target").to<std::string>();
     if(not this->impl->target_name.empty())
@@ -308,7 +269,6 @@ void program::from_value(const value& v)
         auto val        = vv.without_key();
         module modl;
         modl.from_value(val);
-        modl.finalize(this->impl->ctx);
         impl->modules[key] = modl;
     }
 }
@@ -381,7 +341,7 @@ void program::perf_report(std::ostream& os, std::size_t n, parameter_map params)
     double calculate_overhead_time    = total_time - total_instruction_time;
     double calculate_overhead_percent = calculate_overhead_time * 100.0 / total_time;
 
-    print_program(*this, [&](auto ins, const auto& names) {
+    this->print([&](auto ins, auto names) {
         print_instruction(std::cout, ins, names);
 
         // skip return instruction
@@ -424,18 +384,23 @@ void program::perf_report(std::ostream& os, std::size_t n, parameter_map params)
 void program::debug_print() const { std::cout << *this << std::endl; }
 void program::debug_print(instruction_ref ins) const
 {
-    if(ins == this->end())
+    if(std::any_of(this->impl->modules.begin(), this->impl->modules.end(), [&](auto it) {
+           return (it.second.end() == ins);
+       }))
     {
         std::cout << "End instruction" << std::endl;
         return;
     }
-    if(not has_instruction(ins))
+    else if(not std::any_of(this->impl->modules.begin(), this->impl->modules.end(), [&](auto it) {
+                return it.second.has_instruction(ins);
+            }))
     {
         std::cout << "Instruction not part of program" << std::endl;
         return;
     }
+
     std::stringstream ss;
-    print_program(*this, [&](auto x, const auto& names) {
+    this->print([&](auto x, const auto& names) {
         if(x == ins)
         {
             print_instruction(std::cout, x, names);
@@ -444,53 +409,52 @@ void program::debug_print(instruction_ref ins) const
     });
 }
 
+void program::print(const std::function<
+                    void(instruction_ref, const std::unordered_map<instruction_ref, std::string>&)>&
+                        print_func) const
+{
+    for(const auto& mdl : this->impl->modules)
+    {
+        mdl.second.print(print_func);
+    }
+}
+
 void program::print_graph(std::ostream& os, bool brief) const
 {
-    assert(contains(impl->modules, "main"));
-    impl->modules["main"].print_graph(os, brief);
+    const auto* mm = this->get_main_module();
+    mm->print_graph(os, brief);
 }
 
 void program::print_cpp(std::ostream& os) const
 {
     os << "migraphx::program p;" << std::endl;
-    assert(contains(impl->modules, "main"));
-    impl->modules["main"].print_cpp(os);
+    const auto* mm = this->get_main_module();
+    mm->print_cpp(os);
 }
 
-void program::dry_run(std::unordered_map<std::string, argument> params) const
-{
-    auto& ctx = this->impl->ctx;
-    generic_eval(*this, ctx, std::move(params), [](auto&&...) { return argument{}; });
+    return &impl->modules["main"];
 }
 
-void program::annotate(std::ostream& os, std::function<void(instruction_ref)> a) const
+void program::annotate(std::ostream& os, const std::function<void(instruction_ref)>& a) const
 {
-    assert(contains(impl->modules, "main"));
-    auto& modl = impl->modules.at("main");
-    std::cout << modl.name() << ":" << std::endl;
-    modl.annotate(os, std::move(a));
-}
-
-module* program::get_main_module()
-{
-    if(!contains(impl->modules, "main"))
+    for(auto& modl : this->impl->modules)
     {
-        impl->modules["main"] = {};
+        std::cout << modl.first << ":" << std::endl;
+        modl.second.annotate(os, a);
     }
-
-    return &impl->modules["main"];
 }
 
-const module* program::get_main_module() const
-{
-    assert(contains(impl->modules, "main"));
-    return &impl->modules["main"];
-}
+module* program::get_main_module() { return &impl->modules["main"]; }
+
+const module* program::get_main_module() const { return &impl->modules["main"]; }
 
 program& program::sort()
 {
-    assert(contains(impl->modules, "main"));
-    impl->modules["main"].sort();
+    for(auto& modl : this->impl->modules)
+    {
+        modl.second.sort();
+    }
+
     return *this;
 }
 

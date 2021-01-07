@@ -51,11 +51,7 @@ struct program
 
     std::vector<argument> eval(parameter_map params) const;
 
-    bool has_instruction(instruction_ref ins) const;
-
     std::size_t size() const;
-    instruction_ref begin() const;
-    instruction_ref end() const;
 
     std::vector<shape> get_output_shapes() const;
 
@@ -76,12 +72,16 @@ struct program
 
     void debug_print() const;
     void debug_print(instruction_ref ins) const;
+    void print(const std::function<void(instruction_ref,
+                                        const std::unordered_map<instruction_ref, std::string>&)>&
+                   print_func) const;
+
     void print_graph(std::ostream& os, bool brief = false) const;
     void print_cpp(std::ostream& os) const;
 
     void dry_run(parameter_map params) const;
 
-    void annotate(std::ostream& os, std::function<void(instruction_ref)> a) const;
+    void annotate(std::ostream& os, const std::function<void(instruction_ref)>& a) const;
 
     program& sort();
 
