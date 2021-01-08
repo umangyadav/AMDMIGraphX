@@ -4,7 +4,7 @@
 #include <array>
 #include <migraphx/check_shapes.hpp>
 #include <migraphx/argument.hpp>
-#include <migraphx/module_ref.hpp>
+#include <migraphx/module.hpp>
 #include <migraphx/functional.hpp>
 #include <migraphx/config.hpp>
 #include <cmath>
@@ -14,7 +14,7 @@ namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 namespace op {
 
-struct iff
+struct if_
 {
     module_ref sub_module;
 

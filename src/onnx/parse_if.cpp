@@ -1,4 +1,6 @@
 #include <migraphx/onnx/op_parser.hpp>
+#include <migraphx/onnx/onnx_parser.hpp>
+#include <migraphx/onnx/checks.hpp>
 #include <migraphx/ranges.hpp>
 #include <migraphx/instruction.hpp>
 #include <migraphx/make_op.hpp>
@@ -7,12 +9,12 @@ namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 namespace onnx {
 
-struct parse_where : op_parser<parse_where>
+struct parse_if : op_parser<parse_if>
 {
     std::vector<op_desc> operators() const { return {{"If"}}; }
 
     std::vector<instruction_ref> parse(const op_desc& /*opd*/,
-                                       const onnx_parser& /*parser*/,
+                                       onnx_parser& parser,
                                        const onnx_parser::node_info& info,
                                        std::vector<instruction_ref> args) const
     {
@@ -29,10 +31,12 @@ struct parse_where : op_parser<parse_where>
         // then branch
         if(cond)
         {
-            onnx::GraphProto&& then_graph = info.attributes.at("then_branch").g();
+            const auto& then_graph = info.attributes.at("then_branch").g();
             std::string graph_name        = info.name + "_if";
-            module* mdl                   = prog.create_module(graph_name);
-            parse_graph(mdl, then_graph);
+            module* mdl             = parser.prog.create_module(graph_name);
+            parser.parse_graph(mdl, then_graph);
+
+            info.add_instruction(make_op("If"));
 
             // inputs of the return instruction are that of the output of the
             // if instruction
@@ -42,11 +46,13 @@ struct parse_where : op_parser<parse_where>
         // else branch
         else
         {
-            onnx::GraphProto&& else_graph = info.attributes.at("else_branch").g();
+            const auto& else_graph = info.attributes.at("else_branch").g();
             std::string graph_name        = info.name + "_else";
-            module* mdl                   = prog.create_module(graph_name);
-            parse_graph(mdl, then_graph);
+            module* mdl                   = parser.prog.create_module(graph_name);
+            parser.parse_graph(mdl, else_graph);
 
+            info.add_instruction(make_op("If"));
+            
             // inputs of the return instruction are that of the output of the
             // if instruction
             instruction_ref ret_ins = std::prev(mdl->end());

@@ -4,6 +4,7 @@
 #include <migraphx/literal.hpp>
 #include <migraphx/shape.hpp>
 #include <migraphx/instruction_ref.hpp>
+#include <migraphx/module_ref.hpp>
 #include <migraphx/operation.hpp>
 #include <migraphx/erase.hpp>
 #include <migraphx/config.hpp>
@@ -98,6 +99,8 @@ struct instruction
     shape result{};
     std::vector<instruction_ref> output;
     std::vector<instruction_ref> arguments;
+    std::vector<module_ref> modules;
+
     literal lit;
 };
 } // namespace MIGRAPHX_INLINE_NS

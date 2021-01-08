@@ -473,21 +473,27 @@ void program::print(const std::function<
 {
     for(const auto& mdl : this->impl->modules)
     {
+        std::cout << mdl.first << ":" << std::endl;
         mdl.second.print(print_func);
     }
 }
 
 void program::print_graph(std::ostream& os, bool brief) const
 {
-    const auto* mm = this->get_main_module();
-    mm->print_graph(os, brief);
+    for(const auto& mdl: this->impl->modules)
+    {
+        std::cout << mdl.first << ":" << std::endl;
+        mdl.second.print_graph(os, brief);
+    }
 }
 
 void program::print_cpp(std::ostream& os) const
 {
-    os << "migraphx::program p;" << std::endl;
-    const auto* mm = this->get_main_module();
-    mm->print_cpp(os);
+    for(const auto& mdl: this->impl->modules)
+    {
+        std::cout << mdl.first << ":" << std::endl;
+        mdl.second.print_cpp(os);
+    }
 }
 
 void program::dry_run(std::unordered_map<std::string, argument> params) const

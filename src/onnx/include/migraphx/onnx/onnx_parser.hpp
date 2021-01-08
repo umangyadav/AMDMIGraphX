@@ -53,7 +53,7 @@ struct onnx_parser
     int node_index = 0;
     using node_map = std::unordered_map<std::string, onnx::NodeProto>;
     using op_func  = std::function<std::vector<instruction_ref>(
-        const onnx_parser&, const node_info&, std::vector<instruction_ref>)>;
+        onnx_parser&, const node_info&, std::vector<instruction_ref>)>;
     node_map nodes;
     std::unordered_map<std::string, instruction_ref> instructions;
     program prog                  = program();
