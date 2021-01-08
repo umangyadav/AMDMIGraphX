@@ -155,10 +155,12 @@ instruction_ref module::insert_instruction(instruction_ref ins,
     return result;
 }
 
-// instruction_ref module::add_instruction(const operation& op, std::vector<instruction_ref> args, const std::vector<module_ref>& modules)
+// instruction_ref module::add_instruction(const operation& op, std::vector<instruction_ref> args,
+// const std::vector<module_ref>& modules)
 // {
 //     assert(std::all_of(
-//                args.begin(), args.end(), [&](instruction_ref x) { return has_instruction(x); }) &&
+//                args.begin(), args.end(), [&](instruction_ref x) { return has_instruction(x); })
+//                &&
 //            "Argument is not an exisiting instruction");
 //     assert(not starts_with(op.name(), "@"));
 //     shape r     = compute_shape(op, args);
@@ -167,7 +169,6 @@ instruction_ref module::insert_instruction(instruction_ref ins,
 //     assert(result->valid(begin()));
 //     return result;
 // }
-
 
 instruction_ref module::replace_instruction(instruction_ref ins,
                                             const operation& op,

@@ -480,7 +480,7 @@ void program::print(const std::function<
 
 void program::print_graph(std::ostream& os, bool brief) const
 {
-    for(const auto& mdl: this->impl->modules)
+    for(const auto& mdl : this->impl->modules)
     {
         std::cout << mdl.first << ":" << std::endl;
         mdl.second.print_graph(os, brief);
@@ -489,7 +489,7 @@ void program::print_graph(std::ostream& os, bool brief) const
 
 void program::print_cpp(std::ostream& os) const
 {
-    for(const auto& mdl: this->impl->modules)
+    for(const auto& mdl : this->impl->modules)
     {
         std::cout << mdl.first << ":" << std::endl;
         mdl.second.print_cpp(os);

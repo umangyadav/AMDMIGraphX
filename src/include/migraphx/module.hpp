@@ -50,10 +50,11 @@ struct module
     {
         return add_instruction(op, {args...});
     }
-    
+
     instruction_ref add_instruction(const operation& op, std::vector<instruction_ref> args);
 
-    // instruction_ref add_instruction(const operation& op, std::vector<instruction_ref> args, const std::vector<module_ref>& modules);
+    // instruction_ref add_instruction(const operation& op, std::vector<instruction_ref> args, const
+    // std::vector<module_ref>& modules);
 
     template <class... Ts>
     instruction_ref insert_instruction(instruction_ref ins, operation op, Ts... args)
