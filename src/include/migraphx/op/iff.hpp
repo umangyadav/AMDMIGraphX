@@ -1,5 +1,5 @@
-#ifndef MIGRAPHX_GUARD_OPERATORS_IF_HPP
-#define MIGRAPHX_GUARD_OPERATORS_IF_HPP
+#ifndef MIGRAPHX_GUARD_OPERATORS_IFF_HPP
+#define MIGRAPHX_GUARD_OPERATORS_IFF_HPP
 
 #include <array>
 #include <migraphx/check_shapes.hpp>
@@ -14,14 +14,14 @@ namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 namespace op {
 
-struct if_
+struct iff
 {
     module_ref sub_module;
 
     template <class Self, class F>
     static auto reflect(Self& self, F f)
     {
-        return pack(f(self.sub_module_name, "sub_graph"));
+        return pack(f(self.sub_module, "sub_graph"));
     }
 
     std::string name() const { return "if"; }
