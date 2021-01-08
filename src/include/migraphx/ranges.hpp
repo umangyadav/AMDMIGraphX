@@ -2,6 +2,7 @@
 #define MIGRAPHX_GUARD_MIGRAPHLIB_RANGES_HPP
 
 #include <algorithm>
+#include <iterator>
 #include <vector>
 #include <initializer_list>
 #include <migraphx/rank.hpp>
@@ -166,6 +167,12 @@ template <class Range, class Iterator>
 void copy(Range&& r, Iterator it)
 {
     std::copy(r.begin(), r.end(), it);
+}
+
+template <class Range>
+auto reverse(Range& r)
+{
+    return range(std::make_reverse_iterator(r.end()), std::make_reverse_iterator(r.begin()));
 }
 
 template <class Range, class T>
