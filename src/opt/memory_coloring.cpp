@@ -101,7 +101,7 @@ struct allocation_segment
     const segment* get_segment(instruction_ref ins) const
     {
         auto it = ins2segment.find(ins);
-        if (it == ins2segment.end())
+        if(it == ins2segment.end())
             return nullptr;
         return &it->second;
     }
@@ -118,9 +118,8 @@ struct allocation_segment
 
     static bool overlaps(const std::set<segment>& segments, const segment& s)
     {
-        auto it = std::find_if(segments.begin(), segments.end(), [&](auto&& t) {
-            return is_overlap(s, t);
-        });
+        auto it = std::find_if(
+            segments.begin(), segments.end(), [&](auto&& t) { return is_overlap(s, t); });
         return it != segments.end();
     }
 
@@ -131,21 +130,21 @@ struct allocation_segment
         assert(n > 0);
         auto start = 0;
         // Insert at end if it can fit at the begining
-        if (segments.empty() or segments.begin()->first <= n)
+        if(segments.empty() or segments.begin()->first <= n)
         {
             auto it =
                 std::adjacent_find(segments.begin(), segments.end(), [&](segment x, segment y) {
-                    if (x.second >= y.first)
+                    if(x.second >= y.first)
                         return false;
                     auto k = y.first - x.second;
                     return (k >= n);
                 });
-            if (it == segments.end() and not segments.empty())
+            if(it == segments.end() and not segments.empty())
                 it--;
-            if (it != segments.end())
+            if(it != segments.end())
                 start = it->second;
         }
-        auto s = segment{start, start+n};
+        auto s = segment{start, start + n};
         assert(not overlaps(segments, s));
         segments.insert(s);
         return s;
@@ -182,15 +181,15 @@ struct allocation_segment
             std::set<segment> segments;
             // Add all segemnts for the children to the segments already processed
             transform_if(children.begin(),
-                           children.end(),
-                           std::inserter(segments, segments.begin()),
-                           [&](auto child) { return as.get_segment(child); }, 
-                           [&](auto child) { return *as.get_segment(child); });
+                         children.end(),
+                         std::inserter(segments, segments.begin()),
+                         [&](auto child) { return as.get_segment(child); },
+                         [&](auto child) { return *as.get_segment(child); });
 
             // Get the segement for the parent
             auto* parent_segment = as.get_segment(parent);
             // Add segment for the parent if there is none or segment overlaps with the children
-            if (parent_segment == nullptr or overlaps(segments, *parent_segment))
+            if(parent_segment == nullptr or overlaps(segments, *parent_segment))
                 as.add_segment(parent, next_segment(segments, parent));
             else
                 segments.insert(*parent_segment);
@@ -198,7 +197,7 @@ struct allocation_segment
             for(auto child : children)
             {
                 assert(child != parent);
-                if (not as.get_segment(child))
+                if(not as.get_segment(child))
                     as.add_segment(child, next_segment(segments, child));
             }
         }
@@ -407,15 +406,14 @@ void memory_coloring::apply(module& m) const
         return as.get_segment(pp.first);
     }));
 
-    // Adjacent allocations should not have overlapping segments 
+    // Adjacent allocations should not have overlapping segments
     assert(std::none_of(conflict_table.begin(), conflict_table.end(), [&](auto&& pp) {
         auto* x = as.get_segment(pp.first);
-        return std::any_of(
-            pp.second.begin(), pp.second.end(), [&](auto ins) {
-                auto* y = as.get_segment(ins);
-                assert(x and y);
-                return is_overlap(*x, *y);
-            });
+        return std::any_of(pp.second.begin(), pp.second.end(), [&](auto ins) {
+            auto* y = as.get_segment(ins);
+            assert(x and y);
+            return is_overlap(*x, *y);
+        });
     }));
 
     // Total memory
@@ -423,7 +421,7 @@ void memory_coloring::apply(module& m) const
     for(auto&& pp : as.ins2segment)
     {
         auto seg = pp.second;
-        n = std::max(n, seg.second*alignment);
+        n        = std::max(n, seg.second * alignment);
     }
 
     // Replace allocations
@@ -433,8 +431,8 @@ void memory_coloring::apply(module& m) const
         auto ins = pp.first;
         auto seg = pp.second;
         assert(ins->name() == allocation_op);
-        auto s = ins->get_shape();
-        std::size_t offset = seg.first*32;
+        auto s             = ins->get_shape();
+        std::size_t offset = seg.first * 32;
         m.replace_instruction(ins, op::load{s, offset}, mem);
     }
 }

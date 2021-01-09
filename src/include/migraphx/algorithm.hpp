@@ -32,12 +32,13 @@ void group_unique(Iterator start, Iterator last, Output out, Predicate pred)
 template <class Iterator, class OutputIterator, class Predicate, class F>
 OutputIterator transform_if(Iterator start, Iterator last, OutputIterator out, Predicate pred, F f)
 {
-   while (start != last) {
-      if (pred(*start))
-         *out++ = f(*start);
-      ++start;
-   }
-   return out;
+    while(start != last)
+    {
+        if(pred(*start))
+            *out++ = f(*start);
+        ++start;
+    }
+    return out;
 }
 
 } // namespace MIGRAPHX_INLINE_NS
