@@ -225,7 +225,7 @@ struct allocation_segment
             // segments.insert(*parent_segment);
 
             auto s = next_segment(segments, parent);
-            if (s != *parent_segment)
+            if(s != *parent_segment)
             {
                 as.add_segment(parent, s);
             }
