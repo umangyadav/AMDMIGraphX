@@ -192,7 +192,7 @@ struct allocation_segment
                          [&](auto child) { return as.get_segment(child); },
                          [&](auto child) { return *as.get_segment(child); });
 
-            // Get the segement for the parent
+            // Get the segment for the parent
             auto* parent_segment = as.get_segment(parent);
             // Add segment for the parent if there is none or segment overlaps with the children
             if(parent_segment == nullptr or overlaps(segments, *parent_segment))
@@ -205,6 +205,29 @@ struct allocation_segment
                 assert(child != parent);
                 if(not as.get_segment(child))
                     as.add_segment(child, next_segment(segments, child));
+            }
+        }
+        // Reduce the number of segments
+        for(auto parent : conflict_queue)
+        {
+            auto children = conflict_table.at(parent);
+            // This set is to track the segments already processed
+            std::set<segment> segments;
+            // Add all segemnts for the children to the segments already processed
+            transform_if(children.begin(),
+                         children.end(),
+                         std::inserter(segments, segments.begin()),
+                         [&](auto child) { return as.get_segment(child); },
+                         [&](auto child) { return *as.get_segment(child); });
+            // Get the segment for the parent
+            auto* parent_segment = as.get_segment(parent);
+            assert(parent_segment != nullptr);
+            // segments.insert(*parent_segment);
+
+            auto s = next_segment(segments, parent);
+            if (s != *parent_segment)
+            {
+                as.add_segment(parent, s);
             }
         }
         return as;
