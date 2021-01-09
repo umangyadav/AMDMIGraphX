@@ -59,7 +59,7 @@ instruction_set_map build_conflict_table(const module& m, std::string allocation
             if(i->name() != allocation_op)
                 continue;
             // Skip zero allocations
-            if (i->get_shape().bytes() == 0)
+            if(i->get_shape().bytes() == 0)
                 continue;
             conflict_table[i];
             for(auto j : live_set)
@@ -68,7 +68,7 @@ instruction_set_map build_conflict_table(const module& m, std::string allocation
                 if(j->name() != allocation_op)
                     continue;
                 // Skip zero allocations
-                if (j->get_shape().bytes() == 0)
+                if(j->get_shape().bytes() == 0)
                     continue;
                 if(i == j)
                     continue;
@@ -443,9 +443,9 @@ void memory_coloring::apply(module& m) const
     }
 
     // Replace zero allocation
-    for(auto ins: iterator_for(m))
+    for(auto ins : iterator_for(m))
     {
-        if (ins->name() != allocation_op)
+        if(ins->name() != allocation_op)
             continue;
         assert(ins->get_shape().bytes() == 0);
         m.replace_instruction(ins, op::load{ins->get_shape(), 0}, mem);
