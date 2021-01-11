@@ -52,9 +52,12 @@ void liveness(const module& m, F f)
 instruction_set_map build_conflict_table(const module& m, std::string allocation_op)
 {
     instruction_set_map conflict_table;
-    liveness(m, [&](auto, auto live_set) {
+    liveness(m, [&](auto ins, auto live_set) {
+        std::cout << "--- live ---" << std::endl;
+        m.debug_print(ins);
         for(auto i : live_set)
         {
+            m.debug_print(i);
             // Skip variables that aren't allocations
             if(i->name() != allocation_op)
                 continue;
@@ -150,7 +153,11 @@ struct allocation_segment
             if(it != segments.end())
                 start = it->second;
         }
+        std::cout << "Segments:" << std::endl;
+        for(auto s:segments)
+            std::cout << s.first << ", " << s.second << std::endl;
         auto s = segment{start, start + n};
+        std::cout << "Insert: " << s.first << ", " << s.second << std::endl;
         assert(not overlaps(segments, s));
         segments.insert(s);
         return s;
@@ -208,28 +215,28 @@ struct allocation_segment
             }
         }
         // Reduce the number of segments
-        for(auto parent : conflict_queue)
-        {
-            auto children = conflict_table.at(parent);
-            // This set is to track the segments already processed
-            std::set<segment> segments;
-            // Add all segemnts for the children to the segments already processed
-            transform_if(children.begin(),
-                         children.end(),
-                         std::inserter(segments, segments.begin()),
-                         [&](auto child) { return as.get_segment(child); },
-                         [&](auto child) { return *as.get_segment(child); });
-            // Get the segment for the parent
-            auto* parent_segment = as.get_segment(parent);
-            assert(parent_segment != nullptr);
-            // segments.insert(*parent_segment);
+        // for(auto parent : conflict_queue)
+        // {
+        //     auto children = conflict_table.at(parent);
+        //     // This set is to track the segments already processed
+        //     std::set<segment> segments;
+        //     // Add all segemnts for the children to the segments already processed
+        //     transform_if(children.begin(),
+        //                  children.end(),
+        //                  std::inserter(segments, segments.begin()),
+        //                  [&](auto child) { return as.get_segment(child); },
+        //                  [&](auto child) { return *as.get_segment(child); });
+        //     // Get the segment for the parent
+        //     auto* parent_segment = as.get_segment(parent);
+        //     assert(parent_segment != nullptr);
+        //     // segments.insert(*parent_segment);
 
-            auto s = next_segment(segments, parent);
-            if(s != *parent_segment)
-            {
-                as.add_segment(parent, s);
-            }
-        }
+        //     auto s = next_segment(segments, parent);
+        //     if (s != *parent_segment)
+        //     {
+        //         as.add_segment(parent, s);
+        //     }
+        // }
         return as;
     }
 };
@@ -444,6 +451,21 @@ void memory_coloring::apply(module& m) const
             return is_overlap(*x, *y);
         });
     }));
+
+    // Print out segments
+    for(auto&& pp:conflict_table)
+    {
+        std::cout << "------- conflict -------" << std::endl;
+        auto s1 = as.ins2segment.at(pp.first);
+        std::cout << s1.first << ", " << s1.second << ": ";
+        m.debug_print(pp.first);
+        for(auto ins:pp.second)
+        {
+            auto s2 = as.ins2segment.at(ins);
+            std::cout << s2.first << ", " << s2.second << ": ";
+            m.debug_print(ins);
+        }
+    }
 
     // Total memory
     std::size_t n = 0;
