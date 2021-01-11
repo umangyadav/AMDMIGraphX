@@ -154,7 +154,7 @@ struct allocation_segment
                 start = it->second;
         }
         std::cout << "Segments:" << std::endl;
-        for(auto s:segments)
+        for(auto s : segments)
             std::cout << s.first << ", " << s.second << std::endl;
         auto s = segment{start, start + n};
         std::cout << "Insert: " << s.first << ", " << s.second << std::endl;
@@ -453,13 +453,13 @@ void memory_coloring::apply(module& m) const
     }));
 
     // Print out segments
-    for(auto&& pp:conflict_table)
+    for(auto&& pp : conflict_table)
     {
         std::cout << "------- conflict -------" << std::endl;
         auto s1 = as.ins2segment.at(pp.first);
         std::cout << s1.first << ", " << s1.second << ": ";
         m.debug_print(pp.first);
-        for(auto ins:pp.second)
+        for(auto ins : pp.second)
         {
             auto s2 = as.ins2segment.at(ins);
             std::cout << s2.first << ", " << s2.second << ": ";
