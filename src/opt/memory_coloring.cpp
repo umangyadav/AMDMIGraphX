@@ -15,6 +15,8 @@
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 
+MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_DEBUG_MEMORY_COLORING);
+
 using instruction_set     = std::unordered_set<instruction_ref>;
 using instruction_set_map = std::unordered_map<instruction_ref, instruction_set>;
 
@@ -54,15 +56,15 @@ instruction_set_map build_conflict_table(const module& m, std::string allocation
     instruction_set_map conflict_table;
     liveness(m, [&](auto ins, auto live_set) {
         // Skip variables that aren't allocations
-        if(ins->name() != allocation_op)
+        if (ins->name() != allocation_op)
             return;
         // Skip zero allocations
-        if(ins->get_shape().bytes() == 0)
+        if (ins->get_shape().bytes() == 0)
             return;
         conflict_table[ins];
         for(auto i : live_set)
         {
-            if(i == ins)
+            if (i == ins)
                 continue;
             // Skip variables that aren't allocations
             if(i->name() != allocation_op)
@@ -117,6 +119,17 @@ struct allocation_segment
         }
     }
 
+    std::size_t max_bytes(std::size_t alignment = 1)
+    {
+        std::size_t n = 0;
+        for(auto&& pp : ins2segment)
+        {
+            auto seg = pp.second;
+            n        = std::max(n, seg.second * alignment);
+        }
+        return n;
+    }
+
     static bool overlaps(const std::set<segment>& segments, const segment& s)
     {
         auto it = std::find_if(
@@ -135,16 +148,14 @@ struct allocation_segment
         {
             auto it =
                 std::adjacent_find(segments.begin(), segments.end(), [&](segment x, segment y) {
-                    if(is_overlap(x, y))
+                    if (is_overlap(x, y))
                         return false;
                     assert(y.first >= x.second);
                     auto k = y.first - x.second;
                     return (k >= n);
                 });
             if(it == segments.end())
-                it = std::max_element(segments.begin(), segments.end(), [&](segment x, segment y) {
-                    return x.second < y.second;
-                });
+                it = std::max_element(segments.begin(), segments.end(), [&](segment x, segment y) { return x.second < y.second; });
             if(it != segments.end())
                 start = it->second;
         }
@@ -199,25 +210,29 @@ struct allocation_segment
                 segments.insert(*parent_segment);
         }
         // Reduce the number of segments
-        for(auto parent : conflict_queue)
+        for(std::size_t n = 0;n<3;n++)
         {
-            auto children = conflict_table.at(parent);
-            // This set is to track the segments already processed
-            std::set<segment> segments;
-            // Add all segemnts for the children to the segments already processed
-            transform_if(children.begin(),
-                         children.end(),
-                         std::inserter(segments, segments.begin()),
-                         [&](auto child) { return as.get_segment(child); },
-                         [&](auto child) { return *as.get_segment(child); });
-            // Get the segment for the parent
-            auto* parent_segment = as.get_segment(parent);
-            assert(parent_segment != nullptr);
-
-            auto s = next_segment(segments, parent);
-            if(s.second < parent_segment->second)
+            // changed = false;
+            for(auto parent : conflict_queue)
             {
-                as.add_segment(parent, s);
+                auto children = conflict_table.at(parent);
+                // This set is to track the segments already processed
+                std::set<segment> segments;
+                // Add all segemnts for the children to the segments already processed
+                transform_if(children.begin(),
+                             children.end(),
+                             std::inserter(segments, segments.begin()),
+                             [&](auto child) { return as.get_segment(child); },
+                             [&](auto child) { return *as.get_segment(child); });
+                // Get the segment for the parent
+                auto* parent_segment = as.get_segment(parent);
+                assert(parent_segment != nullptr);
+
+                auto s = next_segment(segments, parent);
+                if (s != *parent_segment and s.second <= as.max_bytes())
+                {
+                    as.add_segment(parent, s);
+                }
             }
         }
         return as;
@@ -435,30 +450,26 @@ void memory_coloring::apply(module& m) const
         });
     }));
 
-#if 0
     // Print out segments
-    for(auto&& pp : conflict_table)
+    if (enabled(MIGRAPHX_DEBUG_MEMORY_COLORING{}))
     {
-        std::cout << "------- conflict -------" << std::endl;
-        auto s1 = as.ins2segment.at(pp.first);
-        std::cout << s1.first << ", " << s1.second << ": ";
-        m.debug_print(pp.first);
-        for(auto ins : pp.second)
+        for(auto&& pp : conflict_table)
         {
-            auto s2 = as.ins2segment.at(ins);
-            std::cout << s2.first << ", " << s2.second << ": ";
-            m.debug_print(ins);
+            std::cout << "------- conflict -------" << std::endl;
+            auto s1 = as.ins2segment.at(pp.first);
+            std::cout << s1.first << ", " << s1.second << ": ";
+            m.debug_print(pp.first);
+            for(auto ins : pp.second)
+            {
+                auto s2 = as.ins2segment.at(ins);
+                std::cout << s2.first << ", " << s2.second << ": ";
+                m.debug_print(ins);
+            }
         }
     }
-#endif
 
     // Total memory
-    std::size_t n = 0;
-    for(auto&& pp : as.ins2segment)
-    {
-        auto seg = pp.second;
-        n        = std::max(n, seg.second * alignment);
-    }
+    std::size_t n = as.max_bytes(alignment);
 
     // Replace allocations
     auto mem = m.add_parameter("scratch", shape{shape::int8_type, {n}});
