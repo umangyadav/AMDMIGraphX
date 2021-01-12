@@ -56,15 +56,15 @@ instruction_set_map build_conflict_table(const module& m, std::string allocation
     instruction_set_map conflict_table;
     liveness(m, [&](auto ins, auto live_set) {
         // Skip variables that aren't allocations
-        if (ins->name() != allocation_op)
+        if(ins->name() != allocation_op)
             return;
         // Skip zero allocations
-        if (ins->get_shape().bytes() == 0)
+        if(ins->get_shape().bytes() == 0)
             return;
         conflict_table[ins];
         for(auto i : live_set)
         {
-            if (i == ins)
+            if(i == ins)
                 continue;
             // Skip variables that aren't allocations
             if(i->name() != allocation_op)
@@ -148,14 +148,16 @@ struct allocation_segment
         {
             auto it =
                 std::adjacent_find(segments.begin(), segments.end(), [&](segment x, segment y) {
-                    if (is_overlap(x, y))
+                    if(is_overlap(x, y))
                         return false;
                     assert(y.first >= x.second);
                     auto k = y.first - x.second;
                     return (k >= n);
                 });
             if(it == segments.end())
-                it = std::max_element(segments.begin(), segments.end(), [&](segment x, segment y) { return x.second < y.second; });
+                it = std::max_element(segments.begin(), segments.end(), [&](segment x, segment y) {
+                    return x.second < y.second;
+                });
             if(it != segments.end())
                 start = it->second;
         }
@@ -210,7 +212,7 @@ struct allocation_segment
                 segments.insert(*parent_segment);
         }
         // Reduce the number of segments
-        for(std::size_t n = 0;n<3;n++)
+        for(std::size_t n = 0; n < 3; n++)
         {
             // changed = false;
             for(auto parent : conflict_queue)
@@ -229,7 +231,7 @@ struct allocation_segment
                 assert(parent_segment != nullptr);
 
                 auto s = next_segment(segments, parent);
-                if (s != *parent_segment and s.second <= as.max_bytes())
+                if(s != *parent_segment and s.second <= as.max_bytes())
                 {
                     as.add_segment(parent, s);
                 }
@@ -451,7 +453,7 @@ void memory_coloring::apply(module& m) const
     }));
 
     // Print out segments
-    if (enabled(MIGRAPHX_DEBUG_MEMORY_COLORING{}))
+    if(enabled(MIGRAPHX_DEBUG_MEMORY_COLORING{}))
     {
         for(auto&& pp : conflict_table)
         {
