@@ -25,10 +25,7 @@ struct iff
 
     std::string name() const { return "if"; }
 
-    shape compute_shape(std::vector<shape> inputs) const
-    {
-        return inputs[0];
-    }
+    shape compute_shape(std::vector<shape> inputs) const { return inputs[0]; }
 };
 
 } // namespace op

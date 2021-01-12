@@ -80,7 +80,6 @@ bool instruction::valid() const
     }
     else if(op.name() == "if")
     {
-        
     }
     else
     {
