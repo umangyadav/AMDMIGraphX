@@ -37,7 +37,7 @@ struct parse_if : op_parser<parse_if>
             // inputs of the return instruction are that of the output of the
             // if instruction
             instruction_ref ret_ins = std::prev(info.mdl->end());
-            auto inputs = ret_ins->inputs();
+            auto inputs             = ret_ins->inputs();
             info.mdl->remove_instruction(ret_ins);
 
             return inputs;
@@ -51,7 +51,7 @@ struct parse_if : op_parser<parse_if>
             // inputs of the return instruction are that of the output of the
             // if instruction
             instruction_ref ret_ins = std::prev(info.mdl->end());
-            auto inputs = ret_ins->inputs();
+            auto inputs             = ret_ins->inputs();
             info.mdl->remove_instruction(ret_ins);
 
             return inputs;
