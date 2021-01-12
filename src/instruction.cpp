@@ -1,6 +1,7 @@
 #include <migraphx/instruction.hpp>
 #include <migraphx/builtin.hpp>
 #include <migraphx/erase.hpp>
+#include <migraphx/module.hpp>
 
 namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
@@ -76,6 +77,10 @@ bool instruction::valid() const
     else if(op.name() == "@return")
     {
         computed = {};
+    }
+    else if(op.name() == "if")
+    {
+        
     }
     else
     {
@@ -271,6 +276,12 @@ std::vector<shape> to_shapes(const std::vector<instruction_ref>& args)
 shape compute_shape(const operation& op, const std::vector<instruction_ref>& args)
 {
     return op.compute_shape(to_shapes(args));
+}
+
+std::vector<shape> compute_shape(module_ref mdl)
+{
+    auto out_shapes = mdl->get_output_shapes();
+    return out_shapes;
 }
 
 } // namespace MIGRAPHX_INLINE_NS

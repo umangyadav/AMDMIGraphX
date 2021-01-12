@@ -36,7 +36,7 @@ struct parse_if : op_parser<parse_if>
             module* mdl            = parser.prog.create_module(graph_name);
             parser.parse_graph(mdl, then_graph);
 
-            info.add_instruction(make_op("if"));
+            info.add_instruction(make_op("if"), mdl);
 
             // inputs of the return instruction are that of the output of the
             // if instruction
@@ -51,7 +51,7 @@ struct parse_if : op_parser<parse_if>
             module* mdl            = parser.prog.create_module(graph_name);
             parser.parse_graph(mdl, else_graph);
 
-            info.add_instruction(make_op("if"));
+            info.add_instruction(make_op("if"), mdl);
 
             // inputs of the return instruction are that of the output of the
             // if instruction

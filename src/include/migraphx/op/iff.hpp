@@ -4,7 +4,6 @@
 #include <array>
 #include <migraphx/check_shapes.hpp>
 #include <migraphx/argument.hpp>
-#include <migraphx/module.hpp>
 #include <migraphx/functional.hpp>
 #include <migraphx/config.hpp>
 #include <cmath>
@@ -16,7 +15,7 @@ namespace op {
 
 struct iff
 {
-    module_ref sub_module;
+    std::string sub_module;
 
     template <class Self, class F>
     static auto reflect(Self& self, F f)
@@ -25,10 +24,10 @@ struct iff
     }
 
     std::string name() const { return "if"; }
-    shape compute_shape(const std::vector<shape>&) const
+
+    shape compute_shape(std::vector<shape> inputs) const
     {
-        std::vector<shape> out_shapes = sub_module->get_output_shapes();
-        return out_shapes[0];
+        return inputs[0];
     }
 };
 
