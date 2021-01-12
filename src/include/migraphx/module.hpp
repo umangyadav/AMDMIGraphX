@@ -53,9 +53,6 @@ struct module
 
     instruction_ref add_instruction(const operation& op, std::vector<instruction_ref> args);
 
-    instruction_ref
-    add_instruction(const operation& op, module_ref mdl, std::vector<instruction_ref> args);
-
     template <class... Ts>
     instruction_ref insert_instruction(instruction_ref ins, operation op, Ts... args)
     {
@@ -63,11 +60,6 @@ struct module
     }
     instruction_ref
     insert_instruction(instruction_ref ins, const operation& op, std::vector<instruction_ref> args);
-
-    instruction_ref insert_instruction(instruction_ref ins,
-                                       const operation& op,
-                                       module_ref mdl,
-                                       std::vector<instruction_ref> args);
 
     template <class... Ts>
     instruction_ref replace_instruction(instruction_ref ins, operation op, Ts... args)

@@ -100,7 +100,6 @@ struct instruction
     shape result{};
     std::vector<instruction_ref> output;
     std::vector<instruction_ref> arguments;
-    std::vector<module_ref> modules;
 
     literal lit;
 };

@@ -32,31 +32,29 @@ struct parse_if : op_parser<parse_if>
         if(cond)
         {
             const auto& then_graph = info.attributes.at("then_branch").g();
-            std::string graph_name = info.name + "_if";
-            module* mdl            = parser.prog.create_module(graph_name);
-            parser.parse_graph(mdl, then_graph);
-
-            info.add_instruction(make_op("if"), mdl);
+            parser.parse_graph(info.mdl, then_graph);
 
             // inputs of the return instruction are that of the output of the
             // if instruction
-            instruction_ref ret_ins = std::prev(mdl->end());
-            return ret_ins->inputs();
+            instruction_ref ret_ins = std::prev(info.mdl->end());
+            auto inputs = ret_ins->inputs();
+            info.mdl->remove_instruction(ret_ins);
+
+            return inputs;
         }
         // else branch
         else
         {
             const auto& else_graph = info.attributes.at("else_branch").g();
-            std::string graph_name = info.name + "_else";
-            module* mdl            = parser.prog.create_module(graph_name);
-            parser.parse_graph(mdl, else_graph);
-
-            info.add_instruction(make_op("if"), mdl);
+            parser.parse_graph(info.mdl, else_graph);
 
             // inputs of the return instruction are that of the output of the
             // if instruction
-            instruction_ref ret_ins = std::prev(mdl->end());
-            return ret_ins->inputs();
+            instruction_ref ret_ins = std::prev(info.mdl->end());
+            auto inputs = ret_ins->inputs();
+            info.mdl->remove_instruction(ret_ins);
+
+            return inputs;
         }
     }
 };
