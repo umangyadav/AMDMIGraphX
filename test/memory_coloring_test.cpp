@@ -706,7 +706,7 @@ TEST_CASE(test38)
     auto p83    = mm->add_instruction(pass_op{}, p78, p77);
     mm->add_instruction(pass_op{}, output, p83, p63);
     run_pass(p);
-    CHECK(p.get_parameter_shape("scratch").bytes() == 7225344); // Optimal solution is 6422528
+    CHECK(p.get_parameter_shape("scratch").bytes() == 6422528);
     CHECK(no_allocate(p));
 }
 
