@@ -15,12 +15,13 @@ namespace op {
 
 struct iff
 {
-    std::string sub_module;
+    std::string then_sub_graph;
+    std::string else_sub_graph;
 
     template <class Self, class F>
     static auto reflect(Self& self, F f)
     {
-        return pack(f(self.sub_module, "sub_graph"));
+        return pack(f(self.then_sub_graph, "then_sub_graph"), f(self.else_sub_graph, "else_sub_graph"));
     }
 
     std::string name() const { return "if"; }

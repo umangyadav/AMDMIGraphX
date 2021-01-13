@@ -142,10 +142,21 @@ struct module
     friend bool operator==(const module& x, const module& y);
     friend bool operator!=(const module& x, const module& y) { return !(x == y); }
 
+    module_ref get_parent_module() const
+    {
+        return parent_mdl;
+    }
+
+    void set_parent_module(module_ref mdl)
+    {
+        parent_mdl = mdl;;
+    }
+
     private:
     void assign(const module& m);
     std::unique_ptr<module_impl> impl;
     std::string module_name;
+    module_ref parent_mdl;
 };
 
 } // namespace MIGRAPHX_INLINE_NS

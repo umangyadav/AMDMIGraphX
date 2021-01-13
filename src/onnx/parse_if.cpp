@@ -28,8 +28,8 @@ struct parse_if : op_parser<parse_if>
         // cond is not constant, need to create sub_modules
         if(cond_arg.empty())
         {
-            module_ref then_mdl = parser.prog.create_module(then_name);
-            module_ref else_mdl = parser.prog.create_module(else_name);
+            module_ref then_mdl = parser.prog.create_module(then_name, info.mdl);
+            module_ref else_mdl = parser.prog.create_module(else_name, info.mdl);
 
             // parse the then sub_graph
             parser.parse_graph(then_mdl, then_graph);
@@ -48,7 +48,7 @@ struct parse_if : op_parser<parse_if>
                 MIGRAPHX_THROW("PARSE_IF: then and else sub_grahps must have same output shapes!");
             }
 
-            auto ret = info.add_instruction(make_op("if"), args, {then_mdl, else_mdl});
+            auto ret = info.add_instruction(make_op("if", {{"then_sub_graph", then_name}, {"else_sub_graph", else_name}}), args, {then_mdl, else_mdl});
 
             return {ret};
         }
