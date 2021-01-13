@@ -67,7 +67,8 @@ struct onnx_parser
     using op_func  = std::function<std::vector<instruction_ref>(
         onnx_parser&, const node_info&, std::vector<instruction_ref>)>;
     node_map nodes;
-    std::unordered_map<module_ref, std::unordered_map<std::string, instruction_ref>> map_mdl_instructions;
+    std::unordered_map<module_ref, std::unordered_map<std::string, instruction_ref>>
+        map_mdl_instructions;
     program prog                  = program();
     std::size_t default_dim_value = 1;
     std::unordered_map<std::string, std::vector<std::size_t>> map_input_dims;

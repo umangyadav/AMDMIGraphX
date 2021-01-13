@@ -142,14 +142,12 @@ struct module
     friend bool operator==(const module& x, const module& y);
     friend bool operator!=(const module& x, const module& y) { return !(x == y); }
 
-    module_ref get_parent_module() const
-    {
-        return parent_mdl;
-    }
+    module_ref get_parent_module() const { return parent_mdl; }
 
     void set_parent_module(module_ref mdl)
     {
-        parent_mdl = mdl;;
+        parent_mdl = mdl;
+        ;
     }
 
     private:

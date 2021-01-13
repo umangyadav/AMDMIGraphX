@@ -244,7 +244,7 @@ void onnx_parser::parse_from(const void* data, std::size_t size)
 
 void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph)
 {
-    if (contains(map_mdl_instructions, mdl))
+    if(contains(map_mdl_instructions, mdl))
     {
         map_mdl_instructions[mdl] = {};
     }
@@ -450,10 +450,10 @@ shape onnx_parser::parse_type(const onnx::TypeProto& t,
 
 instruction_ref onnx_parser::get_input(module_ref mdl, const std::string name) const
 {
-    while (contains(map_mdl_instructions, mdl))
+    while(contains(map_mdl_instructions, mdl))
     {
         auto& instructions = map_mdl_instructions.at(mdl);
-        if (contains(instructions, name))
+        if(contains(instructions, name))
         {
             return instructions.at(name);
         }

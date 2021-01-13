@@ -48,7 +48,10 @@ struct parse_if : op_parser<parse_if>
                 MIGRAPHX_THROW("PARSE_IF: then and else sub_grahps must have same output shapes!");
             }
 
-            auto ret = info.add_instruction(make_op("if", {{"then_sub_graph", then_name}, {"else_sub_graph", else_name}}), args, {then_mdl, else_mdl});
+            auto ret = info.add_instruction(
+                make_op("if", {{"then_sub_graph", then_name}, {"else_sub_graph", else_name}}),
+                args,
+                {then_mdl, else_mdl});
 
             return {ret};
         }
