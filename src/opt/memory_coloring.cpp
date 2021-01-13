@@ -135,7 +135,8 @@ struct allocation_segment
         return it != segments.end();
     }
 
-    static segment next_segment(std::set<segment>& segments, instruction_ref ins, std::size_t alignment)
+    static segment
+    next_segment(std::set<segment>& segments, instruction_ref ins, std::size_t alignment)
     {
         assert(ins->get_shape().bytes() > 0);
         auto n = 1 + (ins->get_shape().bytes() - 1) / alignment;
@@ -166,7 +167,8 @@ struct allocation_segment
     }
 
     // Build the allocation_color class from the conflict_table
-    static allocation_segment build(const instruction_set_map& conflict_table, std::size_t alignment)
+    static allocation_segment build(const instruction_set_map& conflict_table,
+                                    std::size_t alignment)
     {
         allocation_segment as{};
         std::vector<instruction_ref> conflict_queue;
@@ -433,8 +435,8 @@ struct allocation_color
 void memory_coloring::apply(module& m) const
 {
     const std::size_t alignment = 32;
-    auto conflict_table = build_conflict_table(m, allocation_op);
-    auto as             = allocation_segment::build(conflict_table, alignment);
+    auto conflict_table         = build_conflict_table(m, allocation_op);
+    auto as                     = allocation_segment::build(conflict_table, alignment);
 
     // All allocations should have a segment
     assert(std::all_of(conflict_table.begin(), conflict_table.end(), [&](auto&& pp) {
@@ -494,7 +496,7 @@ void memory_coloring::apply(module& m) const
     }
 
     // Remove scratch parameter if its not used
-    if (mem->outputs().empty())
+    if(mem->outputs().empty())
     {
         m.remove_instruction(mem);
     }
