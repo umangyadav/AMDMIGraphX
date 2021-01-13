@@ -143,8 +143,10 @@ onnx_parser::node_info::add_instruction(const operation& op,
     return mdl->add_instruction(op, args);
 }
 
-instruction_ref onnx_parser::node_info::add_instruction(
-    const operation& op, const std::vector<instruction_ref>& args, const std::vector<module_ref>& modules) const
+instruction_ref
+onnx_parser::node_info::add_instruction(const operation& op,
+                                        const std::vector<instruction_ref>& args,
+                                        const std::vector<module_ref>& modules) const
 {
     return mdl->add_instruction(op, args, modules);
 }

@@ -19,14 +19,14 @@ struct parse_if : op_parser<parse_if>
                                        std::vector<instruction_ref> args) const
     {
         const auto& then_graph = info.attributes.at("then_branch").g();
-        std::string then_name = info.name + "_if";
+        std::string then_name  = info.name + "_if";
 
         const auto& else_graph = info.attributes.at("else_branch").g();
-        std::string else_name = info.name + "_else";
+        std::string else_name  = info.name + "_else";
 
         migraphx::argument cond_arg = args.front()->eval();
         // cond is not constant, need to create sub_modules
-        if (cond_arg.empty())
+        if(cond_arg.empty())
         {
             module_ref then_mdl = parser.prog.create_module(then_name);
             module_ref else_mdl = parser.prog.create_module(else_name);
@@ -40,7 +40,10 @@ struct parse_if : op_parser<parse_if>
             auto then_out_shapes = then_mdl->get_output_shapes();
             auto else_out_shapes = else_mdl->get_output_shapes();
 
-            if (not std::equal(then_out_shapes.begin(), then_out_shapes.end(), else_out_shapes.begin(), else_out_shapes.end()))
+            if(not std::equal(then_out_shapes.begin(),
+                              then_out_shapes.end(),
+                              else_out_shapes.begin(),
+                              else_out_shapes.end()))
             {
                 MIGRAPHX_THROW("PARSE_IF: then and else sub_grahps must have same output shapes!");
             }
@@ -59,12 +62,11 @@ struct parse_if : op_parser<parse_if>
             }
 
             // no need to create a submodule, so still use the main module
-            module* mm            = parser.prog.get_main_module();
+            module* mm = parser.prog.get_main_module();
             // then branch
             if(vec_conds.front())
             {
                 parser.parse_graph(mm, then_graph);
-
             }
             // else branch
             else
@@ -75,7 +77,7 @@ struct parse_if : op_parser<parse_if>
             // inputs of the return instruction are that of the output of the
             // if instruction
             instruction_ref ret_ins = std::prev(mm->end());
-            auto outputs = ret_ins->inputs();
+            auto outputs            = ret_ins->inputs();
             mm->remove_instruction(ret_ins);
 
             return outputs;

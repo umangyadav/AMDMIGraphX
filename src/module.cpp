@@ -155,8 +155,9 @@ instruction_ref module::insert_instruction(instruction_ref ins,
     return result;
 }
 
-instruction_ref
-module::add_instruction(const operation& op, std::vector<instruction_ref> args, std::vector<module_ref> modules)
+instruction_ref module::add_instruction(const operation& op,
+                                        std::vector<instruction_ref> args,
+                                        std::vector<module_ref> modules)
 {
     return insert_instruction(impl->instructions.end(), op, std::move(args), std::move(modules));
 }
@@ -171,7 +172,8 @@ instruction_ref module::insert_instruction(instruction_ref ins,
            "Argument is not an exisiting instruction");
     assert(not starts_with(op.name(), "@"));
     auto out_shapes = compute_shape(modules[0]);
-    auto result     = impl->instructions.insert(ins, {op, out_shapes[0], std::move(args), std::move(modules)});
+    auto result =
+        impl->instructions.insert(ins, {op, out_shapes[0], std::move(args), std::move(modules)});
     instruction::backreference(result);
     assert(result->valid(begin()));
     return result;

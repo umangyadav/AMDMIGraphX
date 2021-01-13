@@ -24,7 +24,10 @@ struct instruction
 
     instruction(operation o, shape r, std::vector<instruction_ref> args);
 
-    instruction(operation o, shape r, std::vector<instruction_ref> args, std::vector<module_ref> modules);
+    instruction(operation o,
+                shape r,
+                std::vector<instruction_ref> args,
+                std::vector<module_ref> modules);
 
     instruction(literal l);
 

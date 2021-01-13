@@ -11,8 +11,14 @@ instruction::instruction(operation o, shape r, std::vector<instruction_ref> args
 {
 }
 
-instruction::instruction(operation o, shape r, std::vector<instruction_ref> args, std::vector<module_ref> modules)
-    : op(std::move(o)), result(std::move(r)), arguments(std::move(args)), arg_modules(std::move(modules))
+instruction::instruction(operation o,
+                         shape r,
+                         std::vector<instruction_ref> args,
+                         std::vector<module_ref> modules)
+    : op(std::move(o)),
+      result(std::move(r)),
+      arguments(std::move(args)),
+      arg_modules(std::move(modules))
 {
 }
 
@@ -86,7 +92,7 @@ bool instruction::valid() const
     else if(op.name() == "if")
     {
         auto out_shapes = compute_shape(arg_modules[0]);
-        computed= out_shapes[0];
+        computed        = out_shapes[0];
     }
     else
     {
