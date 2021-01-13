@@ -24,6 +24,8 @@ struct instruction
 
     instruction(operation o, shape r, std::vector<instruction_ref> args);
 
+    instruction(operation o, shape r, std::vector<instruction_ref> args, std::vector<module_ref> modules);
+
     instruction(literal l);
 
     void replace(operation o);
@@ -100,7 +102,7 @@ struct instruction
     shape result{};
     std::vector<instruction_ref> output;
     std::vector<instruction_ref> arguments;
-    std::vector<module_ref> modules;
+    std::vector<module_ref> arg_modules;
 
     literal lit;
 };

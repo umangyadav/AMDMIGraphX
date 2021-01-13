@@ -39,8 +39,8 @@ struct onnx_parser
                                         const std::vector<instruction_ref>& args) const;
 
         instruction_ref add_instruction(const operation& op,
-                                        module_ref mdl,
-                                        const std::vector<instruction_ref>& args) const;
+                                        const std::vector<instruction_ref>& args,
+                                        const std::vector<module_ref>& modules) const;
 
         template <class... Ts>
         instruction_ref add_instruction(const operation& op, Ts... xs) const
@@ -49,9 +49,9 @@ struct onnx_parser
         }
 
         template <class... Ts>
-        instruction_ref add_instruction(const operation& op, module_ref mdl, Ts... xs) const
+        instruction_ref add_instruction(const operation& op, const std::vector<module_ref>& modules, Ts... xs) const
         {
-            return add_instruction(op, mdl, {xs...});
+            return add_instruction(op, {xs...}, modules);
         }
 
         instruction_ref add_literal(literal l) const;

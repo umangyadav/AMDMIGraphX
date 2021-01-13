@@ -18,45 +18,67 @@ struct parse_if : op_parser<parse_if>
                                        const onnx_parser::node_info& info,
                                        std::vector<instruction_ref> args) const
     {
+        const auto& then_graph = info.attributes.at("then_branch").g();
+        std::string then_name = info.name + "_if";
+
+        const auto& else_graph = info.attributes.at("else_branch").g();
+        std::string else_name = info.name + "_else";
+
         migraphx::argument cond_arg = args.front()->eval();
-        check_arg_empty(cond_arg, "PARSE_IF: Only support constant input condition");
-        std::vector<bool> vec_conds;
-        cond_arg.visit([&](auto s) { vec_conds.assign(s.begin(), s.end()); });
-        if(vec_conds.size() != 1)
+        // cond is not constant, need to create sub_modules
+        if (cond_arg.empty())
         {
-            MIGRAPHX_THROW("PARSE_IF: condition input can have only one element!");
+            module_ref then_mdl = parser.prog.create_module(then_name);
+            module_ref else_mdl = parser.prog.create_module(else_name);
+
+            // parse the then sub_graph
+            parser.parse_graph(then_mdl, then_graph);
+
+            // parse_the else sub_graph
+            parser.parse_graph(else_mdl, else_graph);
+
+            auto then_out_shapes = then_mdl->get_output_shapes();
+            auto else_out_shapes = else_mdl->get_output_shapes();
+
+            if (not std::equal(then_out_shapes.begin(), then_out_shapes.end(), else_out_shapes.begin(), else_out_shapes.end()))
+            {
+                MIGRAPHX_THROW("PARSE_IF: then and else sub_grahps must have same output shapes!");
+            }
+
+            auto ret = info.add_instruction(make_op("if"), args, {then_mdl, else_mdl});
+
+            return {ret};
         }
-
-        bool cond = vec_conds[0];
-        // then branch
-        if(cond)
-        {
-            const auto& then_graph = info.attributes.at("then_branch").g();
-            std::string graph_name = info.name + "_if";
-            module* mdl            = parser.prog.create_module(graph_name);
-            parser.parse_graph(mdl, then_graph);
-
-            info.add_instruction(make_op("if"), mdl);
-
-            // inputs of the return instruction are that of the output of the
-            // if instruction
-            instruction_ref ret_ins = std::prev(mdl->end());
-            return ret_ins->inputs();
-        }
-        // else branch
         else
         {
-            const auto& else_graph = info.attributes.at("else_branch").g();
-            std::string graph_name = info.name + "_else";
-            module* mdl            = parser.prog.create_module(graph_name);
-            parser.parse_graph(mdl, else_graph);
+            std::vector<bool> vec_conds;
+            cond_arg.visit([&](auto s) { vec_conds.assign(s.begin(), s.end()); });
+            if(vec_conds.size() != 1)
+            {
+                MIGRAPHX_THROW("PARSE_IF: condition input can have only one element!");
+            }
 
-            info.add_instruction(make_op("if"), mdl);
+            // no need to create a submodule, so still use the main module
+            module* mm            = parser.prog.get_main_module();
+            // then branch
+            if(vec_conds.front())
+            {
+                parser.parse_graph(mm, then_graph);
+
+            }
+            // else branch
+            else
+            {
+                parser.parse_graph(mm, else_graph);
+            }
 
             // inputs of the return instruction are that of the output of the
             // if instruction
-            instruction_ref ret_ins = std::prev(mdl->end());
-            return ret_ins->inputs();
+            instruction_ref ret_ins = std::prev(mm->end());
+            auto outputs = ret_ins->inputs();
+            mm->remove_instruction(ret_ins);
+
+            return outputs;
         }
     }
 };
