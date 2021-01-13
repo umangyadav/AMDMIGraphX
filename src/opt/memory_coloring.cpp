@@ -88,8 +88,6 @@ bool is_overlap(std::pair<std::size_t, std::size_t> x, std::pair<std::size_t, st
     return std::max(x.first, y.first) < std::min(x.second, y.second);
 }
 
-const std::size_t alignment = 32;
-
 struct allocation_segment
 {
     using segment = std::pair<std::size_t, std::size_t>;
@@ -119,13 +117,13 @@ struct allocation_segment
         }
     }
 
-    std::size_t max_bytes(std::size_t alignment = 1)
+    std::size_t max()
     {
         std::size_t n = 0;
         for(auto&& pp : ins2segment)
         {
             auto seg = pp.second;
-            n        = std::max(n, seg.second * alignment);
+            n        = std::max(n, seg.second);
         }
         return n;
     }
@@ -137,7 +135,7 @@ struct allocation_segment
         return it != segments.end();
     }
 
-    static segment next_segment(std::set<segment>& segments, instruction_ref ins)
+    static segment next_segment(std::set<segment>& segments, instruction_ref ins, std::size_t alignment)
     {
         assert(ins->get_shape().bytes() > 0);
         auto n = 1 + (ins->get_shape().bytes() - 1) / alignment;
@@ -168,7 +166,7 @@ struct allocation_segment
     }
 
     // Build the allocation_color class from the conflict_table
-    static allocation_segment build(const instruction_set_map& conflict_table)
+    static allocation_segment build(const instruction_set_map& conflict_table, std::size_t alignment)
     {
         allocation_segment as{};
         std::vector<instruction_ref> conflict_queue;
@@ -207,7 +205,7 @@ struct allocation_segment
             auto* parent_segment = as.get_segment(parent);
             // Add segment for the parent if there is none or segment overlaps with the children
             if(parent_segment == nullptr or overlaps(segments, *parent_segment))
-                as.add_segment(parent, next_segment(segments, parent));
+                as.add_segment(parent, next_segment(segments, parent, alignment));
             else
                 segments.insert(*parent_segment);
         }
@@ -230,8 +228,8 @@ struct allocation_segment
                 auto* parent_segment = as.get_segment(parent);
                 assert(parent_segment != nullptr);
 
-                auto s = next_segment(segments, parent);
-                if(s != *parent_segment and s.second <= as.max_bytes())
+                auto s = next_segment(segments, parent, alignment);
+                if(s != *parent_segment and s.second <= as.max())
                 {
                     as.add_segment(parent, s);
                 }
@@ -434,8 +432,9 @@ struct allocation_color
 
 void memory_coloring::apply(module& m) const
 {
+    const std::size_t alignment = 32;
     auto conflict_table = build_conflict_table(m, allocation_op);
-    auto as             = allocation_segment::build(conflict_table);
+    auto as             = allocation_segment::build(conflict_table, alignment);
 
     // All allocations should have a segment
     assert(std::all_of(conflict_table.begin(), conflict_table.end(), [&](auto&& pp) {
@@ -471,7 +470,7 @@ void memory_coloring::apply(module& m) const
     }
 
     // Total memory
-    std::size_t n = as.max_bytes(alignment);
+    std::size_t n = as.max() * alignment;
 
     // Replace allocations
     auto mem = m.add_parameter("scratch", shape{shape::int8_type, {n}});
@@ -492,6 +491,12 @@ void memory_coloring::apply(module& m) const
             continue;
         assert(ins->get_shape().bytes() == 0);
         m.replace_instruction(ins, op::load{ins->get_shape(), 0}, mem);
+    }
+
+    // Remove scratch parameter if its not used
+    if (mem->outputs().empty())
+    {
+        m.remove_instruction(mem);
     }
 }
 
