@@ -16,6 +16,7 @@ namespace migraphx {
 inline namespace MIGRAPHX_INLINE_NS {
 
 MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_DEBUG_MEMORY_COLORING);
+MIGRAPHX_DECLARE_ENV_VAR(MIGRAPHX_MEMORY_COLORING_BRUTE_FORCE);
 
 using instruction_set     = std::unordered_set<instruction_ref>;
 using instruction_set_map = std::unordered_map<instruction_ref, instruction_set>;
@@ -117,7 +118,7 @@ struct allocation_segment
         }
     }
 
-    std::size_t max()
+    std::size_t max() const
     {
         std::size_t n = 0;
         for(auto&& pp : ins2segment)
@@ -135,6 +136,26 @@ struct allocation_segment
         return it != segments.end();
     }
 
+    static std::set<segment> merge_overlapping_segments(const std::set<segment>& segments)
+    {
+        assert(not segments.empty());
+        std::set<segment> result;
+        auto current = *segments.begin();
+        std::for_each(std::next(segments.begin()), segments.end(), [&](auto&& s) {
+            if (current.second > s.first) 
+            {
+                current.second = std::max(current.second, s.second);
+            }
+            else
+            {
+                result.insert(current);
+                current = s;
+            }
+        });
+        result.insert(current);
+        return result;   
+    }
+
     static segment
     next_segment(std::set<segment>& segments, instruction_ref ins, std::size_t alignment)
     {
@@ -143,22 +164,20 @@ struct allocation_segment
         assert(n > 0);
         auto start = 0;
         // Insert at end if it can fit at the begining
-        if(segments.empty() or segments.begin()->first <= n)
+        if(not segments.empty() and segments.begin()->first <= n)
         {
+            auto merged_segments = merge_overlapping_segments(segments);
             auto it =
-                std::adjacent_find(segments.begin(), segments.end(), [&](segment x, segment y) {
+                std::adjacent_find(merged_segments.begin(), merged_segments.end(), [&](segment x, segment y) {
                     if(is_overlap(x, y))
                         return false;
                     assert(y.first >= x.second);
                     auto k = y.first - x.second;
                     return (k >= n);
                 });
-            if(it == segments.end())
-                it = std::max_element(segments.begin(), segments.end(), [&](segment x, segment y) {
-                    return x.second < y.second;
-                });
-            if(it != segments.end())
-                start = it->second;
+            if(it == merged_segments.end())
+                it = std::prev(merged_segments.end());
+            start = it->second;
         }
         auto s = segment{start, start + n};
         assert(not overlaps(segments, s));
@@ -166,11 +185,16 @@ struct allocation_segment
         return s;
     }
 
-    // Build the allocation_color class from the conflict_table
-    static allocation_segment build(const instruction_set_map& conflict_table,
-                                    std::size_t alignment)
+    static auto compare(const instruction_set_map& conflict_table)
     {
-        allocation_segment as{};
+        return [&](auto x, auto y) {
+            return std::make_tuple(conflict_table.at(x).size(), x->get_shape().bytes()) <
+                   std::make_tuple(conflict_table.at(y).size(), y->get_shape().bytes());
+        };
+    }
+
+    static std::vector<instruction_ref> get_conflict_queue(const instruction_set_map& conflict_table)
+    {
         std::vector<instruction_ref> conflict_queue;
         // Add all allocations to the conflict_queue
         std::transform(conflict_table.begin(),
@@ -180,10 +204,14 @@ struct allocation_segment
 
         // Sort the conflict queue so we process the allocation with the least
         // number of adjacent allocations first
-        std::sort(conflict_queue.begin(), conflict_queue.end(), [&](auto x, auto y) {
-            return std::make_tuple(conflict_table.at(x).size(), x->get_shape().bytes()) <
-                   std::make_tuple(conflict_table.at(y).size(), y->get_shape().bytes());
-        });
+        std::sort(conflict_queue.begin(), conflict_queue.end(), compare(conflict_table));
+        return conflict_queue;
+    }
+
+    static allocation_segment process(const instruction_set_map& conflict_table, const std::vector<instruction_ref>& conflict_queue,
+                                    std::size_t alignment)
+    {
+        allocation_segment as{};
         // Process the conflict_queue, we refer to the current allocation as
         // the parent and the adjacent allocations as children
         for(auto parent : conflict_queue)
@@ -238,6 +266,44 @@ struct allocation_segment
             }
         }
         return as;
+    }
+
+    // Build the allocation_segment class from the conflict_table using the greedy algorithm
+    static allocation_segment build(const instruction_set_map& conflict_table,
+                                    std::size_t alignment)
+    {
+        return process(conflict_table, get_conflict_queue(conflict_table), alignment);
+    }
+
+    // Build the allocation_segment class from the conflict_table by checking all permutations
+    static allocation_segment build_all(const instruction_set_map& conflict_table,
+                                    std::size_t alignment)
+    {
+        if (conflict_table.empty())
+            return {};
+        auto conflict_queue = get_conflict_queue(conflict_table);
+        std::vector<allocation_segment> allocation_segments(conflict_queue.size());
+        par_for(conflict_queue.size(), 1, [&](auto i) {
+            allocation_segment as{};
+            std::size_t n = std::numeric_limits<std::size_t>::max();
+            auto cq = conflict_queue;
+            std::rotate(cq.begin(), cq.begin() + i, cq.begin() + i + 1);
+            do
+            {
+                auto x = process(conflict_table, conflict_queue, alignment);
+                auto size = x.max();
+                if (size < n)
+                {
+                    n = size;
+                    as = x;
+                }
+            } while(std::next_permutation(cq.begin() + 1, cq.end(), compare(conflict_table)));
+            allocation_segments[i] = as;
+        });
+        auto it = std::min_element(allocation_segments.begin(), allocation_segments.end(), [&](const auto& x, const auto& y) {
+            return x.max() < y.max();
+        });
+        return *it;
     }
 };
 
@@ -436,7 +502,11 @@ void memory_coloring::apply(module& m) const
 {
     const std::size_t alignment = 32;
     auto conflict_table         = build_conflict_table(m, allocation_op);
-    auto as                     = allocation_segment::build(conflict_table, alignment);
+    allocation_segment as{};
+    if (enabled(MIGRAPHX_MEMORY_COLORING_BRUTE_FORCE{}))
+        as                     = allocation_segment::build_all(conflict_table, alignment);
+    else
+        as                     = allocation_segment::build(conflict_table, alignment);
 
     // All allocations should have a segment
     assert(std::all_of(conflict_table.begin(), conflict_table.end(), [&](auto&& pp) {
