@@ -154,7 +154,7 @@ struct module
     void assign(const module& m);
     std::unique_ptr<module_impl> impl;
     std::string module_name;
-    module_ref parent_mdl;
+    module_ref parent_mdl = nullptr;
 };
 
 } // namespace MIGRAPHX_INLINE_NS
