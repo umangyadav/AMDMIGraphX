@@ -211,7 +211,7 @@ struct allocation_segment
 
     static allocation_segment process(const instruction_set_map& conflict_table,
                                       const std::vector<instruction_ref>& conflict_queue,
-                                      std::size_t alignment)
+                                      std::size_t alignment, bool reduce = true)
     {
         allocation_segment as{};
         // Process the conflict_queue, we refer to the current allocation as
@@ -233,39 +233,43 @@ struct allocation_segment
                          [&](auto child) { return as.get_segment(child); },
                          [&](auto child) { return *as.get_segment(child); });
 
-            // Get the segment for the parent
-            auto* parent_segment = as.get_segment(parent);
-            // Add segment for the parent if there is none or segment overlaps with the children
-            if(parent_segment == nullptr or overlaps(segments, *parent_segment))
-                as.add_segment(parent, next_segment(segments, parent, alignment));
-            else
-                segments.insert(*parent_segment);
+            // Add segment
+            as.add_segment(parent, next_segment(segments, parent, alignment));
+            // // Get the segment for the parent
+            // auto* parent_segment = as.get_segment(parent);
+            // // Add segment for the parent if there is none or segment overlaps with the children
+            // if(parent_segment == nullptr or overlaps(segments, *parent_segment))
+            // else
+            //     segments.insert(*parent_segment);
         }
         // Reduce the number of segments
-        for(std::size_t n = 0; n < 3; n++)
+        if (reduce)
         {
-            // changed = false;
-            for(auto parent : conflict_queue)
+            for(std::size_t n = 0; n < 3; n++)
             {
-                auto children = conflict_table.at(parent);
-                // This set is to track the segments already processed
-                std::set<segment> segments;
-                // Add all segemnts for the children to the segments already processed
-                transform_if(children.begin(),
-                             children.end(),
-                             std::inserter(segments, segments.begin()),
-                             [&](auto child) { return as.get_segment(child); },
-                             [&](auto child) { return *as.get_segment(child); });
-                // Get the segment for the parent
-                auto* parent_segment = as.get_segment(parent);
-                assert(parent_segment != nullptr);
-
-                auto s = next_segment(segments, parent, alignment);
-                if(s != *parent_segment and s.second <= as.max())
+                for(auto parent : conflict_queue)
                 {
-                    as.add_segment(parent, s);
+                    auto children = conflict_table.at(parent);
+                    // This set is to track the segments already processed
+                    std::set<segment> segments;
+                    // Add all segemnts for the children to the segments already processed
+                    transform_if(children.begin(),
+                                 children.end(),
+                                 std::inserter(segments, segments.begin()),
+                                 [&](auto child) { return as.get_segment(child); },
+                                 [&](auto child) { return *as.get_segment(child); });
+                    // Get the segment for the parent
+                    auto* parent_segment = as.get_segment(parent);
+                    assert(parent_segment != nullptr);
+
+                    auto s = next_segment(segments, parent, alignment);
+                    if(s != *parent_segment and s.second <= as.max())
+                    {
+                        as.add_segment(parent, s);
+                    }
                 }
             }
+
         }
         return as;
     }
@@ -277,6 +281,16 @@ struct allocation_segment
         return process(conflict_table, get_conflict_queue(conflict_table), alignment);
     }
 
+    static std::size_t factorial(std::size_t n)
+    {
+        std::size_t result = 1;
+        while(n > 1) {
+            result *= n;
+            n--;
+        }
+        return result;
+    }
+
     // Build the allocation_segment class from the conflict_table by checking all permutations
     static allocation_segment build_all(const instruction_set_map& conflict_table,
                                         std::size_t alignment)
@@ -284,27 +298,21 @@ struct allocation_segment
         if(conflict_table.empty())
             return {};
         auto conflict_queue = get_conflict_queue(conflict_table);
-        std::vector<allocation_segment> allocation_segments(conflict_queue.size());
-        par_for(conflict_queue.size(), 1, [&](auto i) {
-            allocation_segment as{};
-            std::size_t n = std::numeric_limits<std::size_t>::max();
-            auto cq       = conflict_queue;
-            std::rotate(cq.begin(), cq.begin() + i, cq.begin() + i + 1);
-            do
+        std::vector<allocation_segment> allocation_segments(std::thread::hardware_concurrency());
+        std::vector<std::size_t> sizes(std::thread::hardware_concurrency(), std::numeric_limits<std::size_t>::max());
+        par_for(factorial(conflict_queue.size()), 1, [&](auto i, auto tid) {
+            auto cq = conflict_queue;
+            kth_permutation(i, cq.begin(), cq.end());
+            auto x    = process(conflict_table, cq, alignment, false);
+            auto size = x.max();
+            if (size < sizes[tid])
             {
-                auto x    = process(conflict_table, conflict_queue, alignment);
-                auto size = x.max();
-                if(size < n)
-                {
-                    n  = size;
-                    as = x;
-                }
-            } while(std::next_permutation(cq.begin() + 1, cq.end(), compare(conflict_table)));
-            allocation_segments[i] = as;
+                sizes[tid] = size;
+                allocation_segments[tid] = x;
+            }
         });
-        auto it = std::min_element(allocation_segments.begin(),
-                                   allocation_segments.end(),
-                                   [&](const auto& x, const auto& y) { return x.max() < y.max(); });
+        auto min_size = std::min_element(sizes.begin(), sizes.end());
+        auto it = allocation_segments.begin() + (min_size - sizes.begin());
         return *it;
     }
 };
