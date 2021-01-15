@@ -41,15 +41,15 @@ OutputIterator transform_if(Iterator start, Iterator last, OutputIterator out, P
     return out;
 }
 
-template<class Iterator>
+template <class Iterator>
 void kth_permutation(std::size_t k, Iterator start, Iterator last)
 {
     std::size_t size = std::distance(start, last);
-    for(int j = 1; j < size; ++j) 
+    for(int j = 1; j < size; ++j)
     {
         auto x = start + (k % (j + 1));
         auto y = start + j;
-        std::iter_swap(x, y); 
+        std::iter_swap(x, y);
         k = k / (j + 1);
     }
 }

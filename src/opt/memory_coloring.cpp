@@ -211,7 +211,8 @@ struct allocation_segment
 
     static allocation_segment process(const instruction_set_map& conflict_table,
                                       const std::vector<instruction_ref>& conflict_queue,
-                                      std::size_t alignment, bool reduce = true)
+                                      std::size_t alignment,
+                                      bool reduce = true)
     {
         allocation_segment as{};
         // Process the conflict_queue, we refer to the current allocation as
@@ -243,7 +244,7 @@ struct allocation_segment
             //     segments.insert(*parent_segment);
         }
         // Reduce the number of segments
-        if (reduce)
+        if(reduce)
         {
             for(std::size_t n = 0; n < 3; n++)
             {
@@ -269,7 +270,6 @@ struct allocation_segment
                     }
                 }
             }
-
         }
         return as;
     }
@@ -284,7 +284,8 @@ struct allocation_segment
     static std::size_t factorial(std::size_t n)
     {
         std::size_t result = 1;
-        while(n > 1) {
+        while(n > 1)
+        {
             result *= n;
             n--;
         }
@@ -299,20 +300,21 @@ struct allocation_segment
             return {};
         auto conflict_queue = get_conflict_queue(conflict_table);
         std::vector<allocation_segment> allocation_segments(std::thread::hardware_concurrency());
-        std::vector<std::size_t> sizes(std::thread::hardware_concurrency(), std::numeric_limits<std::size_t>::max());
+        std::vector<std::size_t> sizes(std::thread::hardware_concurrency(),
+                                       std::numeric_limits<std::size_t>::max());
         par_for(factorial(conflict_queue.size()), 1, [&](auto i, auto tid) {
             auto cq = conflict_queue;
             kth_permutation(i, cq.begin(), cq.end());
             auto x    = process(conflict_table, cq, alignment, false);
             auto size = x.max();
-            if (size < sizes[tid])
+            if(size < sizes[tid])
             {
-                sizes[tid] = size;
+                sizes[tid]               = size;
                 allocation_segments[tid] = x;
             }
         });
         auto min_size = std::min_element(sizes.begin(), sizes.end());
-        auto it = allocation_segments.begin() + (min_size - sizes.begin());
+        auto it       = allocation_segments.begin() + (min_size - sizes.begin());
         return *it;
     }
 };
