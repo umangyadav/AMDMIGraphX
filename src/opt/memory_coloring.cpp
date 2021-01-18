@@ -211,7 +211,7 @@ struct allocation_segment
 
     static allocation_segment process(const instruction_set_map& conflict_table,
                                       const std::vector<instruction_ref>& conflict_queue,
-                                      std::size_t alignment)
+                                      std::size_t alignment, bool reduce = true)
     {
         allocation_segment as{};
         // Process the conflict_queue, we refer to the current allocation as
@@ -241,29 +241,31 @@ struct allocation_segment
             else
                 segments.insert(*parent_segment);
         }
-        // Reduce the number of segments
-        for(std::size_t n = 0; n < 3; n++)
+        if (reduce)
         {
-            // changed = false;
-            for(auto parent : conflict_queue)
+            // Reduce the number of segments
+            for(std::size_t n = 0; n < 3; n++)
             {
-                auto children = conflict_table.at(parent);
-                // This set is to track the segments already processed
-                std::set<segment> segments;
-                // Add all segemnts for the children to the segments already processed
-                transform_if(children.begin(),
-                             children.end(),
-                             std::inserter(segments, segments.begin()),
-                             [&](auto child) { return as.get_segment(child); },
-                             [&](auto child) { return *as.get_segment(child); });
-                // Get the segment for the parent
-                auto* parent_segment = as.get_segment(parent);
-                assert(parent_segment != nullptr);
-
-                auto s = next_segment(segments, parent, alignment);
-                if(s != *parent_segment and s.second <= as.max())
+                for(auto parent : conflict_queue)
                 {
-                    as.add_segment(parent, s);
+                    auto children = conflict_table.at(parent);
+                    // This set is to track the segments already processed
+                    std::set<segment> segments;
+                    // Add all segemnts for the children to the segments already processed
+                    transform_if(children.begin(),
+                                 children.end(),
+                                 std::inserter(segments, segments.begin()),
+                                 [&](auto child) { return as.get_segment(child); },
+                                 [&](auto child) { return *as.get_segment(child); });
+                    // Get the segment for the parent
+                    auto* parent_segment = as.get_segment(parent);
+                    assert(parent_segment != nullptr);
+
+                    auto s = next_segment(segments, parent, alignment);
+                    if(s != *parent_segment and s.second <= as.max())
+                    {
+                        as.add_segment(parent, s);
+                    }
                 }
             }
         }
@@ -292,7 +294,7 @@ struct allocation_segment
             std::rotate(cq.begin(), cq.begin() + i, cq.begin() + i + 1);
             do
             {
-                auto x    = process(conflict_table, conflict_queue, alignment);
+                auto x    = process(conflict_table, conflict_queue, alignment, false);
                 auto size = x.max();
                 if(size < n)
                 {
