@@ -211,8 +211,7 @@ struct allocation_segment
 
     static allocation_segment process(const instruction_set_map& conflict_table,
                                       const std::vector<instruction_ref>& conflict_queue,
-                                      std::size_t alignment,
-                                      bool reduce = true)
+                                      std::size_t alignment, bool reduce = true)
     {
         allocation_segment as{};
         // Process the conflict_queue, we refer to the current allocation as
@@ -242,7 +241,7 @@ struct allocation_segment
             else
                 segments.insert(*parent_segment);
         }
-        if(reduce)
+        if (reduce)
         {
             // Reduce the number of segments
             for(std::size_t n = 0; n < 3; n++)
@@ -295,7 +294,7 @@ struct allocation_segment
             std::rotate(cq.begin(), cq.begin() + i, cq.begin() + i + 1);
             do
             {
-                auto x    = process(conflict_table, conflict_queue, alignment, false);
+                auto x    = process(conflict_table, cq, alignment, false);
                 auto size = x.max();
                 if(size < n)
                 {
