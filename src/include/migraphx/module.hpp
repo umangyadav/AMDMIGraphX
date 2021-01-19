@@ -79,6 +79,11 @@ struct module
                                         const operation& op,
                                         std::vector<instruction_ref> args) MIGRAPHX_TIDY_CONST;
 
+    instruction_ref replace_instruction(instruction_ref ins,
+                                       const operation& op,
+                                       std::vector<instruction_ref> args,
+                                       std::vector<module_ref> modules);
+
     instruction_ref replace_instruction(instruction_ref ins, instruction_ref rep);
 
     instruction_ref remove_instruction(instruction_ref ins);
@@ -86,6 +91,8 @@ struct module
 
     instruction_ref move_instruction(instruction_ref src, instruction_ref dst);
     instruction_ref move_instructions(instruction_ref src, instruction_ref dst);
+
+    module_ref create_sub_module();
 
     template <class... Ts>
     instruction_ref add_literal(Ts&&... xs)

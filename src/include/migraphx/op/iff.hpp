@@ -25,7 +25,7 @@ struct iff
                     f(self.else_sub_graph, "else_sub_graph"));
     }
 
-    std::string name() const { return "if"; }
+    std::string name() const { return "iff"; }
 
     shape compute_shape(std::vector<shape> inputs) const { return inputs[0]; }
 };

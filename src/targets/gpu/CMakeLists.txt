@@ -122,6 +122,7 @@ add_library(migraphx_gpu
     pad.cpp
     gather.cpp
     convert.cpp
+    iff.cpp
     lrn.cpp
     schedule_model.cpp
     pack_int8_args.cpp
@@ -164,6 +165,7 @@ register_migraphx_gpu_ops(hip_
     floor
     gather
     greater
+    iff
     less
     log
     logsoftmax

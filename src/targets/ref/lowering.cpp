@@ -10,6 +10,7 @@
 #include <migraphx/op/dot.hpp>
 #include <migraphx/op/quant_dot.hpp>
 #include <migraphx/op/elu.hpp>
+#include <migraphx/op/iff.hpp>
 #include <migraphx/op/im2col.hpp>
 #include <migraphx/op/leaky_relu.hpp>
 #include <migraphx/op/logsoftmax.hpp>
@@ -710,6 +711,37 @@ struct ref_quant_gemm
 };
 MIGRAPHX_REGISTER_OP(ref_gemm)
 
+struct ref_if
+{
+    op::iff op;
+
+    template <class Self, class F>
+    static auto reflect(Self& self, F f)
+    {
+        return migraphx::reflect(self.op, f);
+    }
+
+    std::string name() const { return "ref::if"; }
+    shape compute_shape(const std::vector<shape>& inputs) const
+    {
+        return op.compute_shape(inputs);
+    }
+
+    argument compute(context& ctx, const shape&, std::vector<argument> args, 
+                     std::vector<module_ref>& modules, 
+                     std::function<std::vector<argument>(const module_ref& mdl, context& ctx, std::vector<argument> params)> run) const
+    {
+        argument result;
+        bool cond = args[0].implicit();
+        args.erase(args.begin());
+        module_ref mdl = cond ? modules[0] : modules[1];
+        auto results = run(mdl, ctx, args);
+
+        return results[0];
+    }
+};
+MIGRAPHX_REGISTER_OP(ref_if);
+
 struct leaky_relu_op
 {
     op::leaky_relu op;
@@ -921,6 +953,7 @@ struct ref_apply
         apply_map["softmax"]    = extend_op<ref_softmax<op::softmax>, op::softmax>();
         apply_map["rnn_var_sl_last_output"] =
             extend_op<ref_rnn_var_sl_last_output, op::rnn_var_sl_last_output>();
+        apply_map["iff"] = extend_op<ref_if, op::iff>();
     }
 
     void apply()

@@ -24,6 +24,7 @@ struct module_impl
 {
     // A list is used to keep references to an instruction stable
     std::list<instruction> instructions;
+    std::list<module> sub_modules;
     std::vector<std::string> input_names;
 };
 
@@ -90,6 +91,7 @@ void module::assign(const module& m)
     impl->input_names = m.impl->input_names;
 
     std::unordered_map<instruction_ref, instruction_ref> ins_map;
+    std::unordered_map<module_ref, module_ref> sub_module_map;
     for(auto ins : iterator_for(m))
     {
         instruction_ref copy_ins{};
@@ -113,6 +115,26 @@ void module::assign(const module& m)
         }
         else
         {
+            // if there are sub_module inputs, need to make a copy of the submodule
+            auto arg_modules = ins->sub_graph();
+            std::vector<module_ref> copy_arg_modules;
+            if (not arg_modules.empty())
+            {
+                for (auto mdl : arg_modules)
+                {
+                    module_ref copy_mdl = this->create_sub_module();
+                    *copy_mdl = *mdl;
+                    sub_module_map[mdl] = copy_mdl;
+                }
+
+                copy_arg_modules.resize(arg_modules.size());
+                assert(std::all_of(
+                    arg_modules.begin(), arg_modules.end(), [&](auto i) { return sub_module_map.count(i) > 0; }));
+                std::transform(arg_modules.begin(), arg_modules.end(), copy_arg_modules.begin(), [&](auto i) {
+                    return sub_module_map[i];
+                });
+            }
+
             // retrieve its mapped input
             auto inputs = ins->inputs();
             // ensure all inputs have its corresponding copy instructions
@@ -128,7 +150,14 @@ void module::assign(const module& m)
             }
             else
             {
-                copy_ins = add_instruction(ins->get_operator(), copy_inputs);
+                if (copy_arg_modules.empty())
+                {
+                    copy_ins = add_instruction(ins->get_operator(), copy_inputs);
+                }
+                else
+                {
+                    copy_ins = add_instruction(ins->get_operator(), copy_inputs, copy_arg_modules);                    
+                }
             }
         }
 
@@ -192,6 +221,22 @@ instruction_ref module::replace_instruction(instruction_ref ins,
     instruction::replace(ins, op, r, std::move(args));
     assert(ins->valid(begin()));
     return ins;
+}
+
+instruction_ref module::replace_instruction(instruction_ref ins,
+                                    const operation& op,
+                                    std::vector<instruction_ref> args,
+                                    std::vector<module_ref> modules)
+{
+    assert(std::all_of(
+               args.begin(), args.end(), [&](instruction_ref x) { return has_instruction(x); }) &&
+           "Argument is not an exisiting instruction");
+    assert(not starts_with(op.name(), "@"));
+    auto out_shapes = compute_shape(modules[0]);
+    instruction::replace(ins, op, out_shapes[0], std::move(args), std::move(modules));
+    assert(ins->valid(begin()));
+    return ins;
+
 }
 
 instruction_ref module::replace_instruction(instruction_ref ins, instruction_ref rep)
@@ -263,6 +308,15 @@ instruction_ref module::move_instructions(instruction_ref src, instruction_ref d
     for(auto ins : src->inputs())
         this->move_instruction(ins, src);
     return src;
+}
+
+module_ref module::create_sub_module()
+{
+    this->impl->sub_modules.push_back({});
+    module_ref sub_mdl = &this->impl->sub_modules.back();
+    sub_mdl->set_parent_module(this);
+
+    return sub_mdl;
 }
 
 instruction_ref module::add_literal(literal l)
@@ -429,6 +483,11 @@ void module::finalize(context& ctx)
     {
         ins->finalize(ctx);
     }
+
+    for (auto& sub_mdl : this->impl->sub_modules)
+    {
+        sub_mdl.finalize(ctx);
+    }
 }
 
 value module::to_value() const
@@ -545,6 +604,12 @@ void module::print(const std::function<
                "DEBUG_PRINT: Instruction not found");
 
         print_func(ins, names);
+    }
+
+    // print sub_graph
+    for (auto& sub_mdl : this->impl->sub_modules)
+    {
+        sub_mdl.print(print_func);
     }
 }
 

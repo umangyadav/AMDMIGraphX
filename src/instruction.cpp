@@ -18,7 +18,7 @@ instruction::instruction(operation o,
     : op(std::move(o)),
       result(std::move(r)),
       arguments(std::move(args)),
-      arg_modules(std::move(modules))
+      module_args(std::move(modules))
 {
 }
 
@@ -58,6 +58,7 @@ void instruction::clear_arguments()
         arg->remove_output(*this);
     }
     arguments.clear();
+    module_args.clear();
 }
 
 bool operator==(const instruction& i, instruction_ref ref)
@@ -91,7 +92,7 @@ bool instruction::valid() const
     }
     else if(op.name() == "if")
     {
-        auto out_shapes = compute_shape(arg_modules[0]);
+        auto out_shapes = compute_shape(module_args[0]);
         computed        = out_shapes[0];
     }
     else
@@ -123,6 +124,8 @@ const operation& instruction::get_operator() const { return op; }
 std::string instruction::name() const { return op.name(); }
 
 const std::vector<instruction_ref>& instruction::inputs() const { return arguments; }
+
+const std::vector<module_ref>& instruction::sub_graph() const { return module_args; }
 
 const std::vector<instruction_ref>& instruction::outputs() const { return output; }
 
@@ -173,6 +176,13 @@ void instruction::replace(instruction_ref ins,
     backreference(ins);
 }
 
+void
+instruction::replace(instruction_ref ins, operation o, const shape& r, std::vector<instruction_ref> args, std::vector<module_ref> module_args)
+{
+    ins->replace(std::move(o), r, args, module_args);
+}
+
+
 void instruction::replace(operation o, const shape& r, std::vector<instruction_ref> args)
 {
     op = std::move(o);
@@ -180,10 +190,24 @@ void instruction::replace(operation o, const shape& r, std::vector<instruction_r
     replace(std::move(args));
 }
 
+void instruction::replace(operation o, const shape& r, std::vector<instruction_ref> args, std::vector<module_ref> mdl_args)
+{
+    op = std::move(o);
+    replace(r);
+    replace(std::move(args), std::move(mdl_args));
+}
+
 void instruction::replace(std::vector<instruction_ref> args)
 {
     clear_arguments();
     arguments = std::move(args);
+}
+
+void instruction::replace(std::vector<instruction_ref> args, std::vector<module_ref> mdl_args)
+{
+    clear_arguments();
+    arguments = std::move(args);
+    module_args = std::move(mdl_args);
 }
 
 void instruction::replace_argument(instruction_ref old, instruction_ref new_ins)
