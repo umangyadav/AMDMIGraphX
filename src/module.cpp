@@ -118,21 +118,23 @@ void module::assign(const module& m)
             // if there are sub_module inputs, need to make a copy of the submodule
             auto arg_modules = ins->sub_graph();
             std::vector<module_ref> copy_arg_modules;
-            if (not arg_modules.empty())
+            if(not arg_modules.empty())
             {
-                for (auto mdl : arg_modules)
+                for(auto mdl : arg_modules)
                 {
                     module_ref copy_mdl = this->create_sub_module();
-                    *copy_mdl = *mdl;
+                    *copy_mdl           = *mdl;
                     sub_module_map[mdl] = copy_mdl;
                 }
 
                 copy_arg_modules.resize(arg_modules.size());
-                assert(std::all_of(
-                    arg_modules.begin(), arg_modules.end(), [&](auto i) { return sub_module_map.count(i) > 0; }));
-                std::transform(arg_modules.begin(), arg_modules.end(), copy_arg_modules.begin(), [&](auto i) {
-                    return sub_module_map[i];
-                });
+                assert(std::all_of(arg_modules.begin(), arg_modules.end(), [&](auto i) {
+                    return sub_module_map.count(i) > 0;
+                }));
+                std::transform(arg_modules.begin(),
+                               arg_modules.end(),
+                               copy_arg_modules.begin(),
+                               [&](auto i) { return sub_module_map[i]; });
             }
 
             // retrieve its mapped input
@@ -150,13 +152,13 @@ void module::assign(const module& m)
             }
             else
             {
-                if (copy_arg_modules.empty())
+                if(copy_arg_modules.empty())
                 {
                     copy_ins = add_instruction(ins->get_operator(), copy_inputs);
                 }
                 else
                 {
-                    copy_ins = add_instruction(ins->get_operator(), copy_inputs, copy_arg_modules);                    
+                    copy_ins = add_instruction(ins->get_operator(), copy_inputs, copy_arg_modules);
                 }
             }
         }
@@ -224,9 +226,9 @@ instruction_ref module::replace_instruction(instruction_ref ins,
 }
 
 instruction_ref module::replace_instruction(instruction_ref ins,
-                                    const operation& op,
-                                    std::vector<instruction_ref> args,
-                                    std::vector<module_ref> modules)
+                                            const operation& op,
+                                            std::vector<instruction_ref> args,
+                                            std::vector<module_ref> modules)
 {
     assert(std::all_of(
                args.begin(), args.end(), [&](instruction_ref x) { return has_instruction(x); }) &&
@@ -236,7 +238,6 @@ instruction_ref module::replace_instruction(instruction_ref ins,
     instruction::replace(ins, op, out_shapes[0], std::move(args), std::move(modules));
     assert(ins->valid(begin()));
     return ins;
-
 }
 
 instruction_ref module::replace_instruction(instruction_ref ins, instruction_ref rep)
@@ -484,7 +485,7 @@ void module::finalize(context& ctx)
         ins->finalize(ctx);
     }
 
-    for (auto& sub_mdl : this->impl->sub_modules)
+    for(auto& sub_mdl : this->impl->sub_modules)
     {
         sub_mdl.finalize(ctx);
     }
@@ -607,7 +608,7 @@ void module::print(const std::function<
     }
 
     // print sub_graph
-    for (auto& sub_mdl : this->impl->sub_modules)
+    for(auto& sub_mdl : this->impl->sub_modules)
     {
         sub_mdl.print(print_func);
     }

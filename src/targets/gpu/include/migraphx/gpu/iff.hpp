@@ -25,11 +25,13 @@ struct hip_iff
 
     std::string name() const { return "gpu::iff"; }
     shape compute_shape(std::vector<shape> inputs) const;
-    argument
-    compute(context& ctx, const shape&, std::vector<argument> args, 
-            std::vector<module_ref>& modules,
-            std::function<std::vector<argument>(const module_ref& mdl, context& ctx, 
-            const std::vector<argument>& inputs)> run) const;
+    argument compute(
+        context& ctx,
+        const shape&,
+        std::vector<argument> args,
+        std::vector<module_ref>& modules,
+        std::function<std::vector<argument>(
+            const module_ref& mdl, context& ctx, const std::vector<argument>& inputs)> run) const;
     std::ptrdiff_t output_alias(const std::vector<shape>& shapes) const
     {
         return shapes.size() - 1;

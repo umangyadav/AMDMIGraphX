@@ -176,12 +176,14 @@ void instruction::replace(instruction_ref ins,
     backreference(ins);
 }
 
-void
-instruction::replace(instruction_ref ins, operation o, const shape& r, std::vector<instruction_ref> args, std::vector<module_ref> module_args)
+void instruction::replace(instruction_ref ins,
+                          operation o,
+                          const shape& r,
+                          std::vector<instruction_ref> args,
+                          std::vector<module_ref> module_args)
 {
     ins->replace(std::move(o), r, args, module_args);
 }
-
 
 void instruction::replace(operation o, const shape& r, std::vector<instruction_ref> args)
 {
@@ -190,7 +192,10 @@ void instruction::replace(operation o, const shape& r, std::vector<instruction_r
     replace(std::move(args));
 }
 
-void instruction::replace(operation o, const shape& r, std::vector<instruction_ref> args, std::vector<module_ref> mdl_args)
+void instruction::replace(operation o,
+                          const shape& r,
+                          std::vector<instruction_ref> args,
+                          std::vector<module_ref> mdl_args)
 {
     op = std::move(o);
     replace(r);
@@ -206,7 +211,7 @@ void instruction::replace(std::vector<instruction_ref> args)
 void instruction::replace(std::vector<instruction_ref> args, std::vector<module_ref> mdl_args)
 {
     clear_arguments();
-    arguments = std::move(args);
+    arguments   = std::move(args);
     module_args = std::move(mdl_args);
 }
 

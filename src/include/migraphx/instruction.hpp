@@ -81,8 +81,11 @@ struct instruction
     static void
     replace(instruction_ref ins, operation o, const shape& r, std::vector<instruction_ref> args);
 
-    static void
-    replace(instruction_ref ins, operation o, const shape& r, std::vector<instruction_ref> args, std::vector<module_ref> modules_args);
+    static void replace(instruction_ref ins,
+                        operation o,
+                        const shape& r,
+                        std::vector<instruction_ref> args,
+                        std::vector<module_ref> modules_args);
 
     bool can_eval() const;
 
@@ -99,7 +102,10 @@ struct instruction
     void replace(operation o, const shape& r, std::vector<instruction_ref> args);
 
     // internal
-    void replace(operation o, const shape& r, std::vector<instruction_ref> args, std::vector<module_ref> mdl_args);
+    void replace(operation o,
+                 const shape& r,
+                 std::vector<instruction_ref> args,
+                 std::vector<module_ref> mdl_args);
 
     // internal
     void replace(std::vector<instruction_ref> args, std::vector<module_ref> mdl_args);
