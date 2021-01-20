@@ -724,13 +724,14 @@ struct ref_if
     std::string name() const { return "ref::if"; }
     shape compute_shape(const std::vector<shape>& inputs) const { return op.compute_shape(inputs); }
 
-    argument
-    compute(const std::vector<argument>& args,
-            const std::vector<module_ref>& modules,
-            std::function<std::vector<argument>(module_ref& mdl, const std::vector<argument>& inputs)> run) const
+    argument compute(
+        const std::vector<argument>& args,
+        const std::vector<module_ref>& modules,
+        std::function<std::vector<argument>(module_ref& mdl, const std::vector<argument>& inputs)>
+            run) const
     {
         argument result;
-        bool cond = args[0].implicit();
+        bool cond                    = args[0].implicit();
         std::vector<argument> inputs = args;
         inputs.erase(inputs.begin());
         module_ref mdl = cond ? modules[0] : modules[1];

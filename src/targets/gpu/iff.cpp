@@ -14,7 +14,8 @@ shape hip_iff::compute_shape(std::vector<shape> inputs) const
 argument hip_iff::compute(
     const std::vector<argument>& args,
     const std::vector<module_ref>& modules,
-    std::function<std::vector<argument>(module_ref& mdl, const std::vector<argument>& inputs)> run) const
+    std::function<std::vector<argument>(module_ref& mdl, const std::vector<argument>& inputs)> run)
+    const
 {
     auto arg_cond  = migraphx::gpu::from_gpu(args[0]);
     auto cond      = arg_cond.at<bool>();
