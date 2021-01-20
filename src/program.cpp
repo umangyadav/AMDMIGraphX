@@ -227,9 +227,30 @@ std::vector<argument> generic_eval(const module& p,
                     assert(results.find(i) != results.end());
                     return results[i];
                 });
-            results.emplace(ins, trace(ins, [&] {
-                                return ins->get_operator().compute(ctx, ins->get_shape(), values);
-                            }));
+
+            auto& module_args = ins->sub_graph();
+            if (!module_args.empty())
+            {
+                results.emplace(ins, trace(ins, [&] {
+                    return ins->get_operator().compute(values, module_args, [&](module_ref& mdl, const std::vector<argument>& inputs) {
+                        auto param_names = mdl->get_parameter_names();
+                        assert(param_names.size() == values.size());
+                        parameter_map m(param_names.size());
+                        for (std::size_t i = 0; i < param_names.size(); ++i)
+                        {
+                            m.emplace(param_names[i], inputs[i]);
+                        }
+                        return generic_eval(*mdl, ctx, m, trace);
+                    });
+                }));
+            }
+            else
+            {
+                results.emplace(ins, trace(ins, [&] {
+                                    return ins->get_operator().compute(ctx, ins->get_shape(), values);
+                                }));                
+            }
+            
         }
         assert(results.find(ins) != results.end());
     }

@@ -725,18 +725,16 @@ struct ref_if
     shape compute_shape(const std::vector<shape>& inputs) const { return op.compute_shape(inputs); }
 
     argument
-    compute(context& ctx,
-            const shape&,
-            std::vector<argument> args,
-            std::vector<module_ref>& modules,
-            std::function<std::vector<argument>(
-                const module_ref& mdl, context& ctx, std::vector<argument> params)> run) const
+    compute(const std::vector<argument>& args,
+            const std::vector<module_ref>& modules,
+            std::function<std::vector<argument>(module_ref& mdl, const std::vector<argument>& inputs)> run) const
     {
         argument result;
         bool cond = args[0].implicit();
-        args.erase(args.begin());
+        std::vector<argument> inputs = args;
+        inputs.erase(inputs.begin());
         module_ref mdl = cond ? modules[0] : modules[1];
-        auto results   = run(mdl, ctx, args);
+        auto results   = run(mdl, inputs);
 
         return results[0];
     }
