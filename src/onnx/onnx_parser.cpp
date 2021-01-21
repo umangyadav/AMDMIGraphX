@@ -244,7 +244,6 @@ void onnx_parser::parse_from(const void* data, std::size_t size)
 
 void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph, bool inline_subgraph)
 {
-    std::cout << "In parse_graph!" << std::endl;
     if(!contains(map_mdl_instructions, mdl))
     {
         map_mdl_instructions[mdl] = {};
