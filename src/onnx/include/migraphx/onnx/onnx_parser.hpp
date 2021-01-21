@@ -83,7 +83,7 @@ struct onnx_parser
 
     void parse_from(std::istream& is, std::string name = "");
     void parse_from(const void* data, std::size_t size);
-    void parse_graph(module_ref mdl, const onnx::GraphProto& graph);
+    void parse_graph(module_ref mdl, const onnx::GraphProto& graph, bool inline_subgraph = true);
     instruction_ref get_input(module_ref mdl, const std::string name) const;
     literal parse_value(const onnx::AttributeProto& attr) const;
     literal parse_tensor(const onnx::TensorProto& t) const;

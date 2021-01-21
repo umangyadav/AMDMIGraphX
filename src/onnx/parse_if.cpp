@@ -32,10 +32,10 @@ struct parse_if : op_parser<parse_if>
             module_ref else_mdl = info.mdl->create_sub_module();
 
             // parse the then sub_graph
-            parser.parse_graph(then_mdl, then_graph);
+            parser.parse_graph(then_mdl, then_graph, false);
 
             // parse_the else sub_graph
-            parser.parse_graph(else_mdl, else_graph);
+            parser.parse_graph(else_mdl, else_graph, false);
 
             auto then_out_shapes = then_mdl->get_output_shapes();
             auto else_out_shapes = else_mdl->get_output_shapes();
@@ -49,7 +49,7 @@ struct parse_if : op_parser<parse_if>
             }
 
             auto ret = info.add_instruction(
-                make_op("if", {{"then_sub_graph", then_name}, {"else_sub_graph", else_name}}),
+                make_op("iff", {{"then_sub_graph", then_name}, {"else_sub_graph", else_name}}),
                 args,
                 {then_mdl, else_mdl});
 
@@ -64,24 +64,24 @@ struct parse_if : op_parser<parse_if>
                 MIGRAPHX_THROW("PARSE_IF: condition input can have only one element!");
             }
 
-            // no need to create a submodule, so still use the main module
-            module* mm = parser.prog.get_main_module();
+            auto mdl = info.mdl;
+
             // then branch
             if(vec_conds.front())
             {
-                parser.parse_graph(mm, then_graph);
+                parser.parse_graph(mdl, then_graph);
             }
             // else branch
             else
             {
-                parser.parse_graph(mm, else_graph);
+                parser.parse_graph(mdl, else_graph);
             }
 
             // inputs of the return instruction are that of the output of the
             // if instruction
-            instruction_ref ret_ins = std::prev(mm->end());
+            instruction_ref ret_ins = std::prev(mdl->end());
             auto outputs            = ret_ins->inputs();
-            mm->remove_instruction(ret_ins);
+            mdl->remove_instruction(ret_ins);
 
             return outputs;
         }

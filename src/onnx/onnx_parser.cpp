@@ -216,7 +216,7 @@ void onnx_parser::parse_from(std::istream& is, std::string name)
     {
         if(model.has_graph())
         {
-            this->parse_graph(mm, model.graph());
+            this->parse_graph(mm, model.graph(), false);
         }
     }
     else
@@ -233,7 +233,7 @@ void onnx_parser::parse_from(const void* data, std::size_t size)
     {
         if(model.has_graph())
         {
-            this->parse_graph(mm, model.graph());
+            this->parse_graph(mm, model.graph(), false);
         }
     }
     else
@@ -242,9 +242,10 @@ void onnx_parser::parse_from(const void* data, std::size_t size)
     }
 }
 
-void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph)
+void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph, bool inline_subgraph)
 {
-    if(contains(map_mdl_instructions, mdl))
+    std::cout << "In parse_graph!" << std::endl;
+    if(!contains(map_mdl_instructions, mdl))
     {
         map_mdl_instructions[mdl] = {};
     }
@@ -258,18 +259,26 @@ void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph)
     for(auto&& input : graph.input())
     {
         const std::string& name = input.name();
-        // input not in initializer_data, so it is a real input
-        if(!contains(instructions, name))
+        // inline subgrah, its input should already been available in the parent graph
+        if (inline_subgraph)
         {
-            std::vector<std::size_t> dims;
-            if(map_input_dims.count(name) > 0)
-            {
-                dims = map_input_dims.at(name);
-            }
-
-            shape s            = parse_type(input.type(), dims);
-            instructions[name] = mdl->add_parameter(name, s);
+            instructions[name] = get_input(mdl, name);
         }
+        else
+        {
+            // input not in initializer_data, so it is a real input
+            if(!contains(instructions, name))
+            {
+                std::vector<std::size_t> dims;
+                if(map_input_dims.count(name) > 0)
+                {
+                    dims = map_input_dims.at(name);
+                }
+
+                shape s            = parse_type(input.type(), dims);
+                instructions[name] = mdl->add_parameter(name, s);
+            }
+        }        
     }
 
     for(auto&& node : graph.node())
@@ -281,11 +290,11 @@ void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph)
             {
                 this->parse_undefined(mdl, input);
             }
-            if(instructions.count(input) == 0)
-            {
-                MIGRAPHX_THROW("PARSE_GRAPH: invalid onnx file. Input \"" + input +
-                               "\" is unavailable due to unordered nodes!");
-            }
+            // if(instructions.count(input) == 0)
+            // {
+            //     MIGRAPHX_THROW("PARSE_GRAPH: invalid onnx file. Input \"" + input +
+            //                    "\" is unavailable due to unordered nodes!");
+            // }
             args.push_back(get_input(mdl, input));
         }
 
@@ -452,6 +461,7 @@ instruction_ref onnx_parser::get_input(module_ref mdl, const std::string name) c
 {
     while(contains(map_mdl_instructions, mdl))
     {
+        std::cout << "In_while_loop..." << std::endl;
         auto& instructions = map_mdl_instructions.at(mdl);
         if(contains(instructions, name))
         {
@@ -460,6 +470,10 @@ instruction_ref onnx_parser::get_input(module_ref mdl, const std::string name) c
 
         // input could be in the parent module
         mdl = mdl->get_parent_module();
+        if (mdl == nullptr)
+        {
+            break;
+        }
     }
 
     MIGRAPHX_THROW("PARSE_GRAPHX: input " + name + " does not exist!");

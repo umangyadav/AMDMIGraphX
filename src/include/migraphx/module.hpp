@@ -154,7 +154,6 @@ struct module
     void set_parent_module(module_ref mdl)
     {
         parent_mdl = mdl;
-        ;
     }
 
     private:

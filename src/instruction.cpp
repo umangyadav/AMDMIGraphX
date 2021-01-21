@@ -90,16 +90,19 @@ bool instruction::valid() const
     {
         computed = {};
     }
-    else if(op.name() == "if")
-    {
-        auto out_shapes = compute_shape(module_args[0]);
-        computed        = out_shapes[0];
-    }
     else
     {
         try
         {
-            computed = compute_shape(op, arguments);
+            if (!module_args.empty())
+            {
+                auto out_shapes = compute_shape(module_args[0]);
+                computed = out_shapes[0];
+            }
+            else 
+            {
+                computed = compute_shape(op, arguments);
+            }
         }
         catch(migraphx::exception&)
         {
@@ -183,6 +186,7 @@ void instruction::replace(instruction_ref ins,
                           std::vector<module_ref> module_args)
 {
     ins->replace(std::move(o), r, args, module_args);
+    backreference(ins);
 }
 
 void instruction::replace(operation o, const shape& r, std::vector<instruction_ref> args)
