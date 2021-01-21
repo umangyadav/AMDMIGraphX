@@ -94,12 +94,12 @@ bool instruction::valid() const
     {
         try
         {
-            if (!module_args.empty())
+            if(!module_args.empty())
             {
                 auto out_shapes = compute_shape(module_args[0]);
-                computed = out_shapes[0];
+                computed        = out_shapes[0];
             }
-            else 
+            else
             {
                 computed = compute_shape(op, arguments);
             }

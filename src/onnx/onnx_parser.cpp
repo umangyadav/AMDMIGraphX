@@ -260,7 +260,7 @@ void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph, boo
     {
         const std::string& name = input.name();
         // inline subgrah, its input should already been available in the parent graph
-        if (inline_subgraph)
+        if(inline_subgraph)
         {
             instructions[name] = get_input(mdl, name);
         }
@@ -278,7 +278,7 @@ void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph, boo
                 shape s            = parse_type(input.type(), dims);
                 instructions[name] = mdl->add_parameter(name, s);
             }
-        }        
+        }
     }
 
     for(auto&& node : graph.node())
@@ -470,7 +470,7 @@ instruction_ref onnx_parser::get_input(module_ref mdl, const std::string name) c
 
         // input could be in the parent module
         mdl = mdl->get_parent_module();
-        if (mdl == nullptr)
+        if(mdl == nullptr)
         {
             break;
         }

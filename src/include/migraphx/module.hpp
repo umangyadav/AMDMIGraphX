@@ -151,10 +151,7 @@ struct module
 
     module_ref get_parent_module() const { return parent_mdl; }
 
-    void set_parent_module(module_ref mdl)
-    {
-        parent_mdl = mdl;
-    }
+    void set_parent_module(module_ref mdl) { parent_mdl = mdl; }
 
     private:
     void assign(const module& m);

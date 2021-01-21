@@ -407,8 +407,8 @@ struct miopen_apply
     void add_if_op()
     {
         apply_map.emplace("iff", [=](instruction_ref ins) {
-            auto s      = ins->get_shape();
-            auto output = insert_allocation(ins, s);
+            auto s                              = ins->get_shape();
+            auto output                         = insert_allocation(ins, s);
             std::vector<instruction_ref> inputs = ins->inputs();
             inputs.push_back(output);
             std::vector<module_ref> mdl_args = ins->sub_graph();
