@@ -414,7 +414,12 @@ struct miopen_apply
             inputs.push_back(output);
             std::vector<module_ref> mdl_args = ins->module_inputs();
 
-            return mdl->replace_instruction(ins, make_op("gpu::iff", {{"then_sub_graph", op.then_sub_graph}, {"else_sub_graph", op.else_sub_graph}}), inputs, mdl_args);
+            return mdl->replace_instruction(ins,
+                                            make_op("gpu::iff",
+                                                    {{"then_sub_graph", op.then_sub_graph},
+                                                     {"else_sub_graph", op.else_sub_graph}}),
+                                            inputs,
+                                            mdl_args);
         });
     }
 };

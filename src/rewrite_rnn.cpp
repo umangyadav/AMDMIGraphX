@@ -35,7 +35,7 @@ void rewrite_rnn::apply(module& prog) const
     for(auto ins : iterator_for(prog))
     {
         auto& module_inputs = ins->module_inputs();
-        for (auto& smdl : module_inputs)
+        for(auto& smdl : module_inputs)
         {
             this->apply(*smdl);
         }

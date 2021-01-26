@@ -22,7 +22,7 @@ void normalize_ops::apply(module& m) const
 
         // apply this pass to sub_modules
         auto& module_inputs = ins->module_inputs();
-        for (auto& smdl : module_inputs)
+        for(auto& smdl : module_inputs)
         {
             apply(*smdl);
         }

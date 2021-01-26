@@ -14,7 +14,7 @@ void auto_contiguous::apply(module& p) const
     {
         // recursively apply to sub_module
         auto& module_inputs = ins->module_inputs();
-        for (auto& smdl : module_inputs)
+        for(auto& smdl : module_inputs)
         {
             this->apply(*smdl);
         }

@@ -965,12 +965,12 @@ struct ref_apply
             auto& sub_modules = it->module_inputs();
             if(!sub_modules.empty())
             {
-                for (auto smdl : sub_modules)
+                for(auto smdl : sub_modules)
                 {
                     ref_apply{smdl}.apply();
                 }
             }
-            
+
             if(it->name() == "pooling")
             {
                 apply_pooling(it);

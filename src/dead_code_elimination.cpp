@@ -36,7 +36,7 @@ void dead_code_elimination::apply(module& p) const
     {
         // recursively apply to submodules
         auto& module_inputs = ins->module_inputs();
-        for (auto& smdl : module_inputs)
+        for(auto& smdl : module_inputs)
         {
             this->apply(*smdl);
         }
