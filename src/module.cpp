@@ -116,7 +116,7 @@ void module::assign(const module& m)
         else
         {
             // if there are sub_module inputs, need to make a copy of the submodule
-            auto arg_modules = ins->sub_graph();
+            auto arg_modules = ins->module_inputs();
             std::vector<module_ref> copy_arg_modules;
             if(not arg_modules.empty())
             {

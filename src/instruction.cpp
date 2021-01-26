@@ -68,10 +68,14 @@ bool operator==(const instruction& i, instruction_ref ref)
 
 bool instruction::valid(instruction_ref start) const
 {
+    // return valid() && std::all_of(arguments.begin(), arguments.end(), [&](instruction_ref i) {
+    //            auto self = std::find(i->outputs().begin(), i->outputs().end(), *this);
+    //            return self != i->outputs().end() &&
+    //                   std::distance(start, i) < std::distance(start, *self);
+    //        });
     return valid() && std::all_of(arguments.begin(), arguments.end(), [&](instruction_ref i) {
                auto self = std::find(i->outputs().begin(), i->outputs().end(), *this);
-               return self != i->outputs().end() &&
-                      std::distance(start, i) < std::distance(start, *self);
+               return self != i->outputs().end();
            });
 }
 
@@ -128,7 +132,7 @@ std::string instruction::name() const { return op.name(); }
 
 const std::vector<instruction_ref>& instruction::inputs() const { return arguments; }
 
-const std::vector<module_ref>& instruction::sub_graph() const { return module_args; }
+const std::vector<module_ref>& instruction::module_inputs() const { return module_args; }
 
 const std::vector<instruction_ref>& instruction::outputs() const { return output; }
 

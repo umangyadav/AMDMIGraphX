@@ -12,6 +12,13 @@ void auto_contiguous::apply(module& p) const
 {
     for(auto ins : iterator_for(p))
     {
+        // recursively apply to sub_module
+        auto& module_inputs = ins->module_inputs();
+        for (auto& smdl : module_inputs)
+        {
+            this->apply(*smdl);
+        }
+
         shape s = ins->get_shape();
         if(not s.standard() and s.elements() != 0)
         {

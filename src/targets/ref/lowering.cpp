@@ -918,7 +918,7 @@ MIGRAPHX_REGISTER_OP(ref_rnn_var_sl_last_output)
 
 struct ref_apply
 {
-    module* modl;
+    module* mdl;
     std::unordered_map<std::string, std::function<void(instruction_ref)>> apply_map{};
 
     template <class T>
@@ -959,8 +959,18 @@ struct ref_apply
     void apply()
     {
         init();
-        for(auto it : iterator_for(*modl))
+        for(auto it : iterator_for(*mdl))
         {
+            // contains submodules, apply to the submodule first
+            auto& sub_modules = it->module_inputs();
+            if(!sub_modules.empty())
+            {
+                for (auto smdl : sub_modules)
+                {
+                    ref_apply{smdl}.apply();
+                }
+            }
+            
             if(it->name() == "pooling")
             {
                 apply_pooling(it);
@@ -978,29 +988,29 @@ struct ref_apply
 
     void apply_ref_op(instruction_ref ins) const
     {
-        modl->replace_instruction(ins, ref_op{ins->get_operator()}, ins->inputs());
+        mdl->replace_instruction(ins, ref_op{ins->get_operator()}, ins->inputs());
     }
 
     template <class T>
     void apply_simple_op(instruction_ref ins)
     {
-        modl->replace_instruction(ins, T{}, ins->inputs());
+        mdl->replace_instruction(ins, T{}, ins->inputs());
     }
 
     template <class T, class Op>
     void apply_extend_op(instruction_ref ins)
     {
         auto&& op = any_cast<Op>(ins->get_operator());
-        modl->replace_instruction(ins, T{op}, ins->inputs());
+        mdl->replace_instruction(ins, T{op}, ins->inputs());
     }
 
     void apply_pooling(instruction_ref ins) const
     {
         auto&& op = any_cast<op::pooling>(ins->get_operator());
         if(op.mode == "max")
-            modl->replace_instruction(ins, ref_pooling<max_pool>{op}, ins->inputs());
+            mdl->replace_instruction(ins, ref_pooling<max_pool>{op}, ins->inputs());
         else if(op.mode == "average")
-            modl->replace_instruction(ins, ref_pooling<avg_pool>{op}, ins->inputs());
+            mdl->replace_instruction(ins, ref_pooling<avg_pool>{op}, ins->inputs());
     }
 };
 

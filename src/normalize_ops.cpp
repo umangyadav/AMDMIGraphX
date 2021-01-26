@@ -20,6 +20,13 @@ void normalize_ops::apply(module& m) const
         if(inputs.empty())
             continue;
 
+        // apply this pass to sub_modules
+        auto& module_inputs = ins->module_inputs();
+        for (auto& smdl : module_inputs)
+        {
+            apply(*smdl);
+        }
+
         auto lens                    = inputs[0]->get_shape().lens();
         migraphx::operation tuned_op = ins->get_operator();
         if(normalize_attributes(tuned_op, lens))

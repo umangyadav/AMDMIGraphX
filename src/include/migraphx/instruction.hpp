@@ -52,7 +52,7 @@ struct instruction
 
     const std::vector<instruction_ref>& inputs() const;
 
-    const std::vector<module_ref>& sub_graph() const;
+    const std::vector<module_ref>& module_inputs() const;
 
     const std::vector<instruction_ref>& outputs() const;
 

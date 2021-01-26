@@ -148,6 +148,7 @@ void program::compile(const target& t, compile_options options)
 
     for(auto& mp : impl->modules)
     {
+        std::cout << "compiling module: " << mp.first << std::endl;
         auto& modl = mp.second;
         assert(modl.validate() == modl.end());
         run_passes(modl, passes, options.trace);
@@ -228,7 +229,7 @@ std::vector<argument> generic_eval(const module& p,
                     return results[i];
                 });
 
-            auto& module_args = ins->sub_graph();
+            auto& module_args = ins->module_inputs();
             if(!module_args.empty())
             {
                 results.emplace(ins, trace(ins, [&] {
