@@ -17,6 +17,12 @@ void write_literals::apply(module& p) const
     std::size_t n = 0;
     for(auto ins : iterator_for(p))
     {
+        auto& module_inputs = ins->module_inputs();
+        for (auto& smdl : module_inputs)
+        {
+            this->apply(*smdl);
+        }
+
         if(ins->name() == "@literal")
         {
             if(enabled(MIGRAPHX_COPY_LITERALS{}))

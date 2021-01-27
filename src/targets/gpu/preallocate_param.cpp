@@ -14,6 +14,12 @@ void preallocate_param::apply(module& p) const
 {
     for(auto ins : iterator_for(p))
     {
+        auto& module_inputs = ins->module_inputs();
+        for (auto& smdl : module_inputs)
+        {
+            this->apply(*smdl);
+        }
+
         if(ins->name() != "@param")
             continue;
         std::string id = any_cast<builtin::param>(ins->get_operator()).parameter;
