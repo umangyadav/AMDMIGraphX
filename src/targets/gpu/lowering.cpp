@@ -217,9 +217,9 @@ struct miopen_apply
             if(apply_map.count(it->name()) > 0)
             {
                 auto& module_inputs = it->module_inputs();
-                if (!module_inputs.empty())
+                if(!module_inputs.empty())
                 {
-                    for (auto& smdl : module_inputs)
+                    for(auto& smdl : module_inputs)
                     {
                         miopen_apply{smdl, pass}.apply();
                     }

@@ -68,9 +68,10 @@ module::module(module&&) noexcept = default;
 module::~module() noexcept        = default;
 
 // copy constructor
-module::module(const module& m) { 
+module::module(const module& m)
+{
     std::unordered_map<instruction_ref, instruction_ref> ins_map;
-    assign(m, ins_map); 
+    assign(m, ins_map);
 }
 
 // copy assignment operator
@@ -582,8 +583,9 @@ void module::debug_print(const std::vector<instruction_ref>& inss) const
     std::cout << std::endl;
 }
 
-void module::print(std::unordered_map<instruction_ref, std::string>& names, const std::function<
-                   void(instruction_ref, const std::unordered_map<instruction_ref, std::string>&)>&
+void module::print(std::unordered_map<instruction_ref, std::string>& names,
+                   const std::function<void(
+                       instruction_ref, const std::unordered_map<instruction_ref, std::string>&)>&
                        print_func) const
 {
     int count = 0;
