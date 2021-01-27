@@ -326,9 +326,10 @@ module_ref module::create_sub_module()
 std::vector<module_ref> module::get_sub_modules() const
 {
     std::vector<module_ref> sub_modules(this->impl->sub_modules.size());
-    std::transform(this->impl->sub_modules.begin(), this->impl->sub_modules.end(), sub_modules.begin(), [](auto& mdl) {
-        return &mdl;
-    });
+    std::transform(this->impl->sub_modules.begin(),
+                   this->impl->sub_modules.end(),
+                   sub_modules.begin(),
+                   [](auto& mdl) { return &mdl; });
 
     return sub_modules;
 }

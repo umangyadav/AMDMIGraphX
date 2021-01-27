@@ -83,7 +83,10 @@ struct memory_coloring_impl
     }
 
     memory_coloring_impl(module* p, std::string alloc_op, std::size_t os_start, bool p_verify)
-        : p_mdl(p), allocation_op(std::move(alloc_op)), offset_start(os_start), enable_verify(p_verify)
+        : p_mdl(p),
+          allocation_op(std::move(alloc_op)),
+          offset_start(os_start),
+          enable_verify(p_verify)
     {
         instr2_live.clear();
         live_ranges.clear();
@@ -108,7 +111,7 @@ struct memory_coloring_impl
     void build();
     void run();
     void rewrite();
-    
+
     std::size_t required_bytes;
 
     private:
