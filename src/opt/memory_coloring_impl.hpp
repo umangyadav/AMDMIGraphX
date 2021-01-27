@@ -68,7 +68,7 @@ using interval_ptr = live_interval*;
 struct memory_coloring_impl
 {
     memory_coloring_impl(module* p, std::string alloc_op, bool p_verify)
-        : p_program(p), allocation_op(std::move(alloc_op)), enable_verify(p_verify)
+        : p_mdl(p), allocation_op(std::move(alloc_op)), enable_verify(p_verify)
     {
         instr2_live.clear();
         live_ranges.clear();
@@ -118,7 +118,7 @@ struct memory_coloring_impl
     void verify();
 #ifdef MIGRAPHX_DEBUG_OPT
     void dump(const std::string&);
-    void dump_program();
+    void dump_module();
     void dump_intervals();
 #endif
     struct ordering
@@ -145,7 +145,7 @@ struct memory_coloring_impl
             return (i1->offset > i2->offset);
         }
     };
-    module* p_program;
+    module* p_mdl;
     std::unordered_map<const instruction*, interval_ptr> instr2_live;
     // universe of live intervals.
     std::vector<live_interval> live_intervals;
