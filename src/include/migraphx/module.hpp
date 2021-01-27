@@ -93,6 +93,7 @@ struct module
     instruction_ref move_instructions(instruction_ref src, instruction_ref dst);
 
     module_ref create_sub_module();
+    std::vector<module_ref> get_sub_modules() const;
 
     template <class... Ts>
     instruction_ref add_literal(Ts&&... xs)

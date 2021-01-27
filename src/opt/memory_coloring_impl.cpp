@@ -66,7 +66,7 @@ bool memory_coloring_impl::allocate(interval_ptr interval)
         }
     }
 
-    std::size_t offset = 0;
+    std::size_t offset = offset_start;
     while(!conflict_queue.empty())
     {
         live_range* range       = conflict_queue.top();

@@ -75,11 +75,27 @@ struct memory_coloring_impl
         conflict_table.clear();
         num_of_lives       = 0;
         max_value_number   = -1;
+        offset_start       = 0;
         required_bytes     = 0;
         earliest_end_point = -1;
         latest_end_point   = -1;
         unify_literals     = false;
     }
+
+    memory_coloring_impl(module* p, std::string alloc_op, std::size_t os_start, bool p_verify)
+        : p_mdl(p), allocation_op(std::move(alloc_op)), offset_start(os_start), enable_verify(p_verify)
+    {
+        instr2_live.clear();
+        live_ranges.clear();
+        conflict_table.clear();
+        num_of_lives       = 0;
+        max_value_number   = -1;
+        required_bytes     = 0;
+        earliest_end_point = -1;
+        latest_end_point   = -1;
+        unify_literals     = false;
+    }
+
     bool allocate(interval_ptr);
     void add_conflicts(const std::set<int>& live_set, int val)
     {
@@ -92,6 +108,8 @@ struct memory_coloring_impl
     void build();
     void run();
     void rewrite();
+    
+    std::size_t required_bytes;
 
     private:
     static bool is_param(const instruction_ref ins) { return ins->name() == "@param"; }
@@ -158,7 +176,7 @@ struct memory_coloring_impl
 
     int num_of_lives;
     int max_value_number;
-    std::size_t required_bytes;
+    std::size_t offset_start;
     // The earliest program point where an live interval ends.
     int earliest_end_point;
     // The latest program point where an live interval ends.
