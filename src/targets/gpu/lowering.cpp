@@ -216,6 +216,14 @@ struct miopen_apply
             auto s = it->get_shape();
             if(apply_map.count(it->name()) > 0)
             {
+                auto& module_inputs = it->module_inputs();
+                if (!module_inputs.empty())
+                {
+                    for (auto& smdl : module_inputs)
+                    {
+                        miopen_apply{smdl, pass}.apply();
+                    }
+                }
                 check_shape(s, apply_map.at(it->name())(it));
             }
         }

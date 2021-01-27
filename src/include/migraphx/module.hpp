@@ -134,7 +134,7 @@ struct module
     void debug_print() const;
     void debug_print(instruction_ref ins) const;
     void debug_print(const std::vector<instruction_ref>& inss) const;
-    void print(const std::function<void(instruction_ref,
+    void print(std::unordered_map<instruction_ref, std::string>& names, const std::function<void(instruction_ref,
                                         const std::unordered_map<instruction_ref, std::string>&)>&
                    print_func) const;
 
@@ -154,7 +154,7 @@ struct module
     void set_parent_module(module_ref mdl) { parent_mdl = mdl; }
 
     private:
-    void assign(const module& m);
+    void assign(const module& m, std::unordered_map<instruction_ref, instruction_ref> ins_map);
     std::unique_ptr<module_impl> impl;
     std::string module_name;
     module_ref parent_mdl = nullptr;

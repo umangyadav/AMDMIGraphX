@@ -474,7 +474,6 @@ void schedule::apply(module& p) const
     si.accumulate_weights(last, model);
     auto nstreams = si.assign_streams(p, model.concurrency());
     si.sort(p, model.concurrency());
-
     if(enabled(MIGRAPHX_TRACE_COMPILE{}) or enabled(MIGRAPHX_TRACE_SCHEDULE{}))
     {
         p.annotate(std::cout, [&](auto ins) {
