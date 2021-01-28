@@ -20,14 +20,7 @@ argument hip_iff::compute(
     auto arg_cond  = migraphx::gpu::from_gpu(args[0]);
     auto cond      = arg_cond.at<bool>();
     module_ref mdl = cond ? modules[1] : modules[0];
-
     auto results = run(mdl, args);
-    for(auto& gpu_argu : results)
-    {
-        auto argu = migraphx::gpu::from_gpu(gpu_argu);
-        std::cout << "argu_iff = " << argu << std::endl;
-    }
-
     return results[0];
 }
 
