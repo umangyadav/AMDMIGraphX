@@ -22,7 +22,7 @@ argument hip_iff::compute(
     module_ref mdl = cond ? modules[1] : modules[0];
 
     auto results = run(mdl, args);
-    for (auto& gpu_argu : results)
+    for(auto& gpu_argu : results)
     {
         auto argu = migraphx::gpu::from_gpu(gpu_argu);
         std::cout << "argu_iff = " << argu << std::endl;

@@ -1000,15 +1000,15 @@ struct ref_apply
     template <class T, class Op>
     void apply_extend_op(instruction_ref ins)
     {
-        auto&& op = any_cast<Op>(ins->get_operator());
+        auto&& op         = any_cast<Op>(ins->get_operator());
         auto& module_args = ins->module_inputs();
-        if (module_args.empty())
+        if(module_args.empty())
         {
             mdl->replace_instruction(ins, T{op}, ins->inputs());
         }
         else
         {
-            mdl->replace_instruction(ins, T{op}, ins->inputs(), module_args);            
+            mdl->replace_instruction(ins, T{op}, ins->inputs(), module_args);
         }
     }
 
