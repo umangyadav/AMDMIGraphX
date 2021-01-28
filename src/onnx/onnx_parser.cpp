@@ -460,7 +460,6 @@ instruction_ref onnx_parser::get_input(module_ref mdl, const std::string name) c
 {
     while(contains(map_mdl_instructions, mdl))
     {
-        std::cout << "In_while_loop..." << std::endl;
         auto& instructions = map_mdl_instructions.at(mdl);
         if(contains(instructions, name))
         {

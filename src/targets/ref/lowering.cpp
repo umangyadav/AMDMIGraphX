@@ -1001,7 +1001,15 @@ struct ref_apply
     void apply_extend_op(instruction_ref ins)
     {
         auto&& op = any_cast<Op>(ins->get_operator());
-        mdl->replace_instruction(ins, T{op}, ins->inputs(), ins->module_inputs());
+        auto& module_args = ins->module_inputs();
+        if (module_args.empty())
+        {
+            mdl->replace_instruction(ins, T{op}, ins->inputs());
+        }
+        else
+        {
+            mdl->replace_instruction(ins, T{op}, ins->inputs(), module_args);            
+        }
     }
 
     void apply_pooling(instruction_ref ins) const

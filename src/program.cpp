@@ -175,10 +175,11 @@ template <class F>
 std::vector<argument> generic_eval(const module& p,
                                    context& ctx,
                                    std::unordered_map<std::string, argument> params,
+                                   std::unordered_map<instruction_ref, argument> results,
                                    F trace)
 {
     assert(p.validate() == p.end());
-    std::unordered_map<instruction_ref, argument> results;
+    // std::unordered_map<instruction_ref, argument> results;
     results.reserve(p.size() * 2);
     std::vector<argument> values;
     values.reserve(16);
@@ -237,14 +238,14 @@ std::vector<argument> generic_eval(const module& p,
                                         values,
                                         module_args,
                                         [&](module_ref& mdl, const std::vector<argument>& inputs) {
-                                            auto param_names = mdl->get_parameter_names();
-                                            assert(param_names.size() == values.size());
-                                            parameter_map m(param_names.size());
-                                            for(std::size_t i = 0; i < param_names.size(); ++i)
-                                            {
-                                                m.emplace(param_names[i], inputs[i]);
-                                            }
-                                            return generic_eval(*mdl, ctx, m, trace);
+                                            // auto param_names = mdl->get_parameter_names();
+                                            // assert(param_names.size() == values.size());
+                                            // parameter_map m(param_names.size());
+                                            // for(std::size_t i = 0; i < param_names.size(); ++i)
+                                            // {
+                                            //     m.emplace(param_names[i], inputs[i]);
+                                            // }
+                                            return generic_eval(*mdl, ctx, params, results, trace);
                                         });
                                 }));
             }
@@ -268,8 +269,9 @@ std::vector<argument> generic_eval(const program& p,
                                    std::unordered_map<std::string, argument> params,
                                    F trace)
 {
+    std::unordered_map<instruction_ref, argument> results;
     const auto* mm = p.get_main_module();
-    return generic_eval(*mm, ctx, params, trace);
+    return generic_eval(*mm, ctx, params, results, trace);
 }
 
 std::vector<argument> program::eval(parameter_map params) const
