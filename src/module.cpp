@@ -565,7 +565,7 @@ void module::from_value(const value& v)
 }
 
 void module::debug_print() const { std::cout << *this << std::endl; }
-void module::debug_print(instruction_ref ins) const
+void module::debug_print(instruction_ref ins, std::unordered_map<instruction_ref, std::string>& names1) const
 {
     if(ins == this->end())
     {
@@ -578,15 +578,21 @@ void module::debug_print(instruction_ref ins) const
         return;
     }
     std::stringstream ss;
-    std::unordered_map<instruction_ref, std::string> names1;
     this->print(names1, [&](auto x, const auto& names) {
         if(x == ins)
         {
-            print_instruction(std::cout, x, names);
+            print_instruction(std::cout, x, names1);
             std::cout << std::endl;
         }
     });
 }
+
+void module::debug_print(instruction_ref ins) const
+{
+    std::unordered_map<instruction_ref, std::string> names1;
+    this->debug_print(ins, names1);
+}
+
 void module::debug_print(const std::vector<instruction_ref>& inss) const
 {
     for(auto ins : inss)
@@ -600,7 +606,6 @@ void module::print(std::unordered_map<instruction_ref, std::string>& names,
                        print_func) const
 {
     int count = 0;
-
     for(auto ins : iterator_for(*this))
     {
         std::string var_name;

@@ -172,28 +172,27 @@ void program::finalize()
 }
 
 template <class F>
-std::vector<argument> generic_eval(const module& p,
+std::vector<argument> generic_eval(const module* mdl,
                                    context& ctx,
                                    std::unordered_map<std::string, argument> params,
                                    std::unordered_map<instruction_ref, argument> results,
                                    F trace)
 {
-    assert(p.validate() == p.end());
-    // std::unordered_map<instruction_ref, argument> results;
-    results.reserve(p.size() * 2);
+    assert(mdl->validate() == mdl->end());
+    results.reserve(mdl->size() * 2);
     std::vector<argument> values;
     values.reserve(16);
-    for(auto ins : iterator_for(p))
+    for(auto ins : iterator_for(*mdl))
     {
         const auto& name = ins->name();
         if(name == "@literal")
         {
-            results.emplace(ins, trace(ins, [&] { return ins->get_literal().get_argument(); }));
+            results.emplace(ins, trace(ins, mdl, [&] { return ins->get_literal().get_argument(); }));
         }
         else if(name == "@param")
         {
             results.emplace(
-                ins, trace(ins, [&] {
+                ins, trace(ins, mdl, [&] {
                     auto param_name = any_cast<builtin::param>(ins->get_operator()).parameter;
                     if(not contains(params, param_name))
                         MIGRAPHX_THROW("Parameter not found: " + param_name);
@@ -206,7 +205,7 @@ std::vector<argument> generic_eval(const module& p,
         }
         else if(name == "@outline")
         {
-            results.emplace(ins, trace(ins, [&] { return argument{ins->get_shape(), nullptr}; }));
+            results.emplace(ins, trace(ins, mdl, [&] { return argument{ins->get_shape(), nullptr}; }));
         }
         else if(name == "@return")
         {
@@ -219,6 +218,7 @@ std::vector<argument> generic_eval(const module& p,
                                return results[i];
                            });
 
+            std::cout << "generic_returned......." << std::endl;
             return prog_outputs;
         }
         else
@@ -233,11 +233,11 @@ std::vector<argument> generic_eval(const module& p,
             auto& module_args = ins->module_inputs();
             if(!module_args.empty())
             {
-                results.emplace(ins, trace(ins, [&] {
+                results.emplace(ins, trace(ins, mdl, [&] {
                                     return ins->get_operator().compute(
                                         values,
                                         module_args,
-                                        [&](module_ref& mdl, const std::vector<argument>& inputs) {
+                                        [&](module* mdl, const std::vector<argument>& inputs) {
                                             // auto param_names = mdl->get_parameter_names();
                                             // assert(param_names.size() == values.size());
                                             // parameter_map m(param_names.size());
@@ -245,13 +245,13 @@ std::vector<argument> generic_eval(const module& p,
                                             // {
                                             //     m.emplace(param_names[i], inputs[i]);
                                             // }
-                                            return generic_eval(*mdl, ctx, params, results, trace);
+                                            return generic_eval(mdl, ctx, params, results, trace);
                                         });
                                 }));
             }
             else
             {
-                results.emplace(ins, trace(ins, [&] {
+                results.emplace(ins, trace(ins, mdl, [&] {
                                     return ins->get_operator().compute(
                                         ctx, ins->get_shape(), values);
                                 }));
@@ -260,7 +260,7 @@ std::vector<argument> generic_eval(const module& p,
         assert(results.find(ins) != results.end());
     }
 
-    return {results.at(std::prev(p.end()))};
+    return {results.at(std::prev(mdl->end()))};
 }
 
 template <class F>
@@ -270,8 +270,8 @@ std::vector<argument> generic_eval(const program& p,
                                    F trace)
 {
     std::unordered_map<instruction_ref, argument> results;
-    const auto* mm = p.get_main_module();
-    return generic_eval(*mm, ctx, params, results, trace);
+    auto* mm = p.get_main_module();
+    return generic_eval(mm, ctx, params, results, trace);
 }
 
 std::vector<argument> program::eval(parameter_map params) const
@@ -293,10 +293,11 @@ std::vector<argument> program::eval(parameter_map params) const
 
     if(trace_level > 0)
     {
-        return generic_eval(*this, ctx, std::move(params), [&](auto& ins, auto f) {
+        std::unordered_map<instruction_ref, std::string> names1;
+        return generic_eval(*this, ctx, std::move(params), [&](auto& ins, const module* smdl, auto f) {
             ctx.finish();
             std::cout << "Run instruction: ";
-            this->debug_print(ins);
+            smdl->debug_print(ins, names1);
             auto result = check_context(f);
             ctx.finish();
             if(trace_level > 1 and ins->name().front() != '@' and ins->name() != "load")
@@ -307,7 +308,7 @@ std::vector<argument> program::eval(parameter_map params) const
     else
     {
         return generic_eval(
-            *this, ctx, std::move(params), [&](auto&, auto f) { return check_context(f); });
+            *this, ctx, std::move(params), [&](auto&, const module*, auto f) { return check_context(f); });
     }
 }
 
@@ -385,14 +386,14 @@ void program::perf_report(std::ostream& os, std::size_t n, parameter_map params)
     std::sort(total_vec.begin(), total_vec.end());
     std::unordered_map<instruction_ref, std::vector<double>> ins_vec;
     // Fill the map
-    generic_eval(*this, ctx, params, [&](auto ins, auto) {
+    generic_eval(*this, ctx, params, [&](auto ins, const module*, auto) {
         ins_vec[ins].reserve(n);
         return argument{};
     });
     // Run and time each instruction
     for(std::size_t i = 0; i < n; i++)
     {
-        generic_eval(*this, ctx, params, [&](auto ins, auto f) {
+        generic_eval(*this, ctx, params, [&](auto ins, const module*, auto f) {
             argument result;
             ins_vec[ins].push_back(time<milliseconds>([&] {
                 result = f();
@@ -469,6 +470,7 @@ void program::perf_report(std::ostream& os, std::size_t n, parameter_map params)
 void program::debug_print() const { std::cout << *this << std::endl; }
 void program::debug_print(instruction_ref ins) const
 {
+    auto* mm = this->get_main_module();
     if(std::any_of(this->impl->modules.begin(), this->impl->modules.end(), [&](auto it) {
            return (it.second.end() == ins);
        }))
@@ -476,9 +478,7 @@ void program::debug_print(instruction_ref ins) const
         std::cout << "End instruction" << std::endl;
         return;
     }
-    else if(not std::any_of(this->impl->modules.begin(), this->impl->modules.end(), [&](auto it) {
-                return it.second.has_instruction(ins);
-            }))
+    else if(not mm->has_instruction(ins))
     {
         std::cout << "Instruction not part of program" << std::endl;
         return;
@@ -545,7 +545,7 @@ const module* program::get_module(const std::string& name) const
     return &impl->modules[name];
 }
 
-module* program::create_module(const std::string& name, module_ref parent_mdl)
+module* program::create_module(const std::string& name, module* parent_mdl)
 {
     if(contains(impl->modules, name))
     {
