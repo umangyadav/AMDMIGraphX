@@ -62,7 +62,7 @@ static void print_instruction(std::ostream& os,
         os << " -> " << ins->get_shape();
 }
 
-module::module() : impl(std::make_unique<module_impl>()) {}
+module::module(const std::string& name) : impl(std::make_unique<module_impl>()), module_name(name) {}
 
 module::module(module&&) noexcept = default;
 module::~module() noexcept        = default;
@@ -93,6 +93,7 @@ void module::assign(const module& m, std::unordered_map<instruction_ref, instruc
         impl->instructions.clear();
     }
     impl->input_names = m.impl->input_names;
+    this->module_name = m.module_name;
 
     std::unordered_map<module_ref, module_ref> sub_module_map;
     for(auto ins : iterator_for(m))
@@ -125,7 +126,7 @@ void module::assign(const module& m, std::unordered_map<instruction_ref, instruc
             {
                 for(auto mdl : arg_modules)
                 {
-                    module_ref copy_mdl = this->create_sub_module();
+                    module_ref copy_mdl = this->create_sub_module(mdl->name());
                     copy_mdl->assign(*mdl, ins_map);
                     sub_module_map[mdl] = copy_mdl;
                 }
@@ -314,9 +315,9 @@ instruction_ref module::move_instructions(instruction_ref src, instruction_ref d
     return src;
 }
 
-module_ref module::create_sub_module()
+module_ref module::create_sub_module(const std::string& name)
 {
-    this->impl->sub_modules.push_back({});
+    this->impl->sub_modules.push_back(module(name));
     module_ref sub_mdl = &this->impl->sub_modules.back();
     sub_mdl->set_parent_module(this);
 
@@ -532,6 +533,7 @@ value module::to_value() const
 
 void module::from_value(const value& v)
 {
+    module_name = v.at("module_name").to<std::string>();
     std::unordered_map<std::string, instruction_ref> instructions;
     for(const value& node : v.at("nodes"))
     {

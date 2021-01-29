@@ -28,8 +28,8 @@ struct parse_if : op_parser<parse_if>
         // cond is not constant, need to create sub_modules
         if(cond_arg.empty())
         {
-            module_ref then_mdl = info.mdl->create_sub_module();
-            module_ref else_mdl = info.mdl->create_sub_module();
+            module_ref then_mdl = info.mdl->create_sub_module(then_name);
+            module_ref else_mdl = info.mdl->create_sub_module(else_name);
 
             // parse the then sub_graph
             parser.parse_graph(then_mdl, then_graph, false);

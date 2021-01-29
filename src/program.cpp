@@ -62,7 +62,7 @@ static void print_instruction(std::ostream& os,
         os << " -> " << ins->get_shape();
 }
 
-program::program() : impl(std::make_unique<program_impl>()) { impl->modules["main"] = {}; }
+program::program() : impl(std::make_unique<program_impl>()) { impl->modules["main"] = module("main"); }
 
 program::program(program&&) noexcept = default;
 program::~program() noexcept         = default;
@@ -148,7 +148,7 @@ void program::compile(const target& t, compile_options options)
 
     for(auto& mp : impl->modules)
     {
-        std::cout << "compiling module: " << mp.first << std::endl;
+        std::cout << "compiling module: " << mp.second.name() << std::endl;
         auto& modl = mp.second;
         assert(modl.validate() == modl.end());
         run_passes(modl, passes, options.trace);
@@ -178,6 +178,7 @@ std::vector<argument> generic_eval(const module* mdl,
                                    std::unordered_map<instruction_ref, argument> results,
                                    F trace)
 {
+    std::cout << "\nStart executing module \"" << mdl->name() << "\" ...." << std::endl;
     assert(mdl->validate() == mdl->end());
     results.reserve(mdl->size() * 2);
     std::vector<argument> values;
@@ -221,7 +222,8 @@ std::vector<argument> generic_eval(const module* mdl,
                                return results[i];
                            });
 
-            std::cout << "generic_returned......." << std::endl;
+            std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl << std::endl;
+
             return prog_outputs;
         }
         else
@@ -240,7 +242,7 @@ std::vector<argument> generic_eval(const module* mdl,
                                     return ins->get_operator().compute(
                                         values,
                                         module_args,
-                                        [&](module* mdl, const std::vector<argument>& inputs) {
+                                        [&](module* smdl, const std::vector<argument>& inputs) {
                                             // auto param_names = mdl->get_parameter_names();
                                             // assert(param_names.size() == values.size());
                                             // parameter_map m(param_names.size());
@@ -248,7 +250,7 @@ std::vector<argument> generic_eval(const module* mdl,
                                             // {
                                             //     m.emplace(param_names[i], inputs[i]);
                                             // }
-                                            return generic_eval(mdl, ctx, params, results, trace);
+                                            return generic_eval(smdl, ctx, params, results, trace);
                                         });
                                 }));
             }
@@ -262,6 +264,8 @@ std::vector<argument> generic_eval(const module* mdl,
         }
         assert(results.find(ins) != results.end());
     }
+
+    std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl << std::endl;
 
     return {results.at(std::prev(mdl->end()))};
 }
@@ -357,7 +361,8 @@ void program::from_value(const value& v)
     {
         const auto& key = vv.get_key();
         auto val        = vv.without_key();
-        module modl;
+        auto mdl_name = vv.at("module_name").to<std::string>();
+        module modl(mdl_name);
         modl.from_value(val);
         impl->modules[key] = modl;
     }
@@ -524,7 +529,7 @@ void program::print_cpp(std::ostream& os) const
 {
     for(const auto& mdl : this->impl->modules)
     {
-        std::cout << mdl.first << ":" << std::endl;
+        std::cout << mdl.first << ": " << std::endl;
         mdl.second.print_cpp(os);
     }
 }
@@ -557,7 +562,7 @@ module* program::create_module(const std::string& name, module* parent_mdl)
         MIGRAPHX_THROW("CREATE_MODULE: module " + name + " already exists");
     }
 
-    impl->modules[name] = {};
+    impl->modules[name] = module(name);
     impl->modules[name].set_parent_module(parent_mdl);
 
     return &impl->modules[name];

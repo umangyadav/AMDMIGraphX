@@ -30,7 +30,7 @@ using module_ref = module*;
  */
 struct module
 {
-    module();
+    module(const std::string& name = "main");
 
     // move constructor
     module(module&&) noexcept;
@@ -92,7 +92,7 @@ struct module
     instruction_ref move_instruction(instruction_ref src, instruction_ref dst);
     instruction_ref move_instructions(instruction_ref src, instruction_ref dst);
 
-    module_ref create_sub_module();
+    module_ref create_sub_module(const std::string& name);
     std::vector<module_ref> get_sub_modules() const;
 
     template <class... Ts>
