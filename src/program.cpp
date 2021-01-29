@@ -187,7 +187,8 @@ std::vector<argument> generic_eval(const module* mdl,
         const auto& name = ins->name();
         if(name == "@literal")
         {
-            results.emplace(ins, trace(ins, mdl, [&] { return ins->get_literal().get_argument(); }));
+            results.emplace(ins,
+                            trace(ins, mdl, [&] { return ins->get_literal().get_argument(); }));
         }
         else if(name == "@param")
         {
@@ -205,7 +206,9 @@ std::vector<argument> generic_eval(const module* mdl,
         }
         else if(name == "@outline")
         {
-            results.emplace(ins, trace(ins, mdl, [&] { return argument{ins->get_shape(), nullptr}; }));
+            results.emplace(ins, trace(ins, mdl, [&] {
+                                return argument{ins->get_shape(), nullptr};
+                            }));
         }
         else if(name == "@return")
         {
@@ -294,21 +297,23 @@ std::vector<argument> program::eval(parameter_map params) const
     if(trace_level > 0)
     {
         std::unordered_map<instruction_ref, std::string> names1;
-        return generic_eval(*this, ctx, std::move(params), [&](auto& ins, const module* smdl, auto f) {
-            ctx.finish();
-            std::cout << "Run instruction: ";
-            smdl->debug_print(ins, names1);
-            auto result = check_context(f);
-            ctx.finish();
-            if(trace_level > 1 and ins->name().front() != '@' and ins->name() != "load")
-                std::cout << "Ouput: " << result << std::endl;
-            return result;
-        });
+        return generic_eval(
+            *this, ctx, std::move(params), [&](auto& ins, const module* smdl, auto f) {
+                ctx.finish();
+                std::cout << "Run instruction: ";
+                smdl->debug_print(ins, names1);
+                auto result = check_context(f);
+                ctx.finish();
+                if(trace_level > 1 and ins->name().front() != '@' and ins->name() != "load")
+                    std::cout << "Ouput: " << result << std::endl;
+                return result;
+            });
     }
     else
     {
-        return generic_eval(
-            *this, ctx, std::move(params), [&](auto&, const module*, auto f) { return check_context(f); });
+        return generic_eval(*this, ctx, std::move(params), [&](auto&, const module*, auto f) {
+            return check_context(f);
+        });
     }
 }
 

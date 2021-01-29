@@ -565,7 +565,8 @@ void module::from_value(const value& v)
 }
 
 void module::debug_print() const { std::cout << *this << std::endl; }
-void module::debug_print(instruction_ref ins, std::unordered_map<instruction_ref, std::string>& names1) const
+void module::debug_print(instruction_ref ins,
+                         std::unordered_map<instruction_ref, std::string>& names1) const
 {
     if(ins == this->end())
     {
