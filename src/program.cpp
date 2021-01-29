@@ -62,7 +62,10 @@ static void print_instruction(std::ostream& os,
         os << " -> " << ins->get_shape();
 }
 
-program::program() : impl(std::make_unique<program_impl>()) { impl->modules["main"] = module("main"); }
+program::program() : impl(std::make_unique<program_impl>())
+{
+    impl->modules["main"] = module("main");
+}
 
 program::program(program&&) noexcept = default;
 program::~program() noexcept         = default;
@@ -222,7 +225,8 @@ std::vector<argument> generic_eval(const module* mdl,
                                return results[i];
                            });
 
-            std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl << std::endl;
+            std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl
+                      << std::endl;
 
             return prog_outputs;
         }
@@ -361,7 +365,7 @@ void program::from_value(const value& v)
     {
         const auto& key = vv.get_key();
         auto val        = vv.without_key();
-        auto mdl_name = vv.at("module_name").to<std::string>();
+        auto mdl_name   = vv.at("module_name").to<std::string>();
         module modl(mdl_name);
         modl.from_value(val);
         impl->modules[key] = modl;

@@ -62,7 +62,9 @@ static void print_instruction(std::ostream& os,
         os << " -> " << ins->get_shape();
 }
 
-module::module(const std::string& name) : impl(std::make_unique<module_impl>()), module_name(name) {}
+module::module(const std::string& name) : impl(std::make_unique<module_impl>()), module_name(name)
+{
+}
 
 module::module(module&&) noexcept = default;
 module::~module() noexcept        = default;
