@@ -26,6 +26,7 @@ struct module_impl
     std::list<instruction> instructions;
     std::list<module> sub_modules;
     std::vector<std::string> input_names;
+    std::string name;
 };
 
 const operation& get_operation(instruction_ref ins) { return ins->get_operator(); }
@@ -62,8 +63,9 @@ static void print_instruction(std::ostream& os,
         os << " -> " << ins->get_shape();
 }
 
-module::module(const std::string& name) : impl(std::make_unique<module_impl>()), module_name(name)
+module::module(const std::string name) : impl(std::make_unique<module_impl>())
 {
+    impl->name = name;
 }
 
 module::module(module&&) noexcept = default;
@@ -83,6 +85,8 @@ module& module::operator=(module m)
     return *this;
 }
 
+std::string module::name() const { return impl->name; }
+
 void module::assign(const module& m, std::unordered_map<instruction_ref, instruction_ref> ins_map)
 {
     // clean the current module
@@ -95,7 +99,7 @@ void module::assign(const module& m, std::unordered_map<instruction_ref, instruc
         impl->instructions.clear();
     }
     impl->input_names = m.impl->input_names;
-    this->module_name = m.module_name;
+    impl->name        = m.impl->name;
 
     std::unordered_map<module_ref, module_ref> sub_module_map;
     for(auto ins : iterator_for(m))
@@ -535,7 +539,6 @@ value module::to_value() const
 
 void module::from_value(const value& v)
 {
-    module_name = v.at("module_name").to<std::string>();
     std::unordered_map<std::string, instruction_ref> instructions;
     for(const value& node : v.at("nodes"))
     {
@@ -631,6 +634,7 @@ void module::print(std::unordered_map<instruction_ref, std::string>& names,
                "DEBUG_PRINT: Instruction not found");
         print_func(ins, names);
     }
+
 
     // print sub_graph
     for(auto& sub_mdl : this->impl->sub_modules)
@@ -796,11 +800,13 @@ bool operator==(const module& x, const module& y) { return to_string(x) == to_st
 
 std::ostream& operator<<(std::ostream& os, const module& m)
 {
+    // std::cout << "Module " << m.name() << "..." << std::endl;
     std::unordered_map<instruction_ref, std::string> names1;
     m.print(names1, [&](auto ins, const auto& names) {
         print_instruction(os, ins, names);
         os << std::endl;
     });
+
     return os;
 }
 

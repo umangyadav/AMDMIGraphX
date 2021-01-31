@@ -30,7 +30,7 @@ using module_ref = module*;
  */
 struct module
 {
-    module(const std::string& name = "main");
+    module(const std::string name = "");
 
     // move constructor
     module(module&&) noexcept;
@@ -43,7 +43,7 @@ struct module
 
     ~module() noexcept;
 
-    std::string name() const { return module_name; }
+    std::string name() const;
 
     template <class... Ts>
     instruction_ref add_instruction(operation op, Ts... args)
@@ -160,7 +160,6 @@ struct module
     private:
     void assign(const module& m, std::unordered_map<instruction_ref, instruction_ref> ins_map);
     std::unique_ptr<module_impl> impl;
-    std::string module_name;
     module_ref parent_mdl = nullptr;
 };
 

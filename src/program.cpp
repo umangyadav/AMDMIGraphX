@@ -62,10 +62,7 @@ static void print_instruction(std::ostream& os,
         os << " -> " << ins->get_shape();
 }
 
-program::program() : impl(std::make_unique<program_impl>())
-{
-    impl->modules["main"] = module("main");
-}
+program::program() : impl(std::make_unique<program_impl>()) { impl->modules["main"] = {"main"}; }
 
 program::program(program&&) noexcept = default;
 program::~program() noexcept         = default;
@@ -365,8 +362,7 @@ void program::from_value(const value& v)
     {
         const auto& key = vv.get_key();
         auto val        = vv.without_key();
-        auto mdl_name   = vv.at("module_name").to<std::string>();
-        module modl(mdl_name);
+        module modl{key};
         modl.from_value(val);
         impl->modules[key] = modl;
     }
@@ -556,7 +552,7 @@ void program::annotate(std::ostream& os, const std::function<void(instruction_re
 const module* program::get_module(const std::string& name) const
 {
     assert(contains(impl->modules, name));
-    return &impl->modules[name];
+    return &impl->modules.at(name);
 }
 
 module* program::create_module(const std::string& name, module* parent_mdl)
@@ -569,7 +565,7 @@ module* program::create_module(const std::string& name, module* parent_mdl)
     impl->modules[name] = module(name);
     impl->modules[name].set_parent_module(parent_mdl);
 
-    return &impl->modules[name];
+    return &impl->modules.at(name);
 }
 
 void program::remove_module(const std::string& name)
@@ -584,9 +580,9 @@ module* program::get_module(const std::string& name)
     return &impl->modules[name];
 }
 
-module* program::get_main_module() { return &impl->modules["main"]; }
+module* program::get_main_module() { return &impl->modules.at("main"); }
 
-const module* program::get_main_module() const { return &impl->modules["main"]; }
+const module* program::get_main_module() const { return &impl->modules.at("main"); }
 
 program& program::sort()
 {
@@ -604,9 +600,7 @@ std::ostream& operator<<(std::ostream& os, const program& p)
 {
     for(auto& mp : p.impl->modules)
     {
-        os << "Module " << mp.first << ": " << std::endl;
-        os << mp.second;
-        os << std::endl;
+        os << mp.second << std::endl;
     }
 
     return os;
