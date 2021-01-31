@@ -635,7 +635,6 @@ void module::print(std::unordered_map<instruction_ref, std::string>& names,
         print_func(ins, names);
     }
 
-
     // print sub_graph
     for(auto& sub_mdl : this->impl->sub_modules)
     {
