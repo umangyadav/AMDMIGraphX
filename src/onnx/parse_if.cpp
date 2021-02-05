@@ -25,7 +25,7 @@ struct parse_if : op_parser<parse_if>
         std::string else_name  = info.name + "_else";
 
         migraphx::argument cond_arg = args.front()->eval();
-        auto& map_insts = info.node_insts;
+        auto& map_insts             = info.node_insts;
         // cond is not constant, need to create sub_modules
         if(cond_arg.empty())
         {

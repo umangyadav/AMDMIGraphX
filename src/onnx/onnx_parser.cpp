@@ -191,11 +191,13 @@ operation onnx_parser::load(const std::string& name, const node_info& info) cons
     return op;
 }
 
-void onnx_parser::parse_undefined(module_ref mdl, instruction_map& map_insts, const std::string& name)
+void onnx_parser::parse_undefined(module_ref mdl,
+                                  instruction_map& map_insts,
+                                  const std::string& name)
 {
     if(!contains(map_insts, name))
     {
-        auto ins           = mdl->add_instruction(make_op("undefined"));
+        auto ins        = mdl->add_instruction(make_op("undefined"));
         map_insts[name] = ins;
     }
 }
@@ -239,7 +241,9 @@ void onnx_parser::parse_from(const void* data, std::size_t size)
     }
 }
 
-void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph, instruction_map map_insts)
+void onnx_parser::parse_graph(module_ref mdl,
+                              const onnx::GraphProto& graph,
+                              instruction_map map_insts)
 {
     for(auto&& f : graph.initializer())
     {
@@ -258,7 +262,7 @@ void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph, ins
                 dims = map_input_dims.at(name);
             }
 
-            shape s            = parse_type(input.type(), dims);
+            shape s         = parse_type(input.type(), dims);
             map_insts[name] = mdl->add_parameter(name, s);
         }
     }
@@ -315,11 +319,10 @@ void onnx_parser::parse_graph(module_ref mdl, const onnx::GraphProto& graph, ins
                    prog_output.end(),
                    std::back_inserter(all_output_names),
                    [](auto& node) { return node.name(); });
-    std::copy_if(
-        all_output_names.begin(),
-        all_output_names.end(),
-        std::back_inserter(prog_output_names),
-        [&](const auto& name) { return !(name.empty() or map_insts.count(name) == 0); });
+    std::copy_if(all_output_names.begin(),
+                 all_output_names.end(),
+                 std::back_inserter(prog_output_names),
+                 [&](const auto& name) { return !(name.empty() or map_insts.count(name) == 0); });
 
     std::vector<instruction_ref> output_ins;
     std::transform(prog_output_names.begin(),

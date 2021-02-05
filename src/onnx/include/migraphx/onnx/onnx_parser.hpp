@@ -20,8 +20,8 @@ namespace onnx = onnx_for_migraphx;
 struct onnx_parser
 {
     std::string filename;
-    std::string path    = ".";
-    using attribute_map = std::unordered_map<std::string, onnx::AttributeProto>;
+    std::string path      = ".";
+    using attribute_map   = std::unordered_map<std::string, onnx::AttributeProto>;
     using instruction_map = std::unordered_map<std::string, instruction_ref>;
     struct node_info
     {
@@ -30,7 +30,7 @@ struct onnx_parser
         std::string name        = "";
         module* mdl             = nullptr;
         instruction_map node_insts;
-        
+
         instruction_ref make_contiguous(instruction_ref ins) const;
         instruction_ref add_bias(const std::vector<instruction_ref>& args,
                                  instruction_ref curr_ins,
