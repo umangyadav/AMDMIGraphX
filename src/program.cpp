@@ -555,7 +555,7 @@ const module* program::get_module(const std::string& name) const
     return &impl->modules.at(name);
 }
 
-module* program::create_module(const std::string& name, module* parent_mdl)
+module* program::create_module(const std::string& name)
 {
     if(contains(impl->modules, name))
     {
@@ -563,7 +563,7 @@ module* program::create_module(const std::string& name, module* parent_mdl)
     }
 
     impl->modules[name] = module(name);
-    impl->modules[name].set_parent_module(parent_mdl);
+    // impl->modules[name].set_parent_module(parent_mdl);
 
     return &impl->modules.at(name);
 }

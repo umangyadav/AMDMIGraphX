@@ -25,17 +25,18 @@ struct parse_if : op_parser<parse_if>
         std::string else_name  = info.name + "_else";
 
         migraphx::argument cond_arg = args.front()->eval();
+        auto& map_insts = info.node_insts;
         // cond is not constant, need to create sub_modules
         if(cond_arg.empty())
         {
-            module_ref then_mdl = info.mdl->create_sub_module(then_name);
-            module_ref else_mdl = info.mdl->create_sub_module(else_name);
+            module_ref then_mdl = parser.prog.create_module(then_name);
+            module_ref else_mdl = parser.prog.create_module(else_name);
 
             // parse the then sub_graph
-            parser.parse_graph(then_mdl, then_graph, false);
+            parser.parse_graph(then_mdl, then_graph, map_insts);
 
             // parse_the else sub_graph
-            parser.parse_graph(else_mdl, else_graph, false);
+            parser.parse_graph(else_mdl, else_graph, map_insts);
 
             auto then_out_shapes = then_mdl->get_output_shapes();
             auto else_out_shapes = else_mdl->get_output_shapes();
@@ -64,17 +65,16 @@ struct parse_if : op_parser<parse_if>
                 MIGRAPHX_THROW("PARSE_IF: condition input can have only one element!");
             }
 
-            auto mdl = info.mdl;
-
+            auto* mdl = info.mdl;
             // then branch
             if(vec_conds.front())
             {
-                parser.parse_graph(mdl, then_graph);
+                parser.parse_graph(mdl, then_graph, map_insts);
             }
             // else branch
             else
             {
-                parser.parse_graph(mdl, else_graph);
+                parser.parse_graph(mdl, else_graph, map_insts);
             }
 
             // inputs of the return instruction are that of the output of the
