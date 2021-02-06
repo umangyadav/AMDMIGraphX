@@ -59,6 +59,7 @@ struct live_interval
     std::list<std::size_t> use_points;
     std::size_t def_point;
     shape result;
+    std::vector<module_ref> sub_mods;
     bool is_literal;
     bool is_live_on_entry;
 };

@@ -155,6 +155,7 @@ void memory_coloring_impl::build()
                 // First time see a use, create a live interval.
                 int id                = num_of_lives++;
                 interval_ptr interval = &(live_intervals[id]);
+                interval->sub_mods = iter->module_inputs();
                 interval->id          = id;
                 interval->segment.end = cur_points;
                 interval->segment.vn  = ++max_value_number;

@@ -14,8 +14,10 @@ inline namespace MIGRAPHX_INLINE_NS {
 
 void normalize_ops::apply(module& m) const
 {
+    std::cout << "loc1" << std::endl;
     for(auto ins : iterator_for(m))
     {
+        std::cout << "loc1, ins" << std::endl;
         auto inputs = ins->inputs();
         if(inputs.empty())
             continue;

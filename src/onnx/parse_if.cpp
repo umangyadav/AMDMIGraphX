@@ -26,11 +26,15 @@ struct parse_if : op_parser<parse_if>
 
         migraphx::argument cond_arg = args.front()->eval();
         auto& map_insts             = info.node_insts;
+        module_ref mdl = info.mdl;
+
         // cond is not constant, need to create sub_modules
         if(cond_arg.empty())
         {
             module_ref then_mdl = parser.prog.create_module(then_name);
+            then_mdl->set_parent_module(mdl);
             module_ref else_mdl = parser.prog.create_module(else_name);
+            else_mdl->set_parent_module(mdl);
 
             // parse the then sub_graph
             parser.parse_graph(then_mdl, then_graph, map_insts);
@@ -65,7 +69,6 @@ struct parse_if : op_parser<parse_if>
                 MIGRAPHX_THROW("PARSE_IF: condition input can have only one element!");
             }
 
-            auto* mdl = info.mdl;
             // then branch
             if(vec_conds.front())
             {
