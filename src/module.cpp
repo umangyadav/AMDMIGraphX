@@ -130,7 +130,7 @@ void module::assign(const module& m,
             {
                 for(auto mdl : module_args)
                 {
-                    auto prt_mdl     = mdl->get_parent_module();
+                    auto prt_mdl        = mdl->get_parent_module();
                     module_ref copy_mdl = mod_map.at(mdl);
                     copy_mdl->set_parent_module(mod_map.at(prt_mdl));
                     copy_mdl->assign(*mdl, ins_map, mod_map);
