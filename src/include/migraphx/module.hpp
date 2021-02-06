@@ -157,7 +157,9 @@ struct module
 
     void set_parent_module(module_ref mdl) { parent_mdl = mdl; }
 
-    void assign(const module& m, std::unordered_map<instruction_ref, instruction_ref> ins_map, const std::unordered_map<module_ref, module_ref>& mod_map);
+    void assign(const module& m,
+                std::unordered_map<instruction_ref, instruction_ref> ins_map,
+                const std::unordered_map<module_ref, module_ref>& mod_map);
 
     private:
     std::unique_ptr<module_impl> impl;

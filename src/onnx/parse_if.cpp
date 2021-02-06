@@ -26,7 +26,7 @@ struct parse_if : op_parser<parse_if>
 
         migraphx::argument cond_arg = args.front()->eval();
         auto& map_insts             = info.node_insts;
-        module_ref mdl = info.mdl;
+        module_ref mdl              = info.mdl;
 
         // cond is not constant, need to create sub_modules
         if(cond_arg.empty())

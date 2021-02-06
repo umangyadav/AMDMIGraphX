@@ -93,8 +93,8 @@ void program::assign(const program& p)
     std::unordered_map<instruction_ref, instruction_ref> map_insts;
     for(auto& mod_pair : p.impl->modules)
     {
-        auto& name = mod_pair.first;
-        impl->modules[name] = {name};
+        auto& name                          = mod_pair.first;
+        impl->modules[name]                 = {name};
         map_mods[&p.impl->modules.at(name)] = &impl->modules.at(name);
     }
 
@@ -164,7 +164,7 @@ void program::compile(const target& t, compile_options options)
     {
         auto index = std::distance(modl->begin(), invalid);
         MIGRAPHX_THROW("Invalid module " + modl->name() + " from compilation at instruction " +
-                        std::to_string(index));
+                       std::to_string(index));
     }
     modl->finalize(this->impl->ctx);
 }

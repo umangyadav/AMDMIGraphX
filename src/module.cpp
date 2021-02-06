@@ -72,10 +72,7 @@ module::module(module&&) noexcept = default;
 module::~module() noexcept        = default;
 
 // copy constructor
-module::module(const module& m)
-{
-    assign(m, {}, {});
-}
+module::module(const module& m) { assign(m, {}, {}); }
 
 // copy assignment operator
 module& module::operator=(module m)
@@ -86,7 +83,9 @@ module& module::operator=(module m)
 
 std::string module::name() const { return impl->name; }
 
-void module::assign(const module& m, std::unordered_map<instruction_ref, instruction_ref> ins_map, const std::unordered_map<module_ref, module_ref>& mod_map)
+void module::assign(const module& m,
+                    std::unordered_map<instruction_ref, instruction_ref> ins_map,
+                    const std::unordered_map<module_ref, module_ref>& mod_map)
 {
     // clean the current module
     if(!impl)
@@ -131,7 +130,7 @@ void module::assign(const module& m, std::unordered_map<instruction_ref, instruc
             {
                 for(auto mdl : module_args)
                 {
-                    auto parent_mdl = mdl->get_parent_module();
+                    auto parent_mdl     = mdl->get_parent_module();
                     module_ref copy_mdl = mod_map.at(mdl);
                     copy_mdl->set_parent_module(mod_map.at(parent_mdl));
                     copy_mdl->assign(*mdl, ins_map, mod_map);
@@ -505,7 +504,7 @@ void module::finalize(context& ctx)
     {
         ins->finalize(ctx);
 
-        for (auto& smod : ins->module_inputs())
+        for(auto& smod : ins->module_inputs())
         {
             smod->finalize(ctx);
         }
@@ -642,7 +641,7 @@ void module::print(std::unordered_map<instruction_ref, std::string>& names,
         print_func(ins, names);
     }
 
-    for (auto& smod : set_smod)
+    for(auto& smod : set_smod)
     {
         smod->print(names, print_func);
     }
