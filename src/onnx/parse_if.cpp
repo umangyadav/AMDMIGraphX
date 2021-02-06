@@ -19,10 +19,10 @@ struct parse_if : op_parser<parse_if>
                                        std::vector<instruction_ref> args) const
     {
         const auto& then_graph = info.attributes.at("then_branch").g();
-        std::string then_name  = info.name + "_if";
+        std::string then_name  = info.name + "_then_graph";
 
         const auto& else_graph = info.attributes.at("else_branch").g();
-        std::string else_name  = info.name + "_else";
+        std::string else_name  = info.name + "_else_graph";
 
         migraphx::argument cond_arg = args.front()->eval();
         auto& map_insts             = info.node_insts;

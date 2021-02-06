@@ -296,7 +296,7 @@ void onnx_parser::parse_graph(module_ref mdl,
         else
         {
             std::string node_name =
-                "migraphx_node_" + node.op_type() + "_" + std::to_string(node_index);
+                "migraphx_node_" + std::to_string(node_index) + "_" + node.op_type();
             result = ops[node.op_type()](
                 *this, {get_attributes(node), output_num, node_name, mdl, map_insts}, args);
         }
