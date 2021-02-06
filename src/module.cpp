@@ -802,8 +802,9 @@ module& module::sort()
 
 bool operator==(const module& x, const module& y) { return to_string(x) == to_string(y); }
 
-
-static void print_module(std::ostream& os, const module& m, std::unordered_map<instruction_ref, std::string> names)
+static void print_module(std::ostream& os,
+                         const module& m,
+                         std::unordered_map<instruction_ref, std::string> names)
 {
     os << "Module \"" << m.name() << "\" ..." << std::endl;
     std::unordered_set<module_ref> sub_mods;
@@ -811,14 +812,14 @@ static void print_module(std::ostream& os, const module& m, std::unordered_map<i
         print_instruction(os, ins, names);
         os << std::endl;
         auto& mod_args = ins->module_inputs();
-        for (auto& smod : mod_args)
+        for(auto& smod : mod_args)
         {
             sub_mods.insert(smod);
         }
     });
     os << std::endl;
 
-    for (auto& smod : sub_mods)
+    for(auto& smod : sub_mods)
     {
         print_module(os, *smod, names);
     }
