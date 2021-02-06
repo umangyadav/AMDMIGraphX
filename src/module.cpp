@@ -130,9 +130,9 @@ void module::assign(const module& m,
             {
                 for(auto mdl : module_args)
                 {
-                    auto parent_mdl     = mdl->get_parent_module();
+                    auto prt_mdl     = mdl->get_parent_module();
                     module_ref copy_mdl = mod_map.at(mdl);
-                    copy_mdl->set_parent_module(mod_map.at(parent_mdl));
+                    copy_mdl->set_parent_module(mod_map.at(prt_mdl));
                     copy_mdl->assign(*mdl, ins_map, mod_map);
                 }
 
@@ -320,26 +320,6 @@ instruction_ref module::move_instructions(instruction_ref src, instruction_ref d
     return src;
 }
 
-// module_ref module::create_sub_module(const std::string& name)
-// {
-//     this->impl->sub_modules.push_back(module(name));
-//     module_ref sub_mdl = &this->impl->sub_modules.back();
-//     sub_mdl->set_parent_module(this);
-
-//     return sub_mdl;
-// }
-
-// std::vector<module_ref> module::get_sub_modules() const
-// {
-//     std::vector<module_ref> sub_modules(this->impl->sub_modules.size());
-//     std::transform(this->impl->sub_modules.begin(),
-//                    this->impl->sub_modules.end(),
-//                    sub_modules.begin(),
-//                    [](auto& mdl) { return &mdl; });
-
-//     return sub_modules;
-// }
-
 instruction_ref module::add_literal(literal l)
 {
     impl->instructions.emplace_front(std::move(l));
@@ -484,7 +464,6 @@ std::vector<shape> module::get_output_shapes() const
 
         return output_shapes;
     }
-    // The else branch is to provide backward compatibility
     else
     {
         return {last_ins.get_shape()};
@@ -515,8 +494,8 @@ value module::to_value() const
 {
     value result;
     value nodes;
-    std::unordered_map<instruction_ref, std::string> names1;
-    this->print(names1, [&](auto ins, const auto& names) {
+    std::unordered_map<instruction_ref, std::string> names;
+    this->print(names, [&](auto ins) {
         value node;
         node["output"] = names.at(ins);
         node["name"]   = ins->name();
@@ -572,7 +551,7 @@ void module::from_value(const value& v)
 
 void module::debug_print() const { std::cout << *this << std::endl; }
 void module::debug_print(instruction_ref ins,
-                         std::unordered_map<instruction_ref, std::string>& names1) const
+                         std::unordered_map<instruction_ref, std::string>& names) const
 {
     if(ins == this->end())
     {
@@ -585,10 +564,10 @@ void module::debug_print(instruction_ref ins,
         return;
     }
     std::stringstream ss;
-    this->print(names1, [&](auto x, const auto& names) {
+    this->print(names, [&](auto x) {
         if(x == ins)
         {
-            print_instruction(std::cout, x, names1);
+            print_instruction(std::cout, x, names);
             std::cout << std::endl;
         }
     });
@@ -608,9 +587,7 @@ void module::debug_print(const std::vector<instruction_ref>& inss) const
 }
 
 void module::print(std::unordered_map<instruction_ref, std::string>& names,
-                   const std::function<void(
-                       instruction_ref, const std::unordered_map<instruction_ref, std::string>&)>&
-                       print_func) const
+                   const std::function<void(instruction_ref)>& print_func) const
 {
     int count = 0;
     std::unordered_set<module_ref> set_smod;
@@ -638,13 +615,8 @@ void module::print(std::unordered_map<instruction_ref, std::string>& names,
             set_smod.insert(smod);
         }
 
-        print_func(ins, names);
+        print_func(ins);
     }
-
-    // for(auto& smod : set_smod)
-    // {
-    //     smod->print(names, print_func);
-    // }
 }
 
 static std::string enclose_name(const std::string& name)
@@ -654,11 +626,11 @@ static std::string enclose_name(const std::string& name)
 
 void module::print_graph(std::ostream& os, bool brief) const
 {
-    std::unordered_map<instruction_ref, std::string> names1;
+    std::unordered_map<instruction_ref, std::string> names;
 
     os << "digraph {" << std::endl;
     os << "\trankdir=LR;" << std::endl;
-    this->print(names1, [&](auto ins, const auto& names) {
+    this->print(names, [&](auto ins) {
         std::string label;
         if(brief)
             label = ins->name();
@@ -734,8 +706,8 @@ void module::print_cpp(std::ostream& os) const
     os << "migraphx::module p;" << std::endl;
     // cppcheck-suppress variableScope
     unsigned long seed = 0;
-    std::unordered_map<instruction_ref, std::string> names1;
-    this->print(names1, [&](auto ins, const auto& names) {
+    std::unordered_map<instruction_ref, std::string> names;
+    this->print(names, [&](auto ins) {
         auto op = cpp_op_var(names.at(ins), ins);
         if(ins->name().front() != '@')
         {
@@ -781,9 +753,9 @@ void module::print_cpp(std::ostream& os) const
 
 void module::annotate(std::ostream& os, std::function<void(instruction_ref)> a) const
 {
-    std::unordered_map<instruction_ref, std::string> names1;
-    this->print(names1, [&](auto ins, const auto& names) {
-        print_instruction(os, ins, names1);
+    std::unordered_map<instruction_ref, std::string> names;
+    this->print(names, [&](auto ins) {
+        print_instruction(os, ins, names);
         a(ins);
         os << std::endl;
     });
@@ -808,7 +780,7 @@ static void print_module(std::ostream& os,
 {
     os << "Module \"" << m.name() << "\" ..." << std::endl;
     std::unordered_set<module_ref> sub_mods;
-    m.print(names, [&](auto ins, const auto& names1) {
+    m.print(names, [&](auto ins) {
         print_instruction(os, ins, names);
         os << std::endl;
         auto& mod_args = ins->module_inputs();
