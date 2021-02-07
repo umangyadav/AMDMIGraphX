@@ -156,7 +156,7 @@ void program::compile(const target& t, compile_options options)
     auto&& passes = t.get_passes(this->impl->ctx, options);
 
     auto* modl = get_main_module();
-    std::cout << "compiling module: " << modl->name() << std::endl;
+    // std::cout << "compiling module: " << modl->name() << std::endl;
     assert(modl->validate() == modl->end());
     run_passes(*modl, passes, options.trace);
     auto invalid = this->validate();
@@ -521,7 +521,7 @@ void program::debug_print(instruction_ref ins) const
     });
 }
 
-void program::print(std::unordered_map<instruction_ref, std::string> names,
+void program::print(std::unordered_map<instruction_ref, std::string>& names,
                     const std::function<void(instruction_ref)>& print_func) const
 {
     auto* mdl = this->get_main_module();

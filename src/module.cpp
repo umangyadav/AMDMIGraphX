@@ -786,7 +786,7 @@ static void print_module(std::ostream& os,
                          const module& m,
                          std::unordered_map<instruction_ref, std::string> names)
 {
-    os << "Module \"" << m.name() << "\" ..." << std::endl;
+    // os << "Module \"" << m.name() << "\" ..." << std::endl;
     std::unordered_set<module_ref> sub_mods;
     m.print(names, [&](auto ins) {
         print_instruction(os, ins, names);
