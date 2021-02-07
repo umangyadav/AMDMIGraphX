@@ -34,6 +34,7 @@ void normalize_ops::apply(module& m) const
         if(normalize_attributes(tuned_op, lens))
         {
             m.replace_instruction(ins, tuned_op, inputs);
+            ins->set_normalized();
         }
     }
 }

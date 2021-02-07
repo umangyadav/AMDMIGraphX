@@ -30,7 +30,7 @@ using module_ref = module*;
  */
 struct module
 {
-    module(const std::string name = "");
+    module(const std::string& name = "");
 
     // move constructor
     module(module&&) noexcept;
