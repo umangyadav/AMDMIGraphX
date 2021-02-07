@@ -233,12 +233,12 @@ std::vector<argument> generic_eval(const module* mdl,
                                return results[i];
                            });
 
-        if(trace_level > 0)
-        {
+            if(trace_level > 0)
+            {
 
-            std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl
-                      << std::endl;
-        }
+                std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl
+                          << std::endl;
+            }
 
             return prog_outputs;
         }
@@ -283,7 +283,8 @@ std::vector<argument> generic_eval(const module* mdl,
 
     if(trace_level > 0)
     {
-        std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl << std::endl;
+        std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl
+                  << std::endl;
     }
 
     return {results.at(std::prev(mdl->end()))};
@@ -305,7 +306,7 @@ std::vector<argument> program::eval(parameter_map params) const
 #endif
 
     auto trace_level = value_of(MIGRAPHX_TRACE_EVAL{});
-    auto* mm = get_main_module();
+    auto* mm         = get_main_module();
     std::unordered_map<instruction_ref, argument> results;
 
     if(trace_level > 0)
