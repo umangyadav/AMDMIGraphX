@@ -67,8 +67,7 @@ struct onnx_parser
     using op_func  = std::function<std::vector<instruction_ref>(
         onnx_parser&, const node_info&, std::vector<instruction_ref>)>;
     node_map nodes;
-    std::unordered_map<module_ref, std::unordered_map<std::string, instruction_ref>>
-        map_mdl_instructions;
+    std::unordered_map<std::string, instruction_ref> instructions;
     program prog                  = program();
     std::size_t default_dim_value = 1;
     std::unordered_map<std::string, std::vector<std::size_t>> map_input_dims;
@@ -83,8 +82,7 @@ struct onnx_parser
 
     void parse_from(std::istream& is, std::string name = "");
     void parse_from(const void* data, std::size_t size);
-    void parse_graph(module_ref mdl, const onnx::GraphProto& graph, bool inline_subgraph = true);
-    instruction_ref get_input(module_ref mdl, const std::string name) const;
+    void parse_graph(module_ref mdl, const onnx::GraphProto& graph);
     literal parse_value(const onnx::AttributeProto& attr) const;
     literal parse_tensor(const onnx::TensorProto& t) const;
     shape parse_type(const onnx::TypeProto& t, const std::vector<std::size_t>& input_dims) const;

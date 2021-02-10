@@ -467,7 +467,6 @@ struct stream_info
 
 void schedule::apply(module& p) const
 {
-    return;
     if(not enable)
         return;
     stream_info si;

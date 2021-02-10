@@ -32,10 +32,10 @@ struct parse_if : op_parser<parse_if>
             module_ref else_mdl = info.mdl->create_sub_module(else_name);
 
             // parse the then sub_graph
-            parser.parse_graph(then_mdl, then_graph, false);
+            parser.parse_graph(then_mdl, then_graph);
 
             // parse_the else sub_graph
-            parser.parse_graph(else_mdl, else_graph, false);
+            parser.parse_graph(else_mdl, else_graph);
 
             auto then_out_shapes = then_mdl->get_output_shapes();
             auto else_out_shapes = else_mdl->get_output_shapes();

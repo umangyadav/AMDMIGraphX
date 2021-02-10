@@ -178,7 +178,7 @@ std::vector<argument> generic_eval(const module* mdl,
                                    std::unordered_map<instruction_ref, argument> results,
                                    F trace)
 {
-    std::cout << "\nStart executing module \"" << mdl->name() << "\" ...." << std::endl;
+    // std::cout << "\nStart executing module \"" << mdl->name() << "\" ...." << std::endl;
     assert(mdl->validate() == mdl->end());
     results.reserve(mdl->size() * 2);
     std::vector<argument> values;
@@ -222,8 +222,8 @@ std::vector<argument> generic_eval(const module* mdl,
                                return results[i];
                            });
 
-            std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl
-                      << std::endl;
+            // std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl
+            //           << std::endl;
 
             return prog_outputs;
         }
@@ -266,7 +266,7 @@ std::vector<argument> generic_eval(const module* mdl,
         assert(results.find(ins) != results.end());
     }
 
-    std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl << std::endl;
+    // std::cout << "End executing module \"" << mdl->name() << "\" ...." << std::endl << std::endl;
 
     return {results.at(std::prev(mdl->end()))};
 }
@@ -333,11 +333,10 @@ value program::to_value() const
         result["context"] = this->impl->ctx.to_value();
 
     result["modules"] = value::object{};
-    auto& module_val  = result.at("modules");
-    for(auto& m : impl->modules)
-    {
-        module_val[m.first] = m.second.to_value();
-    }
+    auto& module_vals  = result.at("modules");
+    auto*mm = get_main_module();
+    module_vals["main"] = mm->to_value({});
+
     return result;
 }
 
@@ -357,15 +356,12 @@ void program::from_value(const value& v)
         this->impl->ctx.from_value(v.at("context"));
     }
 
-    auto val_modules = v.at("modules");
-    for(const auto& vv : val_modules)
-    {
-        const auto& key = vv.get_key();
-        auto val        = vv.without_key();
-        module modl{key};
-        modl.from_value(val);
-        impl->modules[key] = modl;
-    }
+    auto module_vals = v.at("modules");
+    auto main_val = module_vals.at("main");
+    module mmod{"main"};
+    mmod.from_value(module_vals.at("main"), {});
+    impl->modules["main"] = mmod;
+
     this->finalize();
 }
 
@@ -555,7 +551,7 @@ const module* program::get_module(const std::string& name) const
     return &impl->modules.at(name);
 }
 
-module* program::create_module(const std::string& name, module* parent_mdl)
+module* program::create_module(const std::string& name)
 {
     if(contains(impl->modules, name))
     {
@@ -563,8 +559,6 @@ module* program::create_module(const std::string& name, module* parent_mdl)
     }
 
     impl->modules[name] = module(name);
-    impl->modules[name].set_parent_module(parent_mdl);
-
     return &impl->modules.at(name);
 }
 
@@ -598,11 +592,8 @@ bool operator==(const program& x, const program& y) { return to_string(x) == to_
 
 std::ostream& operator<<(std::ostream& os, const program& p)
 {
-    for(auto& mp : p.impl->modules)
-    {
-        os << mp.second << std::endl;
-    }
-
+    auto *mm = p.get_main_module();
+    os << *mm;
     return os;
 }
 

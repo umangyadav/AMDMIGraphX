@@ -325,7 +325,6 @@ module_ref module::create_sub_module(const std::string& name)
 {
     this->impl->sub_modules.push_back(module(name));
     module_ref sub_mdl = &this->impl->sub_modules.back();
-    sub_mdl->set_parent_module(this);
 
     return sub_mdl;
 }
@@ -453,18 +452,10 @@ bool module::has_instruction(instruction_ref ins) const
         return true;
     }
 
-    module_ref mdl = this->parent_mdl;
-    while(mdl != nullptr)
-    {
-        if(mdl->has_instruction(ins))
-        {
-            return true;
-        }
-
-        mdl = mdl->parent_mdl;
-    }
-
-    return false;
+    auto parent_modules = get_parent_modules();
+    return std::any_of(parent_modules.begin(), parent_modules.end(), [&](auto mod) {
+        return mod->has_instruction(ins);
+    });
 }
 
 std::size_t module::size() const { return impl->instructions.size(); }
@@ -517,12 +508,11 @@ void module::finalize(context& ctx)
                   << std::endl;
 }
 
-value module::to_value() const
+value module::to_value(std::unordered_map<instruction_ref, std::string> names) const
 {
     value result;
     value nodes;
-    std::unordered_map<instruction_ref, std::string> names1;
-    this->print(names1, [&](auto ins, const auto& names) {
+    this->print(names, [&](auto ins, const auto& names1) {
         value node;
         node["output"]     = names.at(ins);
         node["name"]       = ins->name();
@@ -537,15 +527,35 @@ value module::to_value() const
                        std::back_inserter(inputs),
                        [&](auto i) { return names.at(i); });
         node["inputs"] = inputs;
+
+        auto module_args = ins->module_inputs();
+        if(not module_args.empty())
+        {
+            std::vector<std::string> module_inputs;
+            std::transform(module_args.begin(),
+                           module_args.end(),
+                           std::back_inserter(module_inputs),
+                           [&](auto mod) { return mod->name(); });
+            node["module_inputs"] = module_inputs;
+
+            value sub_modules = value::object{};
+            for(auto& smod : module_args)
+            {
+                sub_modules[smod->name()] = smod->to_value(names);
+            }
+            node["sub_modules"] = sub_modules;
+        }
+
         nodes.push_back(node);
     });
+
     result["nodes"] = nodes;
+
     return result;
 }
 
-void module::from_value(const value& v)
+void module::from_value(const value& v, std::unordered_map<std::string, instruction_ref> instructions)
 {
-    std::unordered_map<std::string, instruction_ref> instructions;
     for(const value& node : v.at("nodes"))
     {
         instruction_ref output;
@@ -569,10 +579,33 @@ void module::from_value(const value& v)
                            node.at("inputs").end(),
                            std::back_inserter(inputs),
                            [&](const value& i) { return instructions[i.to<std::string>()]; });
+
+            std::vector<module_ref> module_args;
+            if (node.contains("sub_modules"))
+            {
+                auto sub_modules = node.at("sub_modules");
+                auto module_inputs = node.at("module_inputs");
+                for (auto& name_v : module_inputs)
+                {
+                    auto name = name_v.to<std::string>();
+                    module_ref smod = this->create_sub_module(name);
+                    smod->from_value(sub_modules.at(name), instructions);
+                    module_args.push_back(smod);
+                }
+            }
+
             if(name == "@return")
+            {
                 output = this->add_return(inputs);
-            else
+            }
+            else if (module_args.empty())
+            {
                 output = this->add_instruction(op, inputs);
+            }
+            else
+            {
+                output = this->add_instruction(op, inputs, module_args);                
+            }            
         }
         output->set_normalized(normalized);
         instructions[node.at("output").to<std::string>()] = output;
@@ -641,12 +674,6 @@ void module::print(std::unordered_map<instruction_ref, std::string>& names,
                            [&](auto arg) { return this->has_instruction(arg); }) &&
                "DEBUG_PRINT: Instruction not found");
         print_func(ins, names);
-    }
-
-    // print sub_graph
-    for(auto& sub_mdl : this->impl->sub_modules)
-    {
-        sub_mdl.print(names, print_func);
     }
 }
 
@@ -803,17 +830,47 @@ module& module::sort()
     return *this;
 }
 
+std::unordered_set<module_ref> module::get_parent_modules() const
+{
+    std::unordered_set<module_ref> parent_modules;
+    for(auto ins : iterator_for(*this))
+    {
+        auto& module_args = ins->module_inputs();
+        for(auto& mod : module_args)
+        {
+            parent_modules.insert(mod);
+        }
+    }
+
+    return parent_modules;
+}
+
 bool operator==(const module& x, const module& y) { return to_string(x) == to_string(y); }
+
+static void print_module(std::ostream& os,
+                         const module& m,
+                         std::unordered_map<instruction_ref, std::string> names)
+{
+    std::unordered_set<module_ref> sub_mods;
+    m.print(names, [&](auto ins, auto names1) {
+        print_instruction(os, ins, names);
+        os << std::endl;
+        auto& mod_args = ins->module_inputs();
+        for(auto& smod : mod_args)
+        {
+            sub_mods.insert(smod);
+        }
+    });
+
+    for(auto& smod : sub_mods)
+    {
+        print_module(os, *smod, names);
+    }
+}
 
 std::ostream& operator<<(std::ostream& os, const module& m)
 {
-    // std::cout << "Module " << m.name() << "..." << std::endl;
-    std::unordered_map<instruction_ref, std::string> names1;
-    m.print(names1, [&](auto ins, const auto& names) {
-        print_instruction(os, ins, names);
-        os << std::endl;
-    });
-
+    print_module(os, m, {});
     return os;
 }
 

@@ -3,6 +3,7 @@
 
 #include <list>
 #include <unordered_map>
+#include <unordered_set>
 #include <migraphx/operation.hpp>
 #include <migraphx/literal.hpp>
 #include <migraphx/builtin.hpp>
@@ -129,8 +130,8 @@ struct module
 
     void finalize(context& ctx);
 
-    value to_value() const;
-    void from_value(const value& v);
+    value to_value(std::unordered_map<instruction_ref, std::string> names) const;
+    void from_value(const value& v, std::unordered_map<std::string, instruction_ref> instructions);
 
     void debug_print() const;
     void debug_print(instruction_ref ins,
@@ -148,19 +149,20 @@ struct module
     void annotate(std::ostream& os, std::function<void(instruction_ref)> a) const;
 
     module& sort();
+    std::unordered_set<module_ref> get_parent_modules() const;
 
     friend std::ostream& operator<<(std::ostream& os, const module& m);
     friend bool operator==(const module& x, const module& y);
     friend bool operator!=(const module& x, const module& y) { return !(x == y); }
 
-    module_ref get_parent_module() const { return parent_mdl; }
+    // module_ref get_parent_module() const { return parent_mdl; }
 
-    void set_parent_module(module_ref mdl) { parent_mdl = mdl; }
+    // void set_parent_module(module_ref mdl) { parent_mdl = mdl; }
 
     private:
     void assign(const module& m, std::unordered_map<instruction_ref, instruction_ref> ins_map);
     std::unique_ptr<module_impl> impl;
-    module_ref parent_mdl = nullptr;
+    // module_ref parent_mdl = nullptr;
 };
 
 } // namespace MIGRAPHX_INLINE_NS
