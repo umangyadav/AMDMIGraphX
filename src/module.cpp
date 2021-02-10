@@ -588,7 +588,7 @@ void module::from_value(const value& v,
                 auto module_inputs = node.at("module_inputs");
                 for(auto& name_v : module_inputs)
                 {
-                    auto mod_name       = name_v.to<std::string>();
+                    auto mod_name   = name_v.to<std::string>();
                     module_ref smod = this->create_sub_module(mod_name);
                     smod->from_value(sub_modules.at(mod_name), instructions);
                     module_args.push_back(smod);
