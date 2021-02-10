@@ -332,9 +332,9 @@ value program::to_value() const
     if(not this->impl->target_name.empty())
         result["context"] = this->impl->ctx.to_value();
 
-    result["modules"] = value::object{};
-    auto& module_vals  = result.at("modules");
-    auto*mm = get_main_module();
+    result["modules"]   = value::object{};
+    auto& module_vals   = result.at("modules");
+    auto* mm            = get_main_module();
     module_vals["main"] = mm->to_value({});
 
     return result;
@@ -357,7 +357,7 @@ void program::from_value(const value& v)
     }
 
     auto module_vals = v.at("modules");
-    auto main_val = module_vals.at("main");
+    auto main_val    = module_vals.at("main");
     module mmod{"main"};
     mmod.from_value(module_vals.at("main"), {});
     impl->modules["main"] = mmod;
@@ -592,7 +592,7 @@ bool operator==(const program& x, const program& y) { return to_string(x) == to_
 
 std::ostream& operator<<(std::ostream& os, const program& p)
 {
-    auto *mm = p.get_main_module();
+    auto* mm = p.get_main_module();
     os << *mm;
     return os;
 }

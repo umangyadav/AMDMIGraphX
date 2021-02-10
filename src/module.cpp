@@ -554,7 +554,8 @@ value module::to_value(std::unordered_map<instruction_ref, std::string> names) c
     return result;
 }
 
-void module::from_value(const value& v, std::unordered_map<std::string, instruction_ref> instructions)
+void module::from_value(const value& v,
+                        std::unordered_map<std::string, instruction_ref> instructions)
 {
     for(const value& node : v.at("nodes"))
     {
@@ -581,13 +582,13 @@ void module::from_value(const value& v, std::unordered_map<std::string, instruct
                            [&](const value& i) { return instructions[i.to<std::string>()]; });
 
             std::vector<module_ref> module_args;
-            if (node.contains("sub_modules"))
+            if(node.contains("sub_modules"))
             {
-                auto sub_modules = node.at("sub_modules");
+                auto sub_modules   = node.at("sub_modules");
                 auto module_inputs = node.at("module_inputs");
-                for (auto& name_v : module_inputs)
+                for(auto& name_v : module_inputs)
                 {
-                    auto name = name_v.to<std::string>();
+                    auto name       = name_v.to<std::string>();
                     module_ref smod = this->create_sub_module(name);
                     smod->from_value(sub_modules.at(name), instructions);
                     module_args.push_back(smod);
@@ -598,14 +599,14 @@ void module::from_value(const value& v, std::unordered_map<std::string, instruct
             {
                 output = this->add_return(inputs);
             }
-            else if (module_args.empty())
+            else if(module_args.empty())
             {
                 output = this->add_instruction(op, inputs);
             }
             else
             {
-                output = this->add_instruction(op, inputs, module_args);                
-            }            
+                output = this->add_instruction(op, inputs, module_args);
+            }
         }
         output->set_normalized(normalized);
         instructions[node.at("output").to<std::string>()] = output;
