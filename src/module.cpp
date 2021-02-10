@@ -512,7 +512,7 @@ value module::to_value(std::unordered_map<instruction_ref, std::string> names) c
 {
     value result;
     value nodes;
-    this->print(names, [&](auto ins, const auto& names1) {
+    this->print(names, [&](auto ins) {
         value node;
         node["output"]     = names.at(ins);
         node["name"]       = ins->name();
@@ -588,9 +588,9 @@ void module::from_value(const value& v,
                 auto module_inputs = node.at("module_inputs");
                 for(auto& name_v : module_inputs)
                 {
-                    auto name       = name_v.to<std::string>();
-                    module_ref smod = this->create_sub_module(name);
-                    smod->from_value(sub_modules.at(name), instructions);
+                    auto mod_name       = name_v.to<std::string>();
+                    module_ref smod = this->create_sub_module(mod_name);
+                    smod->from_value(sub_modules.at(mod_name), instructions);
                     module_args.push_back(smod);
                 }
             }
@@ -615,7 +615,7 @@ void module::from_value(const value& v,
 
 void module::debug_print() const { std::cout << *this << std::endl; }
 void module::debug_print(instruction_ref ins,
-                         std::unordered_map<instruction_ref, std::string>& names1) const
+                         std::unordered_map<instruction_ref, std::string>& names) const
 {
     if(ins == this->end())
     {
@@ -628,10 +628,10 @@ void module::debug_print(instruction_ref ins,
         return;
     }
     std::stringstream ss;
-    this->print(names1, [&](auto x, const auto& names) {
+    this->print(names, [&](auto x) {
         if(x == ins)
         {
-            print_instruction(std::cout, x, names1);
+            print_instruction(std::cout, x, names);
             std::cout << std::endl;
         }
     });
@@ -639,8 +639,8 @@ void module::debug_print(instruction_ref ins,
 
 void module::debug_print(instruction_ref ins) const
 {
-    std::unordered_map<instruction_ref, std::string> names1;
-    this->debug_print(ins, names1);
+    std::unordered_map<instruction_ref, std::string> names;
+    this->debug_print(ins, names);
 }
 
 void module::debug_print(const std::vector<instruction_ref>& inss) const
@@ -651,9 +651,7 @@ void module::debug_print(const std::vector<instruction_ref>& inss) const
 }
 
 void module::print(std::unordered_map<instruction_ref, std::string>& names,
-                   const std::function<void(
-                       instruction_ref, const std::unordered_map<instruction_ref, std::string>&)>&
-                       print_func) const
+                   const std::function<void(instruction_ref)>& print_func) const
 {
     int count = 0;
     for(auto ins : iterator_for(*this))
@@ -674,7 +672,7 @@ void module::print(std::unordered_map<instruction_ref, std::string>& names,
                            ins->inputs().end(),
                            [&](auto arg) { return this->has_instruction(arg); }) &&
                "DEBUG_PRINT: Instruction not found");
-        print_func(ins, names);
+        print_func(ins);
     }
 }
 
@@ -685,11 +683,11 @@ static std::string enclose_name(const std::string& name)
 
 void module::print_graph(std::ostream& os, bool brief) const
 {
-    std::unordered_map<instruction_ref, std::string> names1;
+    std::unordered_map<instruction_ref, std::string> names;
 
     os << "digraph {" << std::endl;
     os << "\trankdir=LR;" << std::endl;
-    this->print(names1, [&](auto ins, const auto& names) {
+    this->print(names, [&](auto ins) {
         std::string label;
         if(brief)
             label = ins->name();
@@ -765,8 +763,8 @@ void module::print_cpp(std::ostream& os) const
     os << "migraphx::module p;" << std::endl;
     // cppcheck-suppress variableScope
     unsigned long seed = 0;
-    std::unordered_map<instruction_ref, std::string> names1;
-    this->print(names1, [&](auto ins, const auto& names) {
+    std::unordered_map<instruction_ref, std::string> names;
+    this->print(names, [&](auto ins) {
         auto op = cpp_op_var(names.at(ins), ins);
         if(ins->name().front() != '@')
         {
@@ -812,9 +810,9 @@ void module::print_cpp(std::ostream& os) const
 
 void module::annotate(std::ostream& os, std::function<void(instruction_ref)> a) const
 {
-    std::unordered_map<instruction_ref, std::string> names1;
-    this->print(names1, [&](auto ins, const auto& names) {
-        print_instruction(os, ins, names1);
+    std::unordered_map<instruction_ref, std::string> names;
+    this->print(names, [&](auto ins) {
+        print_instruction(os, ins, names);
         a(ins);
         os << std::endl;
     });
@@ -853,7 +851,7 @@ static void print_module(std::ostream& os,
                          std::unordered_map<instruction_ref, std::string> names)
 {
     std::unordered_set<module_ref> sub_mods;
-    m.print(names, [&](auto ins, auto names1) {
+    m.print(names, [&](auto ins) {
         print_instruction(os, ins, names);
         os << std::endl;
         auto& mod_args = ins->module_inputs();
