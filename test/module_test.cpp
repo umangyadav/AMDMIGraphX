@@ -90,12 +90,13 @@ TEST_CASE(module_name)
     migraphx::module m1("name");
     EXPECT(m1.name() == "name");
 
-    auto m2 = m1;
+    auto m2 = m1; // NOLINT
     EXPECT(m2.name() == "name");
     migraphx::module m3;
     m3 = m1;
     EXPECT(m3.name() == "name");
 }
+
 TEST_CASE(module_name_main)
 {
     migraphx::program p;
