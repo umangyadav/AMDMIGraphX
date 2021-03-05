@@ -24,12 +24,12 @@ struct hip_if
 
     std::string name() const { return "gpu::if"; }
     shape compute_shape(std::vector<shape> inputs, std::vector<module_ref> mods) const;
-    argument compute(
-        context& ctx,
-        const std::vector<argument>& args,
-        const std::vector<module_ref>& mods,
-        std::function<std::vector<argument>(
-            context&, module_ref, const std::unordered_map<std::string, argument>&)> run) const;
+    argument
+    compute(context& ctx,
+            const std::vector<argument>& args,
+            const std::vector<module_ref>& mods,
+            std::function<std::vector<argument>(
+                context&, module_ref, const std::unordered_map<std::string, argument>&)> run) const;
     std::ptrdiff_t output_alias(const std::vector<shape>& shapes) const
     {
         return shapes.size() - 1;

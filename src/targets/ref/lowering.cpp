@@ -907,8 +907,8 @@ struct ref_if
     compute(context& ctx,
             const std::vector<argument>& args,
             const std::vector<module_ref>& mods,
-            const std::function<std::vector<argument>(context&,
-                module_ref, const std::unordered_map<std::string, argument>&)> run) const
+            const std::function<std::vector<argument>(
+                context&, module_ref, const std::unordered_map<std::string, argument>&)> run) const
     {
         bool cond      = args.front().at<bool>();
         module_ref mod = cond ? mods[0] : mods[1];

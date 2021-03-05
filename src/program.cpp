@@ -237,7 +237,8 @@ std::vector<argument> generic_eval(const module* mod,
                             ctx,
                             values,
                             mod_args,
-                            [&](context& cctx, module_ref smod,
+                            [&](context& cctx,
+                                module_ref smod,
                                 const std::unordered_map<std::string, argument>& inputs) {
                                 // wrap up parameters for sub_modules
                                 const auto& param_names = smod->get_parameter_names();
