@@ -241,16 +241,17 @@ argument compute_op(const T& x, const shape& output_shape, const std::vector<arg
 template <class T, class F>
 auto compute_op(rank<1>,
                 const T& x,
+                context& ctx,
                 const std::vector<argument>& inputs,
                 const std::vector<module_ref>& module_args,
-                F f) -> decltype(x.compute(inputs, module_args, f))
+                F f) -> decltype(x.compute(auto_any_cast(ctx), inputs, module_args, f))
 {
-    return x.compute(inputs, module_args, f);
+    return x.compute(auto_any_cast(ctx), inputs, module_args, f);
 }
 
 template <class T, class F>
-argument
-    compute_op(rank<0>, const T& x, const std::vector<argument>&, const std::vector<module_ref>&, F)
+argument compute_op(
+    rank<0>, const T& x, context&, const std::vector<argument>&, const std::vector<module_ref>&, F)
 {
     std::string name = x.name();
     MIGRAPHX_THROW("Not computable: " + name);
@@ -258,11 +259,12 @@ argument
 
 template <class T, class F>
 argument compute_op(const T& x,
+                    context& ctx,
                     const std::vector<argument>& inputs,
                     const std::vector<module_ref>& module_args,
                     F f)
 {
-    return compute_op(rank<1>{}, x, inputs, module_args, f);
+    return compute_op(rank<1>{}, x, ctx, inputs, module_args, f);
 }
 
 template <class T>
@@ -378,12 +380,13 @@ void from_value_op(T& x, const value& v)
  *      shape compute_shape(const std::vector<shape>& inputs,const std::vector<module_ref>&
  * mod_args) const; argument compute(context& ctx,const shape& output,const std::vector<argument>&
  * input) const; argument compute(const shape& output,const std::vector<argument>& input)
- * const; argument compute(const std::vector<argument>& input,const std::vector<module_ref>&
- * module_args,std::function<std::vector<argument>(module_ref& mdl, const
- * std::unordered_map<std::string, argument>& inputs)> run) const; value to_value() const; void
- * from_value(const value& v) ; value attributes() const; friend std::ostream &
- * operator<<(std::ostream & os,const operation & op) ; friend bool operator==(const operation &
- * x,const operation & y) ;
+ * const; argument compute(context& ctx,const std::vector<argument>& input,const
+ * std::vector<module_ref>& module_args,std::function<std::vector<argument>(module_ref& mdl,
+ * const std::unordered_map<std::string, argument>& inputs)> run) const; value to_value() const;
+ *      void from_value(const value& v) ;
+ *      value attributes() const;
+ *     friend std::ostream & operator<<(std::ostream & os,const operation & op) ;
+ *     friend bool operator==(const operation & x,const operation & y) ;
  * };
  *
  */
@@ -513,13 +516,15 @@ struct operation
     }
 
     argument compute(
+        context& ctx,
         const std::vector<argument>& input,
         const std::vector<module_ref>& module_args,
         std::function<std::vector<argument>(
             module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)> run) const
     {
         assert((*this).private_detail_te_handle_mem_var);
-        return (*this).private_detail_te_get_handle().compute(input, module_args, std::move(run));
+        return (*this).private_detail_te_get_handle().compute(
+            ctx, input, module_args, std::move(run));
     }
 
     value to_value() const
@@ -579,7 +584,8 @@ struct operation
         compute(context& ctx, const shape& output, const std::vector<argument>& input) const    = 0;
         virtual argument compute(const shape& output, const std::vector<argument>& input) const = 0;
         virtual argument
-        compute(const std::vector<argument>& input,
+        compute(context& ctx,
+                const std::vector<argument>& input,
                 const std::vector<module_ref>& module_args,
                 std::function<std::vector<argument>(
                     module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)> run)
@@ -748,25 +754,27 @@ struct operation
     static auto private_detail_te_default_compute(
         char,
         T&& private_detail_te_self,
+        context& ctx,
         const std::vector<argument>& input,
         const std::vector<module_ref>& module_args,
         std::function<std::vector<argument>(
             module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)> run)
-        -> decltype(private_detail_te_self.compute(input, module_args, std::move(run)))
+        -> decltype(private_detail_te_self.compute(ctx, input, module_args, std::move(run)))
     {
-        return private_detail_te_self.compute(input, module_args, std::move(run));
+        return private_detail_te_self.compute(ctx, input, module_args, std::move(run));
     }
 
     template <class T>
     static argument private_detail_te_default_compute(
         float,
         T&& private_detail_te_self,
+        context& ctx,
         const std::vector<argument>& input,
         const std::vector<module_ref>& module_args,
         std::function<std::vector<argument>(
             module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)> run)
     {
-        return detail::compute_op(private_detail_te_self, input, module_args, std::move(run));
+        return detail::compute_op(private_detail_te_self, ctx, input, module_args, std::move(run));
     }
 
     template <class T>
@@ -902,7 +910,8 @@ struct operation
         }
 
         argument
-        compute(const std::vector<argument>& input,
+        compute(context& ctx,
+                const std::vector<argument>& input,
                 const std::vector<module_ref>& module_args,
                 std::function<std::vector<argument>(
                     module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)> run)
@@ -910,7 +919,7 @@ struct operation
         {
 
             return private_detail_te_default_compute(
-                char(0), private_detail_te_value, input, module_args, std::move(run));
+                char(0), private_detail_te_value, ctx, input, module_args, std::move(run));
         }
 
         value to_value() const override

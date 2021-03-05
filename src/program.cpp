@@ -235,6 +235,7 @@ std::vector<argument> generic_eval(const module* mod,
                 results.emplace(
                     ins, trace(ins, mod, [&] {
                         return ins->get_operator().compute(
+                            ctx,
                             values,
                             mod_args,
                             [&](module_ref smod,

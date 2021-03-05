@@ -904,10 +904,11 @@ struct ref_if
     }
 
     argument compute(
+        context&,
         const std::vector<argument>& args,
         const std::vector<module_ref>& mods,
         const std::function<std::vector<argument>(
-            module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)>& run) const
+            module_ref mdl, const std::unordered_map<std::string, argument>& inputs)> run) const
     {
         bool cond      = args.front().at<bool>();
         module_ref mod = cond ? mods[0] : mods[1];

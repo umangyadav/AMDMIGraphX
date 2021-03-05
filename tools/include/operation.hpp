@@ -241,16 +241,17 @@ argument compute_op(const T& x, const shape& output_shape, const std::vector<arg
 template <class T, class F>
 auto compute_op(rank<1>,
                 const T& x,
+                context& ctx,
                 const std::vector<argument>& inputs,
                 const std::vector<module_ref>& module_args,
-                F f) -> decltype(x.compute(inputs, module_args, f))
+                F f) -> decltype(x.compute(auto_any_cast(ctx), inputs, module_args, f))
 {
-    return x.compute(inputs, module_args, f);
+    return x.compute(auto_any_cast(ctx), inputs, module_args, f);
 }
 
 template <class T, class F>
 argument
-    compute_op(rank<0>, const T& x, const std::vector<argument>&, const std::vector<module_ref>&, F)
+    compute_op(rank<0>, const T& x, context&, const std::vector<argument>&, const std::vector<module_ref>&, F)
 {
     std::string name = x.name();
     MIGRAPHX_THROW("Not computable: " + name);
@@ -258,11 +259,12 @@ argument
 
 template <class T, class F>
 argument compute_op(const T& x,
+                    context& ctx,
                     const std::vector<argument>& inputs,
                     const std::vector<module_ref>& module_args,
                     F f)
 {
-    return compute_op(rank<1>{}, x, inputs, module_args, f);
+    return compute_op(rank<1>{}, x, ctx, inputs, module_args, f);
 }
 
 template <class T>
@@ -411,6 +413,7 @@ void from_value_op(T& x, const value& v)
      virtual(
          'compute',
          returns     = 'argument',
+         ctx         = 'context&',
          input       = 'const std::vector<argument>&',
          module_args = 'const std::vector<module_ref>&',
          run =
