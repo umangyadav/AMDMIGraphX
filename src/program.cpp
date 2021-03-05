@@ -228,7 +228,6 @@ std::vector<argument> generic_eval(const module* mod,
                     assert(results.find(i) != results.end());
                     return results[i];
                 });
-
             const auto& mod_args = ins->module_inputs();
             if(not mod_args.empty())
             {
@@ -238,7 +237,7 @@ std::vector<argument> generic_eval(const module* mod,
                             ctx,
                             values,
                             mod_args,
-                            [&](module_ref smod,
+                            [&](context& cctx, module_ref smod,
                                 const std::unordered_map<std::string, argument>& inputs) {
                                 // wrap up parameters for sub_modules
                                 const auto& param_names = smod->get_parameter_names();
@@ -260,7 +259,8 @@ std::vector<argument> generic_eval(const module* mod,
                                                        mod->name() + "\" not exist!");
                                     }
                                 }
-                                return generic_eval(smod, ctx, m, results, trace);
+                                std::cout << "loc1" << std::endl;
+                                return generic_eval(smod, cctx, m, results, trace);
                             });
                     }));
             }

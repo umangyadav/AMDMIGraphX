@@ -381,12 +381,11 @@ void from_value_op(T& x, const value& v)
  * mod_args) const; argument compute(context& ctx,const shape& output,const std::vector<argument>&
  * input) const; argument compute(const shape& output,const std::vector<argument>& input)
  * const; argument compute(context& ctx,const std::vector<argument>& input,const
- * std::vector<module_ref>& module_args,std::function<std::vector<argument>(module_ref& mdl,
- * const std::unordered_map<std::string, argument>& inputs)> run) const; value to_value() const;
- *      void from_value(const value& v) ;
- *      value attributes() const;
- *     friend std::ostream & operator<<(std::ostream & os,const operation & op) ;
- *     friend bool operator==(const operation & x,const operation & y) ;
+ * std::vector<module_ref>& module_args,std::function<std::vector<argument>(context&,
+ * module_ref, const std::unordered_map<std::string, argument>&)> run) const; value to_value()
+ * const; void from_value(const value& v) ; value attributes() const; friend std::ostream &
+ * operator<<(std::ostream & os,const operation & op) ; friend bool operator==(const operation &
+ * x,const operation & y) ;
  * };
  *
  */
@@ -515,12 +514,12 @@ struct operation
         return (*this).private_detail_te_get_handle().compute(output, input);
     }
 
-    argument compute(
-        context& ctx,
-        const std::vector<argument>& input,
-        const std::vector<module_ref>& module_args,
-        std::function<std::vector<argument>(
-            module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)> run) const
+    argument
+    compute(context& ctx,
+            const std::vector<argument>& input,
+            const std::vector<module_ref>& module_args,
+            std::function<std::vector<argument>(
+                context&, module_ref, const std::unordered_map<std::string, argument>&)> run) const
     {
         assert((*this).private_detail_te_handle_mem_var);
         return (*this).private_detail_te_get_handle().compute(
@@ -588,7 +587,7 @@ struct operation
                 const std::vector<argument>& input,
                 const std::vector<module_ref>& module_args,
                 std::function<std::vector<argument>(
-                    module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)> run)
+                    context&, module_ref, const std::unordered_map<std::string, argument>&)> run)
             const                                                         = 0;
         virtual value to_value() const                                    = 0;
         virtual void from_value(const value& v)                           = 0;
@@ -758,7 +757,7 @@ struct operation
         const std::vector<argument>& input,
         const std::vector<module_ref>& module_args,
         std::function<std::vector<argument>(
-            module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)> run)
+            context&, module_ref, const std::unordered_map<std::string, argument>&)> run)
         -> decltype(private_detail_te_self.compute(ctx, input, module_args, std::move(run)))
     {
         return private_detail_te_self.compute(ctx, input, module_args, std::move(run));
@@ -772,7 +771,7 @@ struct operation
         const std::vector<argument>& input,
         const std::vector<module_ref>& module_args,
         std::function<std::vector<argument>(
-            module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)> run)
+            context&, module_ref, const std::unordered_map<std::string, argument>&)> run)
     {
         return detail::compute_op(private_detail_te_self, ctx, input, module_args, std::move(run));
     }
@@ -914,7 +913,7 @@ struct operation
                 const std::vector<argument>& input,
                 const std::vector<module_ref>& module_args,
                 std::function<std::vector<argument>(
-                    module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)> run)
+                    context&, module_ref, const std::unordered_map<std::string, argument>&)> run)
             const override
         {
 
