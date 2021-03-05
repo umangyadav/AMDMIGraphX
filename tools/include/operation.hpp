@@ -250,8 +250,8 @@ auto compute_op(rank<1>,
 }
 
 template <class T, class F>
-argument
-    compute_op(rank<0>, const T& x, context&, const std::vector<argument>&, const std::vector<module_ref>&, F)
+argument compute_op(
+    rank<0>, const T& x, context&, const std::vector<argument>&, const std::vector<module_ref>&, F)
 {
     std::string name = x.name();
     MIGRAPHX_THROW("Not computable: " + name);
