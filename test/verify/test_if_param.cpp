@@ -33,4 +33,9 @@ struct test_if_param : verify_program<test_if_param>
 
         return p;
     }
+
+    bool run_cpu() const 
+    {
+        return false;
+    }
 };
