@@ -31,8 +31,5 @@ struct test_if_literal : verify_program<test_if_literal>
         return p;
     }
 
-    bool run_cpu() const 
-    {
-        return false;
-    }
+    bool run_cpu() const { return false; }
 };

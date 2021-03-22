@@ -32,8 +32,5 @@ struct test_if_lp : verify_program<test_if_lp>
         return p;
     }
 
-    bool run_cpu() const 
-    {
-        return false;
-    }
+    bool run_cpu() const { return false; }
 };
