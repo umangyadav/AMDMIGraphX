@@ -684,8 +684,8 @@ struct find_add_convs
 
         if(a_op != b_op)
         {
-            if(std::tie(a_op.padding, a_op.dilation, a_op.group) ==
-                   std::tie(b_op.padding, b_op.dilation, b_op.group) and
+            if(std::tie(a_op.padding_l, a_op.padding_r, a_op.dilation, a_op.group) ==
+                   std::tie(b_op.padding_l, b_op.padding_r, b_op.dilation, b_op.group) and
                a_weights->get_shape().lens()[2] == 1 and a_weights->get_shape().lens()[3] == 1)
             {
                 if(a_op.stride < b_op.stride)

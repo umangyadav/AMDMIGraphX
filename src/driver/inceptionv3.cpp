@@ -958,7 +958,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     auto mx483 = mm->add_literal(migraphx::generate_literal(
         migraphx::shape{migraphx::shape::float_type, {32, 3, 3, 3}}, 483));
     migraphx::op::convolution convolution484;
-    convolution484.padding  = {0, 0};
+    convolution484.padding()  = {0, 0};
     convolution484.stride   = {2, 2};
     convolution484.dilation = {1, 1};
     convolution484.group    = 1;
@@ -970,7 +970,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu486;
     auto mx486 = mm->add_instruction(relu486, mx485);
     migraphx::op::convolution convolution487;
-    convolution487.padding  = {0, 0};
+    convolution487.padding()  = {0, 0};
     convolution487.stride   = {1, 1};
     convolution487.dilation = {1, 1};
     convolution487.group    = 1;
@@ -982,7 +982,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu489;
     auto mx489 = mm->add_instruction(relu489, mx488);
     migraphx::op::convolution convolution490;
-    convolution490.padding  = {1, 1};
+    convolution490.padding()  = {1, 1};
     convolution490.stride   = {1, 1};
     convolution490.dilation = {1, 1};
     convolution490.group    = 1;
@@ -1000,7 +1000,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling493.lengths = {3, 3};
     auto mx493         = mm->add_instruction(pooling493, mx492);
     migraphx::op::convolution convolution494;
-    convolution494.padding  = {0, 0};
+    convolution494.padding()  = {0, 0};
     convolution494.stride   = {1, 1};
     convolution494.dilation = {1, 1};
     convolution494.group    = 1;
@@ -1012,7 +1012,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu496;
     auto mx496 = mm->add_instruction(relu496, mx495);
     migraphx::op::convolution convolution497;
-    convolution497.padding  = {0, 0};
+    convolution497.padding()  = {0, 0};
     convolution497.stride   = {1, 1};
     convolution497.dilation = {1, 1};
     convolution497.group    = 1;
@@ -1030,7 +1030,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling500.lengths = {3, 3};
     auto mx500         = mm->add_instruction(pooling500, mx499);
     migraphx::op::convolution convolution501;
-    convolution501.padding  = {0, 0};
+    convolution501.padding()  = {0, 0};
     convolution501.stride   = {1, 1};
     convolution501.dilation = {1, 1};
     convolution501.group    = 1;
@@ -1042,7 +1042,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu503;
     auto mx503 = mm->add_instruction(relu503, mx502);
     migraphx::op::convolution convolution504;
-    convolution504.padding  = {0, 0};
+    convolution504.padding()  = {0, 0};
     convolution504.stride   = {1, 1};
     convolution504.dilation = {1, 1};
     convolution504.group    = 1;
@@ -1054,7 +1054,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu506;
     auto mx506 = mm->add_instruction(relu506, mx505);
     migraphx::op::convolution convolution507;
-    convolution507.padding  = {2, 2};
+    convolution507.padding()  = {2, 2};
     convolution507.stride   = {1, 1};
     convolution507.dilation = {1, 1};
     convolution507.group    = 1;
@@ -1066,7 +1066,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu509;
     auto mx509 = mm->add_instruction(relu509, mx508);
     migraphx::op::convolution convolution510;
-    convolution510.padding  = {0, 0};
+    convolution510.padding()  = {0, 0};
     convolution510.stride   = {1, 1};
     convolution510.dilation = {1, 1};
     convolution510.group    = 1;
@@ -1078,7 +1078,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu512;
     auto mx512 = mm->add_instruction(relu512, mx511);
     migraphx::op::convolution convolution513;
-    convolution513.padding  = {1, 1};
+    convolution513.padding()  = {1, 1};
     convolution513.stride   = {1, 1};
     convolution513.dilation = {1, 1};
     convolution513.group    = 1;
@@ -1090,7 +1090,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu515;
     auto mx515 = mm->add_instruction(relu515, mx514);
     migraphx::op::convolution convolution516;
-    convolution516.padding  = {1, 1};
+    convolution516.padding()  = {1, 1};
     convolution516.stride   = {1, 1};
     convolution516.dilation = {1, 1};
     convolution516.group    = 1;
@@ -1108,7 +1108,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling519.lengths = {3, 3};
     auto mx519         = mm->add_instruction(pooling519, mx500);
     migraphx::op::convolution convolution520;
-    convolution520.padding  = {0, 0};
+    convolution520.padding()  = {0, 0};
     convolution520.stride   = {1, 1};
     convolution520.dilation = {1, 1};
     convolution520.group    = 1;
@@ -1123,7 +1123,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat523.axis = 1;
     auto mx523     = mm->add_instruction(concat523, mx503, mx509, mx518, mx522);
     migraphx::op::convolution convolution524;
-    convolution524.padding  = {0, 0};
+    convolution524.padding()  = {0, 0};
     convolution524.stride   = {1, 1};
     convolution524.dilation = {1, 1};
     convolution524.group    = 1;
@@ -1135,7 +1135,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu526;
     auto mx526 = mm->add_instruction(relu526, mx525);
     migraphx::op::convolution convolution527;
-    convolution527.padding  = {0, 0};
+    convolution527.padding()  = {0, 0};
     convolution527.stride   = {1, 1};
     convolution527.dilation = {1, 1};
     convolution527.group    = 1;
@@ -1147,7 +1147,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu529;
     auto mx529 = mm->add_instruction(relu529, mx528);
     migraphx::op::convolution convolution530;
-    convolution530.padding  = {2, 2};
+    convolution530.padding()  = {2, 2};
     convolution530.stride   = {1, 1};
     convolution530.dilation = {1, 1};
     convolution530.group    = 1;
@@ -1159,7 +1159,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu532;
     auto mx532 = mm->add_instruction(relu532, mx531);
     migraphx::op::convolution convolution533;
-    convolution533.padding  = {0, 0};
+    convolution533.padding()  = {0, 0};
     convolution533.stride   = {1, 1};
     convolution533.dilation = {1, 1};
     convolution533.group    = 1;
@@ -1171,7 +1171,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu535;
     auto mx535 = mm->add_instruction(relu535, mx534);
     migraphx::op::convolution convolution536;
-    convolution536.padding  = {1, 1};
+    convolution536.padding()  = {1, 1};
     convolution536.stride   = {1, 1};
     convolution536.dilation = {1, 1};
     convolution536.group    = 1;
@@ -1183,7 +1183,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu538;
     auto mx538 = mm->add_instruction(relu538, mx537);
     migraphx::op::convolution convolution539;
-    convolution539.padding  = {1, 1};
+    convolution539.padding()  = {1, 1};
     convolution539.stride   = {1, 1};
     convolution539.dilation = {1, 1};
     convolution539.group    = 1;
@@ -1201,7 +1201,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling542.lengths = {3, 3};
     auto mx542         = mm->add_instruction(pooling542, mx523);
     migraphx::op::convolution convolution543;
-    convolution543.padding  = {0, 0};
+    convolution543.padding()  = {0, 0};
     convolution543.stride   = {1, 1};
     convolution543.dilation = {1, 1};
     convolution543.group    = 1;
@@ -1216,7 +1216,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat546.axis = 1;
     auto mx546     = mm->add_instruction(concat546, mx526, mx532, mx541, mx545);
     migraphx::op::convolution convolution547;
-    convolution547.padding  = {0, 0};
+    convolution547.padding()  = {0, 0};
     convolution547.stride   = {1, 1};
     convolution547.dilation = {1, 1};
     convolution547.group    = 1;
@@ -1228,7 +1228,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu549;
     auto mx549 = mm->add_instruction(relu549, mx548);
     migraphx::op::convolution convolution550;
-    convolution550.padding  = {0, 0};
+    convolution550.padding()  = {0, 0};
     convolution550.stride   = {1, 1};
     convolution550.dilation = {1, 1};
     convolution550.group    = 1;
@@ -1240,7 +1240,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu552;
     auto mx552 = mm->add_instruction(relu552, mx551);
     migraphx::op::convolution convolution553;
-    convolution553.padding  = {2, 2};
+    convolution553.padding()  = {2, 2};
     convolution553.stride   = {1, 1};
     convolution553.dilation = {1, 1};
     convolution553.group    = 1;
@@ -1252,7 +1252,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu555;
     auto mx555 = mm->add_instruction(relu555, mx554);
     migraphx::op::convolution convolution556;
-    convolution556.padding  = {0, 0};
+    convolution556.padding()  = {0, 0};
     convolution556.stride   = {1, 1};
     convolution556.dilation = {1, 1};
     convolution556.group    = 1;
@@ -1264,7 +1264,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu558;
     auto mx558 = mm->add_instruction(relu558, mx557);
     migraphx::op::convolution convolution559;
-    convolution559.padding  = {1, 1};
+    convolution559.padding()  = {1, 1};
     convolution559.stride   = {1, 1};
     convolution559.dilation = {1, 1};
     convolution559.group    = 1;
@@ -1276,7 +1276,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu561;
     auto mx561 = mm->add_instruction(relu561, mx560);
     migraphx::op::convolution convolution562;
-    convolution562.padding  = {1, 1};
+    convolution562.padding()  = {1, 1};
     convolution562.stride   = {1, 1};
     convolution562.dilation = {1, 1};
     convolution562.group    = 1;
@@ -1294,7 +1294,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling565.lengths = {3, 3};
     auto mx565         = mm->add_instruction(pooling565, mx546);
     migraphx::op::convolution convolution566;
-    convolution566.padding  = {0, 0};
+    convolution566.padding()  = {0, 0};
     convolution566.stride   = {1, 1};
     convolution566.dilation = {1, 1};
     convolution566.group    = 1;
@@ -1309,7 +1309,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat569.axis = 1;
     auto mx569     = mm->add_instruction(concat569, mx549, mx555, mx564, mx568);
     migraphx::op::convolution convolution570;
-    convolution570.padding  = {0, 0};
+    convolution570.padding()  = {0, 0};
     convolution570.stride   = {2, 2};
     convolution570.dilation = {1, 1};
     convolution570.group    = 1;
@@ -1321,7 +1321,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu572;
     auto mx572 = mm->add_instruction(relu572, mx571);
     migraphx::op::convolution convolution573;
-    convolution573.padding  = {0, 0};
+    convolution573.padding()  = {0, 0};
     convolution573.stride   = {1, 1};
     convolution573.dilation = {1, 1};
     convolution573.group    = 1;
@@ -1333,7 +1333,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu575;
     auto mx575 = mm->add_instruction(relu575, mx574);
     migraphx::op::convolution convolution576;
-    convolution576.padding  = {1, 1};
+    convolution576.padding()  = {1, 1};
     convolution576.stride   = {1, 1};
     convolution576.dilation = {1, 1};
     convolution576.group    = 1;
@@ -1345,7 +1345,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu578;
     auto mx578 = mm->add_instruction(relu578, mx577);
     migraphx::op::convolution convolution579;
-    convolution579.padding  = {0, 0};
+    convolution579.padding()  = {0, 0};
     convolution579.stride   = {2, 2};
     convolution579.dilation = {1, 1};
     convolution579.group    = 1;
@@ -1366,7 +1366,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat583.axis = 1;
     auto mx583     = mm->add_instruction(concat583, mx572, mx581, mx582);
     migraphx::op::convolution convolution584;
-    convolution584.padding  = {0, 0};
+    convolution584.padding()  = {0, 0};
     convolution584.stride   = {1, 1};
     convolution584.dilation = {1, 1};
     convolution584.group    = 1;
@@ -1378,7 +1378,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu586;
     auto mx586 = mm->add_instruction(relu586, mx585);
     migraphx::op::convolution convolution587;
-    convolution587.padding  = {0, 0};
+    convolution587.padding()  = {0, 0};
     convolution587.stride   = {1, 1};
     convolution587.dilation = {1, 1};
     convolution587.group    = 1;
@@ -1390,7 +1390,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu589;
     auto mx589 = mm->add_instruction(relu589, mx588);
     migraphx::op::convolution convolution590;
-    convolution590.padding  = {0, 3};
+    convolution590.padding()  = {0, 3};
     convolution590.stride   = {1, 1};
     convolution590.dilation = {1, 1};
     convolution590.group    = 1;
@@ -1402,7 +1402,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu592;
     auto mx592 = mm->add_instruction(relu592, mx591);
     migraphx::op::convolution convolution593;
-    convolution593.padding  = {3, 0};
+    convolution593.padding()  = {3, 0};
     convolution593.stride   = {1, 1};
     convolution593.dilation = {1, 1};
     convolution593.group    = 1;
@@ -1414,7 +1414,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu595;
     auto mx595 = mm->add_instruction(relu595, mx594);
     migraphx::op::convolution convolution596;
-    convolution596.padding  = {0, 0};
+    convolution596.padding()  = {0, 0};
     convolution596.stride   = {1, 1};
     convolution596.dilation = {1, 1};
     convolution596.group    = 1;
@@ -1426,7 +1426,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu598;
     auto mx598 = mm->add_instruction(relu598, mx597);
     migraphx::op::convolution convolution599;
-    convolution599.padding  = {3, 0};
+    convolution599.padding()  = {3, 0};
     convolution599.stride   = {1, 1};
     convolution599.dilation = {1, 1};
     convolution599.group    = 1;
@@ -1438,7 +1438,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu601;
     auto mx601 = mm->add_instruction(relu601, mx600);
     migraphx::op::convolution convolution602;
-    convolution602.padding  = {0, 3};
+    convolution602.padding()  = {0, 3};
     convolution602.stride   = {1, 1};
     convolution602.dilation = {1, 1};
     convolution602.group    = 1;
@@ -1450,7 +1450,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu604;
     auto mx604 = mm->add_instruction(relu604, mx603);
     migraphx::op::convolution convolution605;
-    convolution605.padding  = {3, 0};
+    convolution605.padding()  = {3, 0};
     convolution605.stride   = {1, 1};
     convolution605.dilation = {1, 1};
     convolution605.group    = 1;
@@ -1462,7 +1462,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu607;
     auto mx607 = mm->add_instruction(relu607, mx606);
     migraphx::op::convolution convolution608;
-    convolution608.padding  = {0, 3};
+    convolution608.padding()  = {0, 3};
     convolution608.stride   = {1, 1};
     convolution608.dilation = {1, 1};
     convolution608.group    = 1;
@@ -1480,7 +1480,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling611.lengths = {3, 3};
     auto mx611         = mm->add_instruction(pooling611, mx583);
     migraphx::op::convolution convolution612;
-    convolution612.padding  = {0, 0};
+    convolution612.padding()  = {0, 0};
     convolution612.stride   = {1, 1};
     convolution612.dilation = {1, 1};
     convolution612.group    = 1;
@@ -1495,7 +1495,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat615.axis = 1;
     auto mx615     = mm->add_instruction(concat615, mx586, mx595, mx610, mx614);
     migraphx::op::convolution convolution616;
-    convolution616.padding  = {0, 0};
+    convolution616.padding()  = {0, 0};
     convolution616.stride   = {1, 1};
     convolution616.dilation = {1, 1};
     convolution616.group    = 1;
@@ -1507,7 +1507,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu618;
     auto mx618 = mm->add_instruction(relu618, mx617);
     migraphx::op::convolution convolution619;
-    convolution619.padding  = {0, 0};
+    convolution619.padding()  = {0, 0};
     convolution619.stride   = {1, 1};
     convolution619.dilation = {1, 1};
     convolution619.group    = 1;
@@ -1519,7 +1519,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu621;
     auto mx621 = mm->add_instruction(relu621, mx620);
     migraphx::op::convolution convolution622;
-    convolution622.padding  = {0, 3};
+    convolution622.padding()  = {0, 3};
     convolution622.stride   = {1, 1};
     convolution622.dilation = {1, 1};
     convolution622.group    = 1;
@@ -1531,7 +1531,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu624;
     auto mx624 = mm->add_instruction(relu624, mx623);
     migraphx::op::convolution convolution625;
-    convolution625.padding  = {3, 0};
+    convolution625.padding()  = {3, 0};
     convolution625.stride   = {1, 1};
     convolution625.dilation = {1, 1};
     convolution625.group    = 1;
@@ -1543,7 +1543,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu627;
     auto mx627 = mm->add_instruction(relu627, mx626);
     migraphx::op::convolution convolution628;
-    convolution628.padding  = {0, 0};
+    convolution628.padding()  = {0, 0};
     convolution628.stride   = {1, 1};
     convolution628.dilation = {1, 1};
     convolution628.group    = 1;
@@ -1555,7 +1555,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu630;
     auto mx630 = mm->add_instruction(relu630, mx629);
     migraphx::op::convolution convolution631;
-    convolution631.padding  = {3, 0};
+    convolution631.padding()  = {3, 0};
     convolution631.stride   = {1, 1};
     convolution631.dilation = {1, 1};
     convolution631.group    = 1;
@@ -1567,7 +1567,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu633;
     auto mx633 = mm->add_instruction(relu633, mx632);
     migraphx::op::convolution convolution634;
-    convolution634.padding  = {0, 3};
+    convolution634.padding()  = {0, 3};
     convolution634.stride   = {1, 1};
     convolution634.dilation = {1, 1};
     convolution634.group    = 1;
@@ -1579,7 +1579,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu636;
     auto mx636 = mm->add_instruction(relu636, mx635);
     migraphx::op::convolution convolution637;
-    convolution637.padding  = {3, 0};
+    convolution637.padding()  = {3, 0};
     convolution637.stride   = {1, 1};
     convolution637.dilation = {1, 1};
     convolution637.group    = 1;
@@ -1591,7 +1591,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu639;
     auto mx639 = mm->add_instruction(relu639, mx638);
     migraphx::op::convolution convolution640;
-    convolution640.padding  = {0, 3};
+    convolution640.padding()  = {0, 3};
     convolution640.stride   = {1, 1};
     convolution640.dilation = {1, 1};
     convolution640.group    = 1;
@@ -1609,7 +1609,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling643.lengths = {3, 3};
     auto mx643         = mm->add_instruction(pooling643, mx615);
     migraphx::op::convolution convolution644;
-    convolution644.padding  = {0, 0};
+    convolution644.padding()  = {0, 0};
     convolution644.stride   = {1, 1};
     convolution644.dilation = {1, 1};
     convolution644.group    = 1;
@@ -1624,7 +1624,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat647.axis = 1;
     auto mx647     = mm->add_instruction(concat647, mx618, mx627, mx642, mx646);
     migraphx::op::convolution convolution648;
-    convolution648.padding  = {0, 0};
+    convolution648.padding()  = {0, 0};
     convolution648.stride   = {1, 1};
     convolution648.dilation = {1, 1};
     convolution648.group    = 1;
@@ -1636,7 +1636,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu650;
     auto mx650 = mm->add_instruction(relu650, mx649);
     migraphx::op::convolution convolution651;
-    convolution651.padding  = {0, 0};
+    convolution651.padding()  = {0, 0};
     convolution651.stride   = {1, 1};
     convolution651.dilation = {1, 1};
     convolution651.group    = 1;
@@ -1648,7 +1648,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu653;
     auto mx653 = mm->add_instruction(relu653, mx652);
     migraphx::op::convolution convolution654;
-    convolution654.padding  = {0, 3};
+    convolution654.padding()  = {0, 3};
     convolution654.stride   = {1, 1};
     convolution654.dilation = {1, 1};
     convolution654.group    = 1;
@@ -1660,7 +1660,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu656;
     auto mx656 = mm->add_instruction(relu656, mx655);
     migraphx::op::convolution convolution657;
-    convolution657.padding  = {3, 0};
+    convolution657.padding()  = {3, 0};
     convolution657.stride   = {1, 1};
     convolution657.dilation = {1, 1};
     convolution657.group    = 1;
@@ -1672,7 +1672,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu659;
     auto mx659 = mm->add_instruction(relu659, mx658);
     migraphx::op::convolution convolution660;
-    convolution660.padding  = {0, 0};
+    convolution660.padding()  = {0, 0};
     convolution660.stride   = {1, 1};
     convolution660.dilation = {1, 1};
     convolution660.group    = 1;
@@ -1684,7 +1684,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu662;
     auto mx662 = mm->add_instruction(relu662, mx661);
     migraphx::op::convolution convolution663;
-    convolution663.padding  = {3, 0};
+    convolution663.padding()  = {3, 0};
     convolution663.stride   = {1, 1};
     convolution663.dilation = {1, 1};
     convolution663.group    = 1;
@@ -1696,7 +1696,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu665;
     auto mx665 = mm->add_instruction(relu665, mx664);
     migraphx::op::convolution convolution666;
-    convolution666.padding  = {0, 3};
+    convolution666.padding()  = {0, 3};
     convolution666.stride   = {1, 1};
     convolution666.dilation = {1, 1};
     convolution666.group    = 1;
@@ -1708,7 +1708,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu668;
     auto mx668 = mm->add_instruction(relu668, mx667);
     migraphx::op::convolution convolution669;
-    convolution669.padding  = {3, 0};
+    convolution669.padding()  = {3, 0};
     convolution669.stride   = {1, 1};
     convolution669.dilation = {1, 1};
     convolution669.group    = 1;
@@ -1720,7 +1720,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu671;
     auto mx671 = mm->add_instruction(relu671, mx670);
     migraphx::op::convolution convolution672;
-    convolution672.padding  = {0, 3};
+    convolution672.padding()  = {0, 3};
     convolution672.stride   = {1, 1};
     convolution672.dilation = {1, 1};
     convolution672.group    = 1;
@@ -1738,7 +1738,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling675.lengths = {3, 3};
     auto mx675         = mm->add_instruction(pooling675, mx647);
     migraphx::op::convolution convolution676;
-    convolution676.padding  = {0, 0};
+    convolution676.padding()  = {0, 0};
     convolution676.stride   = {1, 1};
     convolution676.dilation = {1, 1};
     convolution676.group    = 1;
@@ -1753,7 +1753,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat679.axis = 1;
     auto mx679     = mm->add_instruction(concat679, mx650, mx659, mx674, mx678);
     migraphx::op::convolution convolution680;
-    convolution680.padding  = {0, 0};
+    convolution680.padding()  = {0, 0};
     convolution680.stride   = {1, 1};
     convolution680.dilation = {1, 1};
     convolution680.group    = 1;
@@ -1765,7 +1765,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu682;
     auto mx682 = mm->add_instruction(relu682, mx681);
     migraphx::op::convolution convolution683;
-    convolution683.padding  = {0, 0};
+    convolution683.padding()  = {0, 0};
     convolution683.stride   = {1, 1};
     convolution683.dilation = {1, 1};
     convolution683.group    = 1;
@@ -1777,7 +1777,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu685;
     auto mx685 = mm->add_instruction(relu685, mx684);
     migraphx::op::convolution convolution686;
-    convolution686.padding  = {0, 3};
+    convolution686.padding()  = {0, 3};
     convolution686.stride   = {1, 1};
     convolution686.dilation = {1, 1};
     convolution686.group    = 1;
@@ -1789,7 +1789,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu688;
     auto mx688 = mm->add_instruction(relu688, mx687);
     migraphx::op::convolution convolution689;
-    convolution689.padding  = {3, 0};
+    convolution689.padding()  = {3, 0};
     convolution689.stride   = {1, 1};
     convolution689.dilation = {1, 1};
     convolution689.group    = 1;
@@ -1801,7 +1801,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu691;
     auto mx691 = mm->add_instruction(relu691, mx690);
     migraphx::op::convolution convolution692;
-    convolution692.padding  = {0, 0};
+    convolution692.padding()  = {0, 0};
     convolution692.stride   = {1, 1};
     convolution692.dilation = {1, 1};
     convolution692.group    = 1;
@@ -1813,7 +1813,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu694;
     auto mx694 = mm->add_instruction(relu694, mx693);
     migraphx::op::convolution convolution695;
-    convolution695.padding  = {3, 0};
+    convolution695.padding()  = {3, 0};
     convolution695.stride   = {1, 1};
     convolution695.dilation = {1, 1};
     convolution695.group    = 1;
@@ -1825,7 +1825,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu697;
     auto mx697 = mm->add_instruction(relu697, mx696);
     migraphx::op::convolution convolution698;
-    convolution698.padding  = {0, 3};
+    convolution698.padding()  = {0, 3};
     convolution698.stride   = {1, 1};
     convolution698.dilation = {1, 1};
     convolution698.group    = 1;
@@ -1837,7 +1837,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu700;
     auto mx700 = mm->add_instruction(relu700, mx699);
     migraphx::op::convolution convolution701;
-    convolution701.padding  = {3, 0};
+    convolution701.padding()  = {3, 0};
     convolution701.stride   = {1, 1};
     convolution701.dilation = {1, 1};
     convolution701.group    = 1;
@@ -1849,7 +1849,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu703;
     auto mx703 = mm->add_instruction(relu703, mx702);
     migraphx::op::convolution convolution704;
-    convolution704.padding  = {0, 3};
+    convolution704.padding()  = {0, 3};
     convolution704.stride   = {1, 1};
     convolution704.dilation = {1, 1};
     convolution704.group    = 1;
@@ -1867,7 +1867,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling707.lengths = {3, 3};
     auto mx707         = mm->add_instruction(pooling707, mx679);
     migraphx::op::convolution convolution708;
-    convolution708.padding  = {0, 0};
+    convolution708.padding()  = {0, 0};
     convolution708.stride   = {1, 1};
     convolution708.dilation = {1, 1};
     convolution708.group    = 1;
@@ -1882,7 +1882,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat711.axis = 1;
     auto mx711     = mm->add_instruction(concat711, mx682, mx691, mx706, mx710);
     migraphx::op::convolution convolution712;
-    convolution712.padding  = {0, 0};
+    convolution712.padding()  = {0, 0};
     convolution712.stride   = {1, 1};
     convolution712.dilation = {1, 1};
     convolution712.group    = 1;
@@ -1894,7 +1894,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu714;
     auto mx714 = mm->add_instruction(relu714, mx713);
     migraphx::op::convolution convolution715;
-    convolution715.padding  = {0, 0};
+    convolution715.padding()  = {0, 0};
     convolution715.stride   = {2, 2};
     convolution715.dilation = {1, 1};
     convolution715.group    = 1;
@@ -1906,7 +1906,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu717;
     auto mx717 = mm->add_instruction(relu717, mx716);
     migraphx::op::convolution convolution718;
-    convolution718.padding  = {0, 0};
+    convolution718.padding()  = {0, 0};
     convolution718.stride   = {1, 1};
     convolution718.dilation = {1, 1};
     convolution718.group    = 1;
@@ -1918,7 +1918,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu720;
     auto mx720 = mm->add_instruction(relu720, mx719);
     migraphx::op::convolution convolution721;
-    convolution721.padding  = {0, 3};
+    convolution721.padding()  = {0, 3};
     convolution721.stride   = {1, 1};
     convolution721.dilation = {1, 1};
     convolution721.group    = 1;
@@ -1930,7 +1930,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu723;
     auto mx723 = mm->add_instruction(relu723, mx722);
     migraphx::op::convolution convolution724;
-    convolution724.padding  = {3, 0};
+    convolution724.padding()  = {3, 0};
     convolution724.stride   = {1, 1};
     convolution724.dilation = {1, 1};
     convolution724.group    = 1;
@@ -1942,7 +1942,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu726;
     auto mx726 = mm->add_instruction(relu726, mx725);
     migraphx::op::convolution convolution727;
-    convolution727.padding  = {0, 0};
+    convolution727.padding()  = {0, 0};
     convolution727.stride   = {2, 2};
     convolution727.dilation = {1, 1};
     convolution727.group    = 1;
@@ -1963,7 +1963,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat731.axis = 1;
     auto mx731     = mm->add_instruction(concat731, mx717, mx729, mx730);
     migraphx::op::convolution convolution732;
-    convolution732.padding  = {0, 0};
+    convolution732.padding()  = {0, 0};
     convolution732.stride   = {1, 1};
     convolution732.dilation = {1, 1};
     convolution732.group    = 1;
@@ -1975,7 +1975,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu734;
     auto mx734 = mm->add_instruction(relu734, mx733);
     migraphx::op::convolution convolution735;
-    convolution735.padding  = {0, 0};
+    convolution735.padding()  = {0, 0};
     convolution735.stride   = {1, 1};
     convolution735.dilation = {1, 1};
     convolution735.group    = 1;
@@ -1987,7 +1987,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu737;
     auto mx737 = mm->add_instruction(relu737, mx736);
     migraphx::op::convolution convolution738;
-    convolution738.padding  = {0, 1};
+    convolution738.padding()  = {0, 1};
     convolution738.stride   = {1, 1};
     convolution738.dilation = {1, 1};
     convolution738.group    = 1;
@@ -1999,7 +1999,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu740;
     auto mx740 = mm->add_instruction(relu740, mx739);
     migraphx::op::convolution convolution741;
-    convolution741.padding  = {1, 0};
+    convolution741.padding()  = {1, 0};
     convolution741.stride   = {1, 1};
     convolution741.dilation = {1, 1};
     convolution741.group    = 1;
@@ -2014,7 +2014,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat744.axis = 1;
     auto mx744     = mm->add_instruction(concat744, mx740, mx743);
     migraphx::op::convolution convolution745;
-    convolution745.padding  = {0, 0};
+    convolution745.padding()  = {0, 0};
     convolution745.stride   = {1, 1};
     convolution745.dilation = {1, 1};
     convolution745.group    = 1;
@@ -2026,7 +2026,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu747;
     auto mx747 = mm->add_instruction(relu747, mx746);
     migraphx::op::convolution convolution748;
-    convolution748.padding  = {1, 1};
+    convolution748.padding()  = {1, 1};
     convolution748.stride   = {1, 1};
     convolution748.dilation = {1, 1};
     convolution748.group    = 1;
@@ -2038,7 +2038,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu750;
     auto mx750 = mm->add_instruction(relu750, mx749);
     migraphx::op::convolution convolution751;
-    convolution751.padding  = {0, 1};
+    convolution751.padding()  = {0, 1};
     convolution751.stride   = {1, 1};
     convolution751.dilation = {1, 1};
     convolution751.group    = 1;
@@ -2050,7 +2050,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu753;
     auto mx753 = mm->add_instruction(relu753, mx752);
     migraphx::op::convolution convolution754;
-    convolution754.padding  = {1, 0};
+    convolution754.padding()  = {1, 0};
     convolution754.stride   = {1, 1};
     convolution754.dilation = {1, 1};
     convolution754.group    = 1;
@@ -2071,7 +2071,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling758.lengths = {3, 3};
     auto mx758         = mm->add_instruction(pooling758, mx731);
     migraphx::op::convolution convolution759;
-    convolution759.padding  = {0, 0};
+    convolution759.padding()  = {0, 0};
     convolution759.stride   = {1, 1};
     convolution759.dilation = {1, 1};
     convolution759.group    = 1;
@@ -2086,7 +2086,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat762.axis = 1;
     auto mx762     = mm->add_instruction(concat762, mx734, mx744, mx757, mx761);
     migraphx::op::convolution convolution763;
-    convolution763.padding  = {0, 0};
+    convolution763.padding()  = {0, 0};
     convolution763.stride   = {1, 1};
     convolution763.dilation = {1, 1};
     convolution763.group    = 1;
@@ -2098,7 +2098,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu765;
     auto mx765 = mm->add_instruction(relu765, mx764);
     migraphx::op::convolution convolution766;
-    convolution766.padding  = {0, 0};
+    convolution766.padding()  = {0, 0};
     convolution766.stride   = {1, 1};
     convolution766.dilation = {1, 1};
     convolution766.group    = 1;
@@ -2110,7 +2110,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu768;
     auto mx768 = mm->add_instruction(relu768, mx767);
     migraphx::op::convolution convolution769;
-    convolution769.padding  = {0, 1};
+    convolution769.padding()  = {0, 1};
     convolution769.stride   = {1, 1};
     convolution769.dilation = {1, 1};
     convolution769.group    = 1;
@@ -2122,7 +2122,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu771;
     auto mx771 = mm->add_instruction(relu771, mx770);
     migraphx::op::convolution convolution772;
-    convolution772.padding  = {1, 0};
+    convolution772.padding()  = {1, 0};
     convolution772.stride   = {1, 1};
     convolution772.dilation = {1, 1};
     convolution772.group    = 1;
@@ -2137,7 +2137,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     concat775.axis = 1;
     auto mx775     = mm->add_instruction(concat775, mx771, mx774);
     migraphx::op::convolution convolution776;
-    convolution776.padding  = {0, 0};
+    convolution776.padding()  = {0, 0};
     convolution776.stride   = {1, 1};
     convolution776.dilation = {1, 1};
     convolution776.group    = 1;
@@ -2149,7 +2149,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu778;
     auto mx778 = mm->add_instruction(relu778, mx777);
     migraphx::op::convolution convolution779;
-    convolution779.padding  = {1, 1};
+    convolution779.padding()  = {1, 1};
     convolution779.stride   = {1, 1};
     convolution779.dilation = {1, 1};
     convolution779.group    = 1;
@@ -2161,7 +2161,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu781;
     auto mx781 = mm->add_instruction(relu781, mx780);
     migraphx::op::convolution convolution782;
-    convolution782.padding  = {0, 1};
+    convolution782.padding()  = {0, 1};
     convolution782.stride   = {1, 1};
     convolution782.dilation = {1, 1};
     convolution782.group    = 1;
@@ -2173,7 +2173,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     migraphx::op::relu relu784;
     auto mx784 = mm->add_instruction(relu784, mx783);
     migraphx::op::convolution convolution785;
-    convolution785.padding  = {1, 0};
+    convolution785.padding()  = {1, 0};
     convolution785.stride   = {1, 1};
     convolution785.dilation = {1, 1};
     convolution785.group    = 1;
@@ -2194,7 +2194,7 @@ migraphx::program inceptionv3(unsigned batch) // NOLINT(readability-function-siz
     pooling789.lengths = {3, 3};
     auto mx789         = mm->add_instruction(pooling789, mx762);
     migraphx::op::convolution convolution790;
-    convolution790.padding  = {0, 0};
+    convolution790.padding()  = {0, 0};
     convolution790.stride   = {1, 1};
     convolution790.dilation = {1, 1};
     convolution790.group    = 1;

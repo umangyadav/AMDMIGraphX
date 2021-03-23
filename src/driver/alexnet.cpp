@@ -46,7 +46,7 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     auto mx15 = mm->add_literal(migraphx::generate_literal(
         migraphx::shape{migraphx::shape::float_type, {64, 3, 11, 11}}, 15));
     migraphx::op::convolution convolution16;
-    convolution16.padding  = {2, 2};
+    convolution16.padding()  = {2, 2};
     convolution16.stride   = {4, 4};
     convolution16.dilation = {1, 1};
     convolution16.group    = 1;
@@ -66,7 +66,7 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     pooling20.lengths = {3, 3};
     auto mx20         = mm->add_instruction(pooling20, mx19);
     migraphx::op::convolution convolution21;
-    convolution21.padding  = {2, 2};
+    convolution21.padding()  = {2, 2};
     convolution21.stride   = {1, 1};
     convolution21.dilation = {1, 1};
     convolution21.group    = 1;
@@ -86,7 +86,7 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     pooling25.lengths = {3, 3};
     auto mx25         = mm->add_instruction(pooling25, mx24);
     migraphx::op::convolution convolution26;
-    convolution26.padding  = {1, 1};
+    convolution26.padding()  = {1, 1};
     convolution26.stride   = {1, 1};
     convolution26.dilation = {1, 1};
     convolution26.group    = 1;
@@ -100,7 +100,7 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     migraphx::op::relu relu29;
     auto mx29 = mm->add_instruction(relu29, mx28);
     migraphx::op::convolution convolution30;
-    convolution30.padding  = {1, 1};
+    convolution30.padding()  = {1, 1};
     convolution30.stride   = {1, 1};
     convolution30.dilation = {1, 1};
     convolution30.group    = 1;
@@ -114,7 +114,7 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     migraphx::op::relu relu33;
     auto mx33 = mm->add_instruction(relu33, mx32);
     migraphx::op::convolution convolution34;
-    convolution34.padding  = {1, 1};
+    convolution34.padding()  = {1, 1};
     convolution34.stride   = {1, 1};
     convolution34.dilation = {1, 1};
     convolution34.group    = 1;

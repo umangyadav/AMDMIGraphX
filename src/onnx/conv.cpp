@@ -7,10 +7,15 @@ namespace onnx {
 
 void recalc_conv_attributes(value& v, size_t kdims)
 {
-    if(v["padding"].size() != kdims)
+    if(v["padding_l"].size() != kdims)
     {
-        v["padding"].resize(kdims);
-        std::fill_n(v["padding"].begin(), kdims, 0);
+        v["padding_l"].resize(kdims);
+        std::fill_n(v["padding_l"].begin(), kdims, 0);
+    }
+    if(v["padding_r"].size() != kdims)
+    {
+        v["padding_r"].resize(kdims);
+        std::fill_n(v["padding_r"].begin(), kdims, 0);
     }
     if(v["stride"].size() != kdims)
     {

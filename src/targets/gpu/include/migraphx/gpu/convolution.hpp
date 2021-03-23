@@ -21,8 +21,8 @@ struct miopen_convolution
     template <class Self, class F>
     static auto reflect(Self& self, F f)
     {
-        return pack(f(self.op.padding, "padding"),
-                    f(self.op.stride, "stride"),
+        return pack(f(self.op.padding_l, "padding_left"),
+                    f(self.op.padding_r, "padding_right"),
                     f(self.op.dilation, "dilation"),
                     f(self.op.group, "group"),
                     f(self.op.padding_mode, "padding_mode"),

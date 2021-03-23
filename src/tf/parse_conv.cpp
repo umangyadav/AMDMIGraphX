@@ -62,15 +62,17 @@ struct parse_conv : op_parser<parse_conv>
                 calculate_padding(0, pads, input_dims[2], op.stride[0], op.dilation[0], weight_h);
                 calculate_padding(1, pads, input_dims[3], op.stride[1], op.dilation[1], weight_w);
 
-                if(pads[0] != pads[2] || pads[1] != pads[3])
+                // if(pads[0] != pads[2] || pads[1] != pads[3])
+                // {
+                //     std::vector<int64_t> padding = {0, 0, pads[0], pads[1], 0, 0, pads[2], pads[3]};
+                //     l0 = info.add_instruction(migraphx::make_op("pad", {{"pads", padding}}), l0);
+                // }
+                // else
                 {
-                    std::vector<int64_t> padding = {0, 0, pads[0], pads[1], 0, 0, pads[2], pads[3]};
-                    l0 = info.add_instruction(migraphx::make_op("pad", {{"pads", padding}}), l0);
-                }
-                else
-                {
-                    op.padding[0] = pads[0];
-                    op.padding[1] = pads[1];
+                    op.padding_l[0] = pads[0];
+                    op.padding_l[1] = pads[1];
+                    op.padding_r[0] = pads[2];
+                    op.padding_r[1] = pads[3];
                 }
             }
             else if(pad_mode.find("VALID") != std::string::npos)
@@ -86,12 +88,14 @@ struct parse_conv : op_parser<parse_conv>
                 {
                     MIGRAPHX_THROW("padding should have 4 values");
                 }
-                if(padding[0] != padding[2] || padding[1] != padding[3])
-                {
-                    MIGRAPHX_THROW("migraphx does not support asymetric padding");
-                }
-                op.padding[0] = padding[0];
-                op.padding[1] = padding[1];
+                // if(padding[0] != padding[2] || padding[1] != padding[3])
+                // {
+                //     MIGRAPHX_THROW("migraphx does not support asymetric padding");
+                // }
+                op.padding_l[0] = padding[0];
+                op.padding_l[1] = padding[1];
+                op.padding_r[0] = padding[2];
+                op.padding_r[1] = padding[3];
             }
         }
         return info.add_instruction(op, {l0, weights});

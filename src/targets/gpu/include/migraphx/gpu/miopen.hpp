@@ -94,7 +94,7 @@ inline convolution_descriptor make_conv(const T& op)
     std::vector<int> stride(std::max(2, kdims), 1);
     std::vector<int> dilation(std::max(2, kdims), 1);
 
-    std::copy_backward(op.padding.begin(), op.padding.end(), padding.end());
+    std::copy_backward(op.padding().begin(), op.padding().end(), padding.end());
     std::copy_backward(op.stride.begin(), op.stride.end(), stride.end());
     std::copy_backward(op.dilation.begin(), op.dilation.end(), dilation.end());
 
@@ -118,7 +118,7 @@ inline convolution_descriptor make_deconv(const T& op)
     std::vector<int> stride(std::max(2, kdims), 1);
     std::vector<int> dilation(std::max(2, kdims), 1);
 
-    std::copy_backward(op.padding.begin(), op.padding.end(), padding.end());
+    std::copy_backward(op.padding().begin(), op.padding().end(), padding.end());
     std::copy_backward(op.stride.begin(), op.stride.end(), stride.end());
     std::copy_backward(op.dilation.begin(), op.dilation.end(), dilation.end());
 

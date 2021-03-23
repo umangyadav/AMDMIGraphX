@@ -18,7 +18,8 @@ namespace op {
 
 struct deconvolution
 {
-    std::vector<std::size_t> padding  = {0, 0};
+    std::vector<std::size_t> padding_l  = {0, 0};
+    std::vector<std::size_t> padding_r  = {0, 0};
     std::vector<std::size_t> stride   = {1, 1};
     std::vector<std::size_t> dilation = {1, 1};
 
@@ -28,7 +29,8 @@ struct deconvolution
     template <class Self, class F>
     static auto reflect(Self& self, F f)
     {
-        return pack(f(self.padding, "padding"),
+        return pack(f(self.padding_l, "padding_left"),
+                    f(self.padding_r, "padding_right"),
                     f(self.stride, "stride"),
                     f(self.dilation, "dilation"),
                     f(self.padding_mode, "padding_mode"),
@@ -39,7 +41,7 @@ struct deconvolution
 
     void check_attribute_size() const
     {
-        if(not(padding.size() == stride.size() and padding.size() == dilation.size()))
+        if(not(padding_l.size() == stride.size() and padding_l.size() == dilation.size() and padding_l.size() == padding_r.size()))
         {
             MIGRAPHX_THROW("deconvolution: inconsistent attribute sizes");
         }
@@ -65,7 +67,7 @@ struct deconvolution
             output_lens.push_back(std::size_t(std::max<std::ptrdiff_t>(
                 1,
                 stride[i] * (input.lens()[i + 2] - 1) +
-                    ((weights.lens()[i + 2] - 1) * dilation[i] + 1) - 2 * padding[i])));
+                    ((weights.lens()[i + 2] - 1) * dilation[i] + 1) - (padding_l[i] + padding_r[i]))));
         }
         return {t, output_lens};
     }
@@ -73,7 +75,14 @@ struct deconvolution
     size_t kdims() const
     {
         check_attribute_size();
-        return padding.size();
+        return padding_l.size();
+    }
+
+    std::vector<size_t> padding() const
+    {
+        if(padding_l != padding_r)
+            MIGRAPHX_THROW("CONVOLUTION: padding is asymmetric");
+        return padding_l;
     }
 };
 

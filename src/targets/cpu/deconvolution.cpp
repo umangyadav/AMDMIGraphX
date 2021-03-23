@@ -40,8 +40,8 @@ struct dnnl_deconvolution
                 m.at(DNNL_ARG_DST),
                 to_dnnl_dims(op.stride),
                 to_dnnl_dims(dilation),
-                to_dnnl_dims(op.padding),
-                to_dnnl_dims(op.padding)};
+                to_dnnl_dims(op.padding_l),
+                to_dnnl_dims(op.padding_r)};
     }
 };
 

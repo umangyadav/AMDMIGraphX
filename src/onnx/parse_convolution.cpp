@@ -52,7 +52,7 @@ struct parse_convolution : op_parser<parse_convolution>
         std::vector<int64_t> padding;
         if(contains(info.attributes, "pads"))
         {
-            values["padding"].clear();
+            values["padding_l"].clear();
             copy(info.attributes["pads"].ints(), std::back_inserter(padding));
             check_attr_sizes(kdims, padding.size() / 2, "PARSE_CONV: inconsistent paddings");
         }

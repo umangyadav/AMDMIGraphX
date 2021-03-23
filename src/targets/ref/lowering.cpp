@@ -226,7 +226,7 @@ struct ref_convolution : auto_register_op<ref_convolution<Op>>
                 {
                     auto d_2 = dim - 2;
                     win_start.push_back(std::ptrdiff_t(idx_o[dim] * op.stride[d_2]) -
-                                        std::ptrdiff_t(op.padding[d_2]));
+                                        std::ptrdiff_t(op.padding()[d_2]));
                 }
                 const auto group_id = w / (wei_n / op.group);
 
@@ -318,7 +318,7 @@ struct ref_deconvolution : auto_register_op<ref_deconvolution<Op>>
                     for(std::size_t n = 0; n < kdims; ++n)
                     {
                         win_start.push_back(std::ptrdiff_t(*(input_dims_start + n) * op.stride[n]) -
-                                            std::ptrdiff_t(op.padding[n]));
+                                            std::ptrdiff_t(op.padding()[n]));
                     }
 
                     const int group_id = w / (wei_n / op.group);

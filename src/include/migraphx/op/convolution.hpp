@@ -18,9 +18,10 @@ namespace op {
 
 struct convolution
 {
-    std::vector<std::size_t> padding  = {0, 0};
-    std::vector<std::size_t> stride   = {1, 1};
-    std::vector<std::size_t> dilation = {1, 1};
+    std::vector<std::size_t> padding_l  = {0, 0};
+    std::vector<std::size_t> padding_r  = {0, 0};
+    std::vector<std::size_t> stride     = {1, 1};
+    std::vector<std::size_t> dilation   = {1, 1};
 
     int group                   = 1;
     padding_mode_t padding_mode = default_;
@@ -28,7 +29,8 @@ struct convolution
     template <class Self, class F>
     static auto reflect(Self& self, F f)
     {
-        return pack(f(self.padding, "padding"),
+        return pack(f(self.padding_l, "padding_l"),
+                    f(self.padding_r, "padding_r"),
                     f(self.stride, "stride"),
                     f(self.dilation, "dilation"),
                     f(self.group, "group"),
@@ -39,7 +41,7 @@ struct convolution
 
     void check_attribute_size() const
     {
-        if(not(padding.size() == stride.size() and padding.size() == dilation.size()))
+        if(not(padding_l.size() == stride.size() and padding_l.size() == dilation.size() and padding_l.size() == padding_r.size()))
         {
             MIGRAPHX_THROW("CONVOLUTION: inconsistent attribute sizes");
         }
@@ -50,7 +52,7 @@ struct convolution
         check_shapes{inputs, *this}.has(2).same_type().same_ndims().min_ndims(3);
         check_attribute_size();
         // dim num of input and attribute should match
-        if(inputs[0].lens().size() != padding.size() + 2)
+        if(inputs[0].lens().size() != padding_l.size() + 2)
         {
             MIGRAPHX_THROW("CONVOLUTION: input and attribute size mismatch!");
         }
@@ -74,7 +76,7 @@ struct convolution
             output_lens.push_back(std::size_t(std::max<std::ptrdiff_t>(
                 1,
                 (input.lens()[i + 2] - (1 + dilation[i] * (weights.lens()[i + 2] - 1)) +
-                 2 * padding[i]) /
+                 (padding_l[i] + padding_r[i])) /
                         stride[i] +
                     1)));
         }
@@ -85,7 +87,19 @@ struct convolution
     size_t kdims() const
     {
         check_attribute_size();
-        return padding.size();
+        return padding_l.size();
+    }
+
+    bool symmetric() const
+    {
+        return padding_l == padding_r;
+    }
+
+    std::vector<size_t> padding() const
+    {
+        if(not this->symmetric())
+            MIGRAPHX_THROW("CONVOLUTION: padding is asymmetric");
+        return padding_l;
     }
 };
 

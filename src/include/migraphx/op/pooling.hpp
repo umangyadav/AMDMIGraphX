@@ -79,6 +79,7 @@ struct pooling
         check_attribute_size();
         return padding.size();
     }
+    
 };
 
 } // namespace op
