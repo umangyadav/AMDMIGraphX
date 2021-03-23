@@ -18,10 +18,10 @@ namespace op {
 
 struct convolution
 {
-    std::vector<std::size_t> padding_l  = {0, 0};
-    std::vector<std::size_t> padding_r  = {0, 0};
-    std::vector<std::size_t> stride     = {1, 1};
-    std::vector<std::size_t> dilation   = {1, 1};
+    std::vector<std::size_t> padding_l = {0, 0};
+    std::vector<std::size_t> padding_r = {0, 0};
+    std::vector<std::size_t> stride    = {1, 1};
+    std::vector<std::size_t> dilation  = {1, 1};
 
     int group                   = 1;
     padding_mode_t padding_mode = default_;
@@ -41,7 +41,8 @@ struct convolution
 
     void check_attribute_size() const
     {
-        if(not(padding_l.size() == stride.size() and padding_l.size() == dilation.size() and padding_l.size() == padding_r.size()))
+        if(not(padding_l.size() == stride.size() and padding_l.size() == dilation.size() and
+               padding_l.size() == padding_r.size()))
         {
             MIGRAPHX_THROW("CONVOLUTION: inconsistent attribute sizes");
         }
@@ -90,10 +91,7 @@ struct convolution
         return padding_l.size();
     }
 
-    bool symmetric() const
-    {
-        return padding_l == padding_r;
-    }
+    bool symmetric() const { return padding_l == padding_r; }
 
     std::vector<size_t> padding() const
     {

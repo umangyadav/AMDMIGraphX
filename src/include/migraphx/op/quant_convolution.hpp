@@ -19,10 +19,10 @@ namespace op {
 
 struct quant_convolution
 {
-    std::vector<std::size_t> padding_l  = {0, 0};
-    std::vector<std::size_t> padding_r  = {0, 0};
-    std::vector<std::size_t> stride     = {1, 1};
-    std::vector<std::size_t> dilation   = {1, 1};
+    std::vector<std::size_t> padding_l = {0, 0};
+    std::vector<std::size_t> padding_r = {0, 0};
+    std::vector<std::size_t> stride    = {1, 1};
+    std::vector<std::size_t> dilation  = {1, 1};
 
     padding_mode_t padding_mode = default_;
     int group                   = 1;
@@ -43,7 +43,8 @@ struct quant_convolution
 
     void check_attribute_size() const
     {
-        if(not(padding_l.size() == stride.size() and padding_l.size() == dilation.size() and padding_l.size() == padding_r.size()))
+        if(not(padding_l.size() == stride.size() and padding_l.size() == dilation.size() and
+               padding_l.size() == padding_r.size()))
         {
             MIGRAPHX_THROW("quant_convolution: inconsistent attribute sizes");
         }

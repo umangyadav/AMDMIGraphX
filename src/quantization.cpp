@@ -291,8 +291,8 @@ static void ins_quantize_int8(module& modl,
         // Current MIOpen convolution does not support alpha and beta,
         // so we need a separate multiply to adjust the output
         auto conv_op       = any_cast<op::convolution>(ins->get_operator());
-        auto padding_l       = conv_op.padding_l;
-        auto padding_r       = conv_op.padding_r;
+        auto padding_l     = conv_op.padding_l;
+        auto padding_r     = conv_op.padding_r;
         auto stride        = conv_op.stride;
         auto dilation      = conv_op.dilation;
         auto padding_mode  = conv_op.padding_mode;
