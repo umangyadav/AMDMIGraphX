@@ -62,7 +62,6 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     auto mx19 = mm->add_instruction(relu19, mx18);
     migraphx::op::pooling pooling20;
     pooling20.mode      = "max";
-    pooling20.padding() = {0, 0};
     pooling20.stride    = {2, 2};
     pooling20.lengths   = {3, 3};
     auto mx20           = mm->add_instruction(pooling20, mx19);
@@ -83,7 +82,6 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     auto mx24 = mm->add_instruction(relu24, mx23);
     migraphx::op::pooling pooling25;
     pooling25.mode      = "max";
-    pooling25.padding() = {0, 0};
     pooling25.stride    = {2, 2};
     pooling25.lengths   = {3, 3};
     auto mx25           = mm->add_instruction(pooling25, mx24);
