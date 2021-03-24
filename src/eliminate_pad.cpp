@@ -44,12 +44,19 @@ void eliminate_pad::update_op(const instruction_ref& input,
 
     std::vector<size_t> pads_l(kdims_it, kdims_it + kdims);
     std::vector<size_t> pads_r(kdims_it + kdims + 2, pad_op.pads.end());
-    
 
     auto op = any_cast<op::convolution>(ins->get_operator());
- 
-    std::transform(op.padding_l.begin(), op.padding_l.end(), pads_l.begin(), op.padding_l.begin(), std::plus<size_t>());
-    std::transform(op.padding_r.begin(), op.padding_r.end(), pads_r.begin(), op.padding_r.begin(), std::plus<size_t>());
+
+    std::transform(op.padding_l.begin(),
+                   op.padding_l.end(),
+                   pads_l.begin(),
+                   op.padding_l.begin(),
+                   std::plus<size_t>());
+    std::transform(op.padding_r.begin(),
+                   op.padding_r.end(),
+                   pads_r.begin(),
+                   op.padding_r.begin(),
+                   std::plus<size_t>());
 
     std::vector<instruction_ref> new_inputs{ins->inputs()};
     new_inputs.front() = input->inputs().front();
@@ -77,8 +84,16 @@ void eliminate_pad::update_pooling(const instruction_ref& input,
     std::vector<size_t> pads_l(kdims_it, kdims_it + kdims);
     std::vector<size_t> pads_r(kdims_it + kdims, pad_op.pads.end());
 
-    std::transform(op.padding_l.begin(), op.padding_l.end(), pads_l.begin(), op.padding_l.begin(), std::plus<size_t>());
-    std::transform(op.padding_r.begin(), op.padding_r.end(), pads_r.begin(), op.padding_r.begin(), std::plus<size_t>());
+    std::transform(op.padding_l.begin(),
+                   op.padding_l.end(),
+                   pads_l.begin(),
+                   op.padding_l.begin(),
+                   std::plus<size_t>());
+    std::transform(op.padding_r.begin(),
+                   op.padding_r.end(),
+                   pads_r.begin(),
+                   op.padding_r.begin(),
+                   std::plus<size_t>());
 
     std::vector<instruction_ref> new_inputs{ins->inputs()};
     new_inputs.front() = input->inputs().front();
