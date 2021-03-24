@@ -417,13 +417,13 @@ TEST_CASE(avgpool_test)
     // 1D case 2, stride 2
     {
         migraphx::program p;
-        auto* mm   = p.get_main_module();
-        auto s     = migraphx::shape{migraphx::shape::float_type, {2, 2, 4}};
-        auto op    = migraphx::op::pooling{"average"};
-        op.lengths = {2};
+        auto* mm     = p.get_main_module();
+        auto s       = migraphx::shape{migraphx::shape::float_type, {2, 2, 4}};
+        auto op      = migraphx::op::pooling{"average"};
+        op.lengths   = {2};
         op.padding_l = {1};
         op.padding_r = {1};
-        op.stride  = {2};
+        op.stride    = {2};
 
         std::vector<float> data{1.6321,
                                 -2.4186,
@@ -2188,10 +2188,7 @@ TEST_CASE(conv3d_test)
     auto cl = mm->add_literal(migraphx::literal{c_shape, c});
 
     mm->add_instruction(
-        migraphx::make_op("convolution",
-                          {{"stride", {1, 1, 1}}, {"dilation", {1, 1, 1}}}),
-        al,
-        cl);
+        migraphx::make_op("convolution", {{"stride", {1, 1, 1}}, {"dilation", {1, 1, 1}}}), al, cl);
     p.compile(migraphx::ref::target{});
     auto result = p.eval({}).back();
 
@@ -2249,7 +2246,10 @@ TEST_CASE(conv2d_padding_test)
     auto cl = mm->add_literal(migraphx::literal{c_shape, c});
 
     mm->add_instruction(
-        migraphx::make_op("convolution", {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {1, 1}}}), al, cl);
+        migraphx::make_op("convolution",
+                          {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {1, 1}}}),
+        al,
+        cl);
     p.compile(migraphx::ref::target{});
     auto result = p.eval({}).back();
 
@@ -2312,7 +2312,10 @@ TEST_CASE(conv2d_padding_stride_test)
     auto cl = mm->add_literal(migraphx::literal{c_shape, c});
 
     mm->add_instruction(
-        migraphx::make_op("convolution", {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {2, 2}}}), al, cl);
+        migraphx::make_op("convolution",
+                          {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {2, 2}}}),
+        al,
+        cl);
     p.compile(migraphx::ref::target{});
     auto result = p.eval({}).back();
 
@@ -2374,7 +2377,10 @@ TEST_CASE(quant_conv2d_padding_test)
     std::iota(c.begin(), c.end(), 0);
     auto cl = mm->add_literal(migraphx::literal{c_shape, c});
     mm->add_instruction(
-        migraphx::make_op("quant_convolution", {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {1, 1}}}), al, cl);
+        migraphx::make_op("quant_convolution",
+                          {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {1, 1}}}),
+        al,
+        cl);
     p.compile(migraphx::ref::target{});
     auto result            = p.eval({}).back();
     std::vector<int32_t> s = {
@@ -2402,7 +2408,10 @@ TEST_CASE(quant_conv2d_padding_stride_test)
     std::iota(c.begin(), c.end(), 0);
     auto cl = mm->add_literal(migraphx::literal{c_shape, c});
     mm->add_instruction(
-        migraphx::make_op("quant_convolution", {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {2, 2}}}), al, cl);
+        migraphx::make_op("quant_convolution",
+                          {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {2, 2}}}),
+        al,
+        cl);
     p.compile(migraphx::ref::target{});
     auto result = p.eval({}).back();
 
@@ -2464,9 +2473,7 @@ TEST_CASE(deconv_1d_test)
     auto w   = mm->add_literal(migraphx::literal{s, w_data});
 
     mm->add_instruction(
-        migraphx::make_op("deconvolution", { {"stride", {1}}, {"dilation", {1}}}),
-        x,
-        w);
+        migraphx::make_op("deconvolution", {{"stride", {1}}, {"dilation", {1}}}), x, w);
     p.compile(migraphx::ref::target{});
     auto result = p.eval({}).back();
 
@@ -2512,10 +2519,7 @@ TEST_CASE(deconv_3d_test)
     auto w   = mm->add_literal(migraphx::literal{s_2, w_data});
 
     mm->add_instruction(
-        migraphx::make_op("deconvolution",
-                          {{"stride", {1, 1, 1}}, {"dilation", {1, 1, 1}}}),
-        x,
-        w);
+        migraphx::make_op("deconvolution", {{"stride", {1, 1, 1}}, {"dilation", {1, 1, 1}}}), x, w);
     p.compile(migraphx::ref::target{});
     auto result = p.eval({}).back();
 
