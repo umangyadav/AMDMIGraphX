@@ -196,7 +196,6 @@ TEST_CASE(as_literal_3d)
         migraphx::program p;
         auto* mm = p.get_main_module();
         migraphx::op::convolution conv_op;
-        conv_op.padding  = {0, 0, 0};
         conv_op.stride   = {1, 1, 1};
         conv_op.dilation = {1, 1, 1};
 

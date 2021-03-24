@@ -400,7 +400,6 @@ TEST_CASE(avgpool_test)
         auto s     = migraphx::shape{migraphx::shape::float_type, {1, 3, 4}};
         auto op    = migraphx::op::pooling{"average"};
         op.lengths = {2};
-        op.padding = {0};
         op.stride  = {1};
 
         std::vector<float> data{0.3, 0.2, 0.4, 0.1, 0.8, 0.5, 0.9, 0.1, 0.1, 0.7, 0.1, 0.6};
@@ -422,7 +421,8 @@ TEST_CASE(avgpool_test)
         auto s     = migraphx::shape{migraphx::shape::float_type, {2, 2, 4}};
         auto op    = migraphx::op::pooling{"average"};
         op.lengths = {2};
-        op.padding = {1};
+        op.padding_l = {1};
+        op.padding_r = {1};
         op.stride  = {2};
 
         std::vector<float> data{1.6321,
@@ -469,7 +469,6 @@ TEST_CASE(avgpool_test)
         auto s     = migraphx::shape{migraphx::shape::float_type, {2, 2, 3, 3, 3}};
         auto op    = migraphx::op::pooling{"average"};
         op.lengths = {2, 2, 2};
-        op.padding = {0, 0, 0};
         op.stride  = {1, 1, 1};
 
         std::vector<float> data{
@@ -507,7 +506,6 @@ TEST_CASE(maxpool_test_1D_3D)
         auto s     = migraphx::shape{migraphx::shape::float_type, {1, 3, 4}};
         auto op    = migraphx::op::pooling{"max"};
         op.lengths = {2};
-        op.padding = {0};
         op.stride  = {1};
 
         std::vector<float> data{0.3, 0.2, 0.4, 0.1, 0.8, 0.5, 0.9, 0.1, 0.1, 0.7, 0.1, 0.6};
@@ -529,7 +527,6 @@ TEST_CASE(maxpool_test_1D_3D)
         auto s     = migraphx::shape{migraphx::shape::float_type, {2, 2, 5}};
         auto op    = migraphx::op::pooling{"max"};
         op.lengths = {2};
-        op.padding = {0};
         op.stride  = {2};
 
         std::vector<float> data{0.4975, -0.1226, -0.0405, -0.2861, -0.1227, -0.6186, -0.9618,
@@ -553,7 +550,6 @@ TEST_CASE(maxpool_test_1D_3D)
         auto s       = migraphx::shape{migraphx::shape::float_type, {2, 2, 5}};
         auto op      = migraphx::op::pooling{"max"};
         op.lengths   = {2};
-        op.padding   = {0};
         op.stride    = {2};
         op.ceil_mode = true;
 
@@ -589,7 +585,6 @@ TEST_CASE(maxpool_test_1D_3D)
         auto s     = migraphx::shape{migraphx::shape::float_type, {2, 2, 3, 3, 3}};
         auto op    = migraphx::op::pooling{"max"};
         op.lengths = {2, 2, 2};
-        op.padding = {0, 0, 0};
         op.stride  = {2, 2, 2};
 
         std::vector<float> data{
@@ -2194,7 +2189,7 @@ TEST_CASE(conv3d_test)
 
     mm->add_instruction(
         migraphx::make_op("convolution",
-                          {{"padding", {0, 0, 0}}, {"stride", {1, 1, 1}}, {"dilation", {1, 1, 1}}}),
+                          {{"stride", {1, 1, 1}}, {"dilation", {1, 1, 1}}}),
         al,
         cl);
     p.compile(migraphx::ref::target{});
@@ -2254,7 +2249,7 @@ TEST_CASE(conv2d_padding_test)
     auto cl = mm->add_literal(migraphx::literal{c_shape, c});
 
     mm->add_instruction(
-        migraphx::make_op("convolution", {{"padding", {1, 1}}, {"stride", {1, 1}}}), al, cl);
+        migraphx::make_op("convolution", {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {1, 1}}}), al, cl);
     p.compile(migraphx::ref::target{});
     auto result = p.eval({}).back();
 
@@ -2317,7 +2312,7 @@ TEST_CASE(conv2d_padding_stride_test)
     auto cl = mm->add_literal(migraphx::literal{c_shape, c});
 
     mm->add_instruction(
-        migraphx::make_op("convolution", {{"padding", {1, 1}}, {"stride", {2, 2}}}), al, cl);
+        migraphx::make_op("convolution", {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {2, 2}}}), al, cl);
     p.compile(migraphx::ref::target{});
     auto result = p.eval({}).back();
 
@@ -2379,7 +2374,7 @@ TEST_CASE(quant_conv2d_padding_test)
     std::iota(c.begin(), c.end(), 0);
     auto cl = mm->add_literal(migraphx::literal{c_shape, c});
     mm->add_instruction(
-        migraphx::make_op("quant_convolution", {{"padding", {1, 1}}, {"stride", {1, 1}}}), al, cl);
+        migraphx::make_op("quant_convolution", {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {1, 1}}}), al, cl);
     p.compile(migraphx::ref::target{});
     auto result            = p.eval({}).back();
     std::vector<int32_t> s = {
@@ -2407,7 +2402,7 @@ TEST_CASE(quant_conv2d_padding_stride_test)
     std::iota(c.begin(), c.end(), 0);
     auto cl = mm->add_literal(migraphx::literal{c_shape, c});
     mm->add_instruction(
-        migraphx::make_op("quant_convolution", {{"padding", {1, 1}}, {"stride", {2, 2}}}), al, cl);
+        migraphx::make_op("quant_convolution", {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {2, 2}}}), al, cl);
     p.compile(migraphx::ref::target{});
     auto result = p.eval({}).back();
 
@@ -2469,7 +2464,7 @@ TEST_CASE(deconv_1d_test)
     auto w   = mm->add_literal(migraphx::literal{s, w_data});
 
     mm->add_instruction(
-        migraphx::make_op("deconvolution", {{"padding", {0}}, {"stride", {1}}, {"dilation", {1}}}),
+        migraphx::make_op("deconvolution", { {"stride", {1}}, {"dilation", {1}}}),
         x,
         w);
     p.compile(migraphx::ref::target{});
@@ -2518,7 +2513,7 @@ TEST_CASE(deconv_3d_test)
 
     mm->add_instruction(
         migraphx::make_op("deconvolution",
-                          {{"padding", {0, 0, 0}}, {"stride", {1, 1, 1}}, {"dilation", {1, 1, 1}}}),
+                          {{"stride", {1, 1, 1}}, {"dilation", {1, 1, 1}}}),
         x,
         w);
     p.compile(migraphx::ref::target{});

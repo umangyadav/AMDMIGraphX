@@ -182,7 +182,7 @@ TEST_CASE(averagepool_1d_test)
     auto l0  = mm->add_parameter("0", {migraphx::shape::float_type, {1, 3, 5}});
     mm->add_instruction(
         migraphx::make_op(
-            "pooling", {{"mode", "average"}, {"padding", {0}}, {"stride", {1}}, {"lengths", {3}}}),
+            "pooling", {{"mode", "average"}, {"stride", {1}}, {"lengths", {3}}}),
         l0);
 
     auto prog = optimize_onnx("averagepool_1d_test.onnx");
@@ -196,7 +196,6 @@ TEST_CASE(averagepool_3d_test)
     auto l0  = mm->add_parameter("0", {migraphx::shape::float_type, {1, 3, 5, 5, 5}});
     mm->add_instruction(migraphx::make_op("pooling",
                                           {{"mode", "average"},
-                                           {"padding", {0, 0, 0}},
                                            {"stride", {1, 1, 1}},
                                            {"lengths", {3, 3, 3}}}),
                         l0);
@@ -586,7 +585,7 @@ TEST_CASE(conv_3d_test)
     auto l1  = mm->add_parameter("1", {migraphx::shape::float_type, {1, 3, 3, 3, 3}});
     mm->add_instruction(
         migraphx::make_op("convolution",
-                          {{"padding", {0, 0, 0}}, {"stride", {1, 1, 1}}, {"dilation", {1, 1, 1}}}),
+                          {{"stride", {1, 1, 1}}, {"dilation", {1, 1, 1}}}),
         l0,
         l1);
 
@@ -606,7 +605,8 @@ TEST_CASE(conv_autopad_same_test)
     auto l0  = mm->add_parameter("0", {migraphx::shape::float_type, {1, 3, 32, 32}});
     auto l1  = mm->add_parameter("1", {migraphx::shape::float_type, {1, 3, 3, 3}});
     migraphx::op::convolution op;
-    op.padding      = {1, 1};
+    op.padding_l    = {1, 1};
+    op.padding_r    = {1, 1};
     op.padding_mode = migraphx::op::padding_mode_t::same;
     mm->add_instruction(op, l0, l1);
 
@@ -654,7 +654,7 @@ TEST_CASE(conv_bn_relu_maxpool_test)
     mm->add_instruction(
         migraphx::make_op(
             "pooling",
-            {{"mode", "max"}, {"padding", {0, 0}}, {"stride", {2, 2}}, {"lengths", {2, 2}}}),
+            {{"mode", "max"}, {"stride", {2, 2}}, {"lengths", {2, 2}}}),
         l7);
 
     auto prog = optimize_onnx("conv_bn_relu_maxpool_test.onnx");
@@ -677,7 +677,7 @@ TEST_CASE(conv_relu_maxpool_test)
     mm->add_instruction(
         migraphx::make_op(
             "pooling",
-            {{"mode", "max"}, {"padding", {0, 0}}, {"stride", {2, 2}}, {"lengths", {2, 2}}}),
+            {{"mode", "max"}, {"stride", {2, 2}}, {"lengths", {2, 2}}}),
         l6);
 
     auto prog = optimize_onnx("conv_relu_maxpool_test.onnx");
@@ -700,7 +700,7 @@ TEST_CASE(conv_relu_maxpool_x2_test)
     auto l7 = mm->add_instruction(
         migraphx::make_op(
             "pooling",
-            {{"mode", "max"}, {"padding", {0, 0}}, {"stride", {2, 2}}, {"lengths", {2, 2}}}),
+            {{"mode", "max"}, {"stride", {2, 2}}, {"lengths", {2, 2}}}),
         l6);
 
     auto l8  = mm->add_parameter("3", {migraphx::shape::float_type, {1, 5, 5, 5}});
@@ -713,7 +713,7 @@ TEST_CASE(conv_relu_maxpool_x2_test)
     mm->add_instruction(
         migraphx::make_op(
             "pooling",
-            {{"mode", "max"}, {"padding", {0, 0}}, {"stride", {2, 2}}, {"lengths", {2, 2}}}),
+            {{"mode", "max"}, {"stride", {2, 2}}, {"lengths", {2, 2}}}),
         l13);
 
     auto prog = optimize_onnx("conv_relu_maxpool_x2_test.onnx");
@@ -797,7 +797,7 @@ TEST_CASE(deconv_input_pads_strides_test)
     auto l0  = mm->add_parameter("x", {migraphx::shape::float_type, {1, 1, 3, 3}});
     auto l1  = mm->add_parameter("w", {migraphx::shape::float_type, {1, 2, 3, 3}});
     mm->add_instruction(
-        migraphx::make_op("deconvolution", {{"padding", {1, 1}}, {"stride", {3, 2}}}), l0, l1);
+        migraphx::make_op("deconvolution", {{"padding_l", {1, 1}}, {"padding_r", {1, 1}}, {"stride", {3, 2}}}), l0, l1);
 
     auto prog = optimize_onnx("deconv_input_pads_strides_test.onnx");
     EXPECT(p == prog);
@@ -810,7 +810,7 @@ TEST_CASE(deconv_input_pads_asymm_test)
     auto l0  = mm->add_parameter("x", {migraphx::shape::float_type, {1, 1, 3, 3}});
     auto l1  = mm->add_parameter("w", {migraphx::shape::float_type, {1, 2, 3, 3}});
     auto l2  = mm->add_instruction(
-        migraphx::make_op("deconvolution", {{"padding", {0, 0}}, {"stride", {3, 2}}}), l0, l1);
+        migraphx::make_op("deconvolution", {{"stride", {3, 2}}}), l0, l1);
     mm->add_instruction(
         migraphx::make_op("slice", {{"axes", {2, 3}}, {"starts", {0, 0}}, {"ends", {8, 6}}}), l2);
 
@@ -825,7 +825,7 @@ TEST_CASE(deconv_input_pads_asymm_1d_test)
     auto l0  = mm->add_parameter("x", {migraphx::shape::float_type, {1, 1, 3}});
     auto l1  = mm->add_parameter("w", {migraphx::shape::float_type, {1, 2, 3}});
     auto l2  = mm->add_instruction(
-        migraphx::make_op("deconvolution", {{"padding", {0}}, {"stride", {2}}, {"dilation", {1}}}),
+        migraphx::make_op("deconvolution", {{"stride", {2}}, {"dilation", {1}}}),
         l0,
         l1);
     mm->add_instruction(migraphx::make_op("slice", {{"axes", {2}}, {"starts", {0}}, {"ends", {6}}}),
@@ -842,7 +842,7 @@ TEST_CASE(deconv_output_padding_test)
     auto l0  = mm->add_parameter("x", {migraphx::shape::float_type, {1, 1, 3, 3}});
     auto l1  = mm->add_parameter("w", {migraphx::shape::float_type, {1, 2, 3, 3}});
     auto l2  = mm->add_instruction(
-        migraphx::make_op("deconvolution", {{"padding", {0, 0}}, {"stride", {3, 2}}}), l0, l1);
+        migraphx::make_op("deconvolution", {{"stride", {3, 2}}}), l0, l1);
     mm->add_instruction(migraphx::make_op("pad", {{"pads", {0, 0, 0, 0, 0, 0, 1, 1}}}), l2);
 
     auto prog = optimize_onnx("deconv_output_padding_test.onnx");
@@ -857,7 +857,7 @@ TEST_CASE(deconv_output_padding_3d_test)
     auto l1  = mm->add_parameter("w", {migraphx::shape::float_type, {1, 2, 3, 3, 3}});
     auto l2  = mm->add_instruction(
         migraphx::make_op("deconvolution",
-                          {{"padding", {0, 0, 0}}, {"stride", {3, 2, 2}}, {"dilation", {1, 1, 1}}}),
+                          {{"stride", {3, 2, 2}}, {"dilation", {1, 1, 1}}}),
         l0,
         l1);
     mm->add_instruction(migraphx::make_op("pad", {{"pads", {0, 0, 0, 0, 0, 0, 0, 1, 1, 1}}}), l2);
@@ -873,7 +873,7 @@ TEST_CASE(deconv_output_shape_test)
     auto l0  = mm->add_parameter("x", {migraphx::shape::float_type, {1, 1, 3, 3}});
     auto l1  = mm->add_parameter("w", {migraphx::shape::float_type, {1, 2, 3, 3}});
     auto l2  = mm->add_instruction(
-        migraphx::make_op("deconvolution", {{"padding", {0, 0}}, {"stride", {3, 2}}}), l0, l1);
+        migraphx::make_op("deconvolution", {{"stride", {3, 2}}}), l0, l1);
     mm->add_instruction(migraphx::make_op("pad", {{"pads", {0, 0, 0, 0, 0, 0, 1, 1}}}), l2);
 
     auto prog = optimize_onnx("deconv_output_shape_test.onnx");
@@ -888,7 +888,7 @@ TEST_CASE(deconv_output_shape_3d_test)
     auto l1  = mm->add_parameter("w", {migraphx::shape::float_type, {1, 2, 3, 3, 3}});
     auto l2  = mm->add_instruction(
         migraphx::make_op("deconvolution",
-                          {{"padding", {0, 0, 0}}, {"stride", {3, 2, 2}}, {"dilation", {1, 1, 1}}}),
+                          {{"stride", {3, 2, 2}}, {"dilation", {1, 1, 1}}}),
         l0,
         l1);
     mm->add_instruction(migraphx::make_op("pad", {{"pads", {0, 0, 0, 0, 0, 0, 0, 1, 1, 1}}}), l2);
@@ -1900,7 +1900,7 @@ TEST_CASE(maxpool_notset_test)
     mm->add_instruction(
         migraphx::make_op(
             "pooling",
-            {{"mode", "max"}, {"padding", {0, 0}}, {"stride", {2, 2}}, {"lengths", {6, 6}}}),
+            {{"mode", "max"}, {"stride", {2, 2}}, {"lengths", {6, 6}}}),
         ins_pad);
 
     auto prog = optimize_onnx("maxpool_notset_test.onnx");
@@ -1920,7 +1920,7 @@ TEST_CASE(maxpool_same_upper_test)
     mm->add_instruction(
         migraphx::make_op(
             "pooling",
-            {{"mode", "max"}, {"padding", {0, 0}}, {"stride", {1, 1}}, {"lengths", {2, 2}}}),
+            {{"mode", "max"}, {"stride", {1, 1}}, {"lengths", {2, 2}}}),
         ins_pad);
 
     auto prog = optimize_onnx("maxpool_same_upper_test.onnx");
