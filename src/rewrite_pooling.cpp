@@ -24,7 +24,7 @@ void rewrite_pooling::apply(module& prog) const
         if(not s.standard())
             continue;
         auto&& op = any_cast<op::pooling>(ins->get_operator());
-        if(!std::all_of(op.padding.begin(), op.padding.end(), [](auto i) { return i == 0; }))
+        if(!std::all_of(op.padding().begin(), op.padding().end(), [](auto i) { return i == 0; }))
             continue;
         if(!std::all_of(op.stride.begin(), op.stride.end(), [](auto i) { return i == 1; }))
             continue;

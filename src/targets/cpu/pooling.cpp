@@ -88,7 +88,7 @@ struct cpu_pooling : auto_register_op<cpu_pooling<Op>>
                 {
                     auto d_2  = dim - 2;
                     int start = static_cast<int>(idx_o[dim] * op.stride[d_2]) -
-                                static_cast<int>(op.padding[d_2]);
+                                static_cast<int>(op.padding()[d_2]);
                     int end = std::min(start + op.lengths[d_2], in_lens[dim]);
                     start   = std::max(start, 0);
                     win_start.push_back(start);
@@ -136,8 +136,8 @@ struct dnnl_pooling : dnnl_extend_op<dnnl_pooling, dnnl::pooling_forward, op::po
                 m.at(DNNL_ARG_DST),
                 to_dnnl_dims(op.stride),
                 to_dnnl_dims(op.lengths),
-                to_dnnl_dims(op.padding),
-                to_dnnl_dims(op.padding)};
+                to_dnnl_dims(op.padding_l),
+                to_dnnl_dims(op.padding_r)};
     }
 };
 

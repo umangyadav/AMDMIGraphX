@@ -46,7 +46,8 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     auto mx15 = mm->add_literal(migraphx::generate_literal(
         migraphx::shape{migraphx::shape::float_type, {64, 3, 11, 11}}, 15));
     migraphx::op::convolution convolution16;
-    convolution16.padding() = {2, 2};
+    convolution16.padding_l = {2, 2};
+    convolution16.padding_r = {2, 2};
     convolution16.stride    = {4, 4};
     convolution16.dilation  = {1, 1};
     convolution16.group     = 1;
@@ -61,12 +62,13 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     auto mx19 = mm->add_instruction(relu19, mx18);
     migraphx::op::pooling pooling20;
     pooling20.mode    = "max";
-    pooling20.padding = {0, 0};
+    pooling20.padding() = {0, 0};
     pooling20.stride  = {2, 2};
     pooling20.lengths = {3, 3};
     auto mx20         = mm->add_instruction(pooling20, mx19);
     migraphx::op::convolution convolution21;
-    convolution21.padding() = {2, 2};
+    convolution21.padding_l = {2, 2};
+    convolution21.padding_r = {2, 2};
     convolution21.stride    = {1, 1};
     convolution21.dilation  = {1, 1};
     convolution21.group     = 1;
@@ -81,12 +83,13 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     auto mx24 = mm->add_instruction(relu24, mx23);
     migraphx::op::pooling pooling25;
     pooling25.mode    = "max";
-    pooling25.padding = {0, 0};
+    pooling25.padding() = {0, 0};
     pooling25.stride  = {2, 2};
     pooling25.lengths = {3, 3};
     auto mx25         = mm->add_instruction(pooling25, mx24);
     migraphx::op::convolution convolution26;
-    convolution26.padding() = {1, 1};
+    convolution26.padding_l = {1, 1};
+    convolution26.padding_r = {1, 1};
     convolution26.stride    = {1, 1};
     convolution26.dilation  = {1, 1};
     convolution26.group     = 1;
@@ -100,7 +103,8 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     migraphx::op::relu relu29;
     auto mx29 = mm->add_instruction(relu29, mx28);
     migraphx::op::convolution convolution30;
-    convolution30.padding() = {1, 1};
+    convolution30.padding_l = {1, 1};
+    convolution30.padding_r = {1, 1};
     convolution30.stride    = {1, 1};
     convolution30.dilation  = {1, 1};
     convolution30.group     = 1;
@@ -114,7 +118,8 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     migraphx::op::relu relu33;
     auto mx33 = mm->add_instruction(relu33, mx32);
     migraphx::op::convolution convolution34;
-    convolution34.padding() = {1, 1};
+    convolution34.padding_l = {1, 1};
+    convolution34.padding_r = {1, 1};
     convolution34.stride    = {1, 1};
     convolution34.dilation  = {1, 1};
     convolution34.group     = 1;
@@ -129,7 +134,6 @@ migraphx::program alexnet(unsigned batch) // NOLINT(readability-function-size)
     auto mx37 = mm->add_instruction(relu37, mx36);
     migraphx::op::pooling pooling38;
     pooling38.mode    = "max";
-    pooling38.padding = {0, 0};
     pooling38.stride  = {2, 2};
     pooling38.lengths = {3, 3};
     auto mx38         = mm->add_instruction(pooling38, mx37);

@@ -489,7 +489,7 @@ struct ref_pooling : auto_register_op<ref_pooling<Op>>
                 {
                     auto d_2  = dim - 2;
                     int start = static_cast<int>(idx_o[dim] * op.stride[d_2]) -
-                                static_cast<int>(op.padding[d_2]);
+                                static_cast<int>(op.padding()[d_2]);
                     int end = std::min(start + op.lengths[d_2], in_lens[dim]);
                     start   = std::max(start, 0);
                     win_start.push_back(start);

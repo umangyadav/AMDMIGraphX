@@ -21,7 +21,8 @@ namespace op {
 struct pooling
 {
     std::string mode                 = "average";
-    std::vector<std::size_t> padding = {0, 0};
+    std::vector<std::size_t> padding_l = {0, 0};
+    std::vector<std::size_t> padding_r = {0, 0};
     std::vector<std::size_t> stride  = {1, 1};
     std::vector<std::size_t> lengths = {1, 1};
     bool ceil_mode                   = false;
@@ -30,7 +31,8 @@ struct pooling
     static auto reflect(Self& self, F f)
     {
         return pack(f(self.mode, "mode"),
-                    f(self.padding, "padding"),
+                    f(self.padding_l, "padding_l"),
+                    f(self.padding_r, "padding_r"),
                     f(self.stride, "stride"),
                     f(self.lengths, "lengths"),
                     f(self.ceil_mode, "ceil_mode"));
@@ -40,7 +42,7 @@ struct pooling
 
     void check_attribute_size() const
     {
-        if(not(padding.size() == stride.size() and padding.size() == lengths.size()))
+        if(not(padding_l.size() == stride.size() and padding_l.size() == lengths.size() and padding_l.size() == padding_r.size()))
         {
             MIGRAPHX_THROW("POOLING: inconsistent attribute sizes");
         }
@@ -64,7 +66,7 @@ struct pooling
 
         for(size_t i = 0; i < kdims; i++)
         {
-            std::ptrdiff_t dim_size = input_lens[i + 2] + 2 * padding[i] - lengths[i];
+            std::ptrdiff_t dim_size = input_lens[i + 2] + (padding_l[i] + padding_r[i]) - lengths[i];
             assert(dim_size >= 0);
             std::size_t len = (ceil_mode) ? ceil_divide<std::ptrdiff_t>(dim_size, stride[i])
                                           : floor_divide<std::ptrdiff_t>(dim_size, stride[i]);
@@ -77,7 +79,16 @@ struct pooling
     size_t kdims() const
     {
         check_attribute_size();
-        return padding.size();
+        return padding_l.size();
+    }
+
+    bool symmetric() const { return padding_l == padding_r; }
+
+    std::vector<size_t> padding() const
+    {
+        if(not this->symmetric())
+            MIGRAPHX_THROW("POOLING: padding is asymmetric");
+        return padding_l;
     }
 };
 

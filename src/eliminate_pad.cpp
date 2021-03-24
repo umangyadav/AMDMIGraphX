@@ -22,7 +22,10 @@ void eliminate_pad::apply(module& p) const
         if(input->name() != "pad")
             continue;
         if(op_name == "convolution" or op_name == "im2col")
+        {
             update_op(input, ins, p);
+            p.debug_print();
+        }
         else if(op_name == "pooling")
             update_pooling(input, ins, p);
     }
@@ -40,11 +43,13 @@ void eliminate_pad::update_op(const instruction_ref& input,
     auto kdims_it = pad_op.pads.begin() + 2;
 
     std::vector<size_t> pads_l(kdims_it, kdims_it + kdims);
-    std::vector<size_t> pads_r(kdims_it + kdims, pad_op.pads.end());
+    std::vector<size_t> pads_r(kdims_it + kdims + 2, pad_op.pads.end());
+    
 
-    auto op = ins->get_operator();
-    op.from_value({{"padding_l", pads_l}});
-    op.from_value({{"padding_r", pads_r}});
+    auto op = any_cast<op::convolution>(ins->get_operator());
+ 
+    std::transform(op.padding_l.begin(), op.padding_l.end(), pads_l.begin(), op.padding_l.begin(), std::plus<size_t>());
+    std::transform(op.padding_r.begin(), op.padding_r.end(), pads_r.begin(), op.padding_r.begin(), std::plus<size_t>());
 
     std::vector<instruction_ref> new_inputs{ins->inputs()};
     new_inputs.front() = input->inputs().front();
@@ -56,8 +61,8 @@ void eliminate_pad::update_pooling(const instruction_ref& input,
                                    const instruction_ref& ins,
                                    module& p) const
 {
-    auto op = ins->get_operator();
-    if(op.to_value()["mode"] == "average")
+    auto op = any_cast<op::pooling>(ins->get_operator());
+    if(op.mode == "average")
     {
         return;
     }
@@ -72,8 +77,8 @@ void eliminate_pad::update_pooling(const instruction_ref& input,
     std::vector<size_t> pads_l(kdims_it, kdims_it + kdims);
     std::vector<size_t> pads_r(kdims_it + kdims, pad_op.pads.end());
 
-    op.from_value({{"padding_l", pads_l}});
-    op.from_value({{"padding_r", pads_r}});
+    std::transform(op.padding_l.begin(), op.padding_l.end(), pads_l.begin(), op.padding_l.begin(), std::plus<size_t>());
+    std::transform(op.padding_r.begin(), op.padding_r.end(), pads_r.begin(), op.padding_r.begin(), std::plus<size_t>());
 
     std::vector<instruction_ref> new_inputs{ins->inputs()};
     new_inputs.front() = input->inputs().front();
