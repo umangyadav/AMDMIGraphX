@@ -408,9 +408,26 @@ void from_value_op(T& x, const value& v)
              input   = 'const std::vector<argument>&',
              const   = True,
              default = 'detail::compute_op'),
+     virtual('compute',
+             returns = 'std::vector<argument>',
+             output  = 'const shape&',
+             input   = 'const std::vector<argument>&',
+             const   = True,
+             default = 'detail::compute_op'),
      virtual(
          'compute',
-         returns     = 'argument',
+         returns     = 'std::vector<argument>',
+         input       = 'const std::vector<argument>&',
+         module_args = 'const std::vector<module_ref>&',
+         run =
+             'std::function<std::vector<argument>(module_ref& mdl, const std::unordered_map<std::string, argument>& inputs)>',
+         const   = True,
+         default = 'detail::compute_op'),
+     virtual(
+         'compute',
+         returns     = 'std::vector<argument>',
+         ctx         = 'context&',
+         output      = 'const shape&',
          input       = 'const std::vector<argument>&',
          module_args = 'const std::vector<module_ref>&',
          run =
